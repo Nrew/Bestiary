@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Rust / Tauri
+target/
+src-tauri/target/
+src-tauri/target-test/
+src-tauri/gen/
+
+# SQLx prepared queries
+.sqlx/
+
+# Environment
+.env
+.env.local
+.env.*
+!.env.example
+
+# Database files
+*.sqlite
+*.sqlite-*
+*.db
+
+# Logs and reports
+*.log
+logs/
+eslint-report.json
+coverage/
+*.lcov
+.nyc_output
+
+# Test output
+test-results/
+playwright-report/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE and editor
+.vscode/
+.idea/
+.cursor/
+.claude/
+*.swp
+*.swo
+*~
+.#*
+
+# Misc
+*.tgz
+*.bak
+tmp/
+temp/
+context.txt

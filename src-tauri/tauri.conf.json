@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json.schemastore.org/tauri.json",
+  "productName": "Bestiary",
+  "version": "1.0.0",
+  "identifier": "bestiary",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Bestiary Compendium",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "label": "main",
+        "visible": false,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false,
+        "focus": true,
+        "decorations": true,
+        "alwaysOnTop": false,
+        "skipTaskbar": false
+      }
+    ],
+    "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$APPDATA/images/**",
+          "$APPLOCALDATA/images/**"
+        ]
+      },
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' asset: http://asset.localhost blob:; connect-src 'self' ipc: http://ipc.localhost http://asset.localhost",
+      "capabilities": [
+        {
+          "identifier": "default",
+          "description": "Default capability for the application",
+          "windows": ["main"],
+          "permissions": [
+            "core:default"
+          ]
+        }
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "dmg", "deb", "appimage"],
+    "copyright": "Copyright (c) 2026 Nrew. Released under the MIT License.",
+    "shortDescription": "Offline bestiary, item, and ability compendium.",
+    "longDescription": "Bestiary is an offline desktop compendium for tabletop role-playing games. Track monsters, items, abilities, and conditions; build encounters; and back up your data to a single JSON file.",
+    "category": "Game",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ],
+    "resources": []
+  },
+  "plugins": {}
+}

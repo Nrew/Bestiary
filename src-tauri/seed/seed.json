@@ -1,0 +1,270 @@
+{
+  "version": "1.4.0",
+  "data": {
+    "statuses": [
+      {
+        "id": "a1f3c2d4-5e6b-4a7c-8d9e-0f1a2b3c4d5e",
+        "name": "Bleeding",
+        "shortTag": "bleed",
+        "icon": "status/poisoned",
+        "color": "#b91c1c",
+        "summary": "An open wound dealing damage each turn until treated.",
+        "description": "<p>The target is suffering from an open wound. At the start of each of its turns it takes <strong>1d4 necrotic damage</strong>. A successful DC 12 Medicine check or any magical healing ends the effect.</p>",
+        "payload": {
+          "durationRounds": 10,
+          "stacks": "stack",
+          "tags": ["bleed", "debuff", "damage-over-time"]
+        },
+        "createdAt": "2024-09-01T10:00:00.000Z",
+        "updatedAt": "2024-09-01T10:00:00.000Z"
+      },
+      {
+        "id": "b2e4d3c5-6f7a-4b8d-9e0f-1a2b3c4d5e6f",
+        "name": "Poisoned",
+        "shortTag": "poisoned",
+        "icon": "status/poisoned",
+        "color": "#16a34a",
+        "summary": "Toxins sapping attack potency and coordination.",
+        "description": "<p>The target has been exposed to poison and suffers its debilitating effects. The creature has disadvantage on attack rolls and ability checks for the duration.</p>",
+        "payload": {
+          "attackPenalty": { "type": "flat", "value": -2 },
+          "durationMinutes": 10.0,
+          "stacks": "refresh",
+          "tags": ["poison", "debuff"]
+        },
+        "createdAt": "2024-09-01T10:05:00.000Z",
+        "updatedAt": "2024-09-01T10:05:00.000Z"
+      }
+    ],
+    "items": [
+      {
+        "id": "c3d5e4f6-7a8b-4c9d-8e1f-2a3b4c5d6e7f",
+        "name": "Iron Greatclub",
+        "slug": "iron-greatclub",
+        "type": "weapon",
+        "description": "<p>A crude but devastating slab of pitted iron lashed to a hardwood haft. Favored by brutes who prefer breaking bones to piercing flesh.</p>",
+        "icon": "item/weapon",
+        "weight": 10.0,
+        "bulk": 3.0,
+        "rarity": "common",
+        "properties": {
+          "damage": "2d6 bludgeoning",
+          "twoHanded": true,
+          "heavy": true
+        },
+        "equipSlots": ["mainHand"],
+        "statModifiers": {},
+        "durability": {
+          "current": 100,
+          "max": 100
+        },
+        "createdAt": "2024-09-01T11:00:00.000Z",
+        "updatedAt": "2024-09-01T11:00:00.000Z"
+      },
+      {
+        "id": "d4e6f5a7-8b9c-4d0e-9f2a-3b4c5d6e7f8a",
+        "name": "Tattered Hide Armor",
+        "slug": "tattered-hide-armor",
+        "type": "armor",
+        "description": "<p>Stitched from cured woodland pelts and patched with bark and bone. Smells faintly of damp moss and old blood.</p>",
+        "icon": "item/armor",
+        "weight": 12.0,
+        "bulk": 3.0,
+        "rarity": "common",
+        "properties": {
+          "armorClass": 12,
+          "armorType": "light",
+          "stealthDisadvantage": false
+        },
+        "equipSlots": ["chest"],
+        "statModifiers": {
+          "armorClass": { "type": "flat", "value": 0 }
+        },
+        "durability": {
+          "current": 60,
+          "max": 100
+        },
+        "createdAt": "2024-09-01T11:10:00.000Z",
+        "updatedAt": "2024-09-01T11:10:00.000Z"
+      },
+      {
+        "id": "e5f7a6b8-9c0d-4e1f-aa3b-4c5d6e7f8a9b",
+        "name": "Vial of Trollblood",
+        "slug": "vial-of-trollblood",
+        "type": "consumable",
+        "description": "<p>A stoppered vial of dark, sluggish ichor that slowly knits itself back together when split. Drinking it grants brief regenerative properties — the taste is famously appalling.</p>",
+        "icon": "item/potion",
+        "weight": 0.5,
+        "bulk": 0.2,
+        "rarity": "uncommon",
+        "properties": {
+          "consumable": true,
+          "healing": "2d4+2 per turn for 1 minute",
+          "actionType": "action"
+        },
+        "equipSlots": [],
+        "statModifiers": {},
+        "createdAt": "2024-09-01T11:20:00.000Z",
+        "updatedAt": "2024-09-01T11:20:00.000Z"
+      }
+    ],
+    "abilities": [
+      {
+        "id": "f6a8b7c9-0d1e-4f2a-8b4c-5d6e7f8a9b0c",
+        "name": "Regeneration",
+        "slug": "regeneration",
+        "description": "<p>The troll regains <strong>10 hit points</strong> at the start of its turn if it has at least 1 HP. If the troll takes acid or fire damage, this trait does not function at the start of its next turn.</p>",
+        "type": "passive",
+        "castingTime": null,
+        "requiresConcentration": false,
+        "effects": [
+          {
+            "type": "custom",
+            "description": "Regain 10 HP at the start of each turn. Suppressed for 1 turn after taking acid or fire damage.",
+            "data": {
+              "healPerTurn": 10,
+              "suppressedBy": ["acid", "fire"]
+            }
+          }
+        ],
+        "createdAt": "2024-09-01T12:00:00.000Z",
+        "updatedAt": "2024-09-01T12:00:00.000Z"
+      },
+      {
+        "id": "a7b9c8d0-1e2f-4a3b-9c5d-6e7f8a9b0c1d",
+        "name": "Crushing Slam",
+        "slug": "crushing-slam",
+        "description": "<p>The troll brings its club down in a devastating overhead arc. On a hit, the target takes bludgeoning damage and must succeed on a DC 13 Constitution saving throw or begin <strong>Bleeding</strong>.</p>",
+        "type": "action",
+        "target": {
+          "type": "target",
+          "range": 5,
+          "count": 1
+        },
+        "castingTime": "1 action",
+        "requiresConcentration": false,
+        "effects": [
+          {
+            "type": "damage",
+            "formula": "2d6 + 4",
+            "damageType": "bludgeoning"
+          },
+          {
+            "type": "applyStatus",
+            "statusId": "a1f3c2d4-5e6b-4a7c-8d9e-0f1a2b3c4d5e",
+            "duration": "until healed",
+            "savingThrow": {
+              "dc": 13,
+              "attribute": "constitution"
+            }
+          }
+        ],
+        "createdAt": "2024-09-01T12:10:00.000Z",
+        "updatedAt": "2024-09-01T12:10:00.000Z"
+      },
+      {
+        "id": "b8c0d9e1-2f3a-4b4c-ad6e-7f8a9b0c1d2e",
+        "name": "Thick Hide",
+        "slug": "thick-hide",
+        "description": "<p>When hit by an attack, the troll hunches and tenses its leathery hide. As a reaction it gains <strong>+2 AC</strong> against that attack, potentially turning the hit into a miss.</p>",
+        "type": "reaction",
+        "target": {
+          "type": "selfTarget"
+        },
+        "castingTime": "1 reaction (when hit by an attack)",
+        "requiresConcentration": false,
+        "recharge": "short rest",
+        "effects": [
+          {
+            "type": "custom",
+            "description": "Gain +2 AC against the triggering attack retroactively.",
+            "data": {
+              "acBonus": 2,
+              "trigger": "when hit by an attack",
+              "retroactive": true
+            }
+          }
+        ],
+        "createdAt": "2024-09-01T12:20:00.000Z",
+        "updatedAt": "2024-09-01T12:20:00.000Z"
+      }
+    ],
+    "entities": [
+      {
+        "id": "c9d1e0f2-3a4b-4c5d-be7f-8a9b0c1d2e3f",
+        "name": "Forest Troll",
+        "slug": "forest-troll",
+        "taxonomy": {
+          "genus": "Trollidae",
+          "species": "Sylvanus regenerans",
+          "subspecies": null
+        },
+        "size": "large",
+        "threatLevel": "hard",
+        "challengeRating": 5.0,
+        "experiencePoints": 1800,
+        "proficiencyBonus": 3,
+        "legendaryActionsPerRound": null,
+        "savingThrows": {
+          "strength": 7,
+          "constitution": 8
+        },
+        "skills": {
+          "perception": 2,
+          "stealth": 2
+        },
+        "damageResistances": [
+          { "damageType": "bludgeoning", "level": "resistant" },
+          { "damageType": "fire", "level": "vulnerable" },
+          { "damageType": "acid", "level": "vulnerable" }
+        ],
+        "statusImmunities": [],
+        "senses": ["darkvision 60 ft.", "passive Perception 12"],
+        "languages": ["Giant"],
+        "habitats": ["forest", "swamp", "hills", "caves"],
+        "description": "<h2>Appearance</h2><p>A hulking, moss-covered brute that lopes through old-growth forests on knuckled fists, its rubbery green hide dappled with lichen and old scars. Standing nearly 9 feet tall, the Forest Troll is a study in ugly efficiency — all reach and muscle and hunger.</p><h2>The Regeneration Problem</h2><p>Forest Trolls are infamous for their ability to close wounds almost as fast as a blade can open them. Adventurers who have never faced one before are often horrified to watch a deep cut seal over in seconds. Only fire and acid leave wounds that truly stay open — a fact that separates experienced monster hunters from unlucky beginners.</p>",
+        "statBlock": {
+          "hp": 84,
+          "armor": 15,
+          "speed": 30.0,
+          "strength": 18,
+          "dexterity": 13,
+          "constitution": 20,
+          "intelligence": 7,
+          "wisdom": 9,
+          "charisma": 7,
+          "custom": {
+            "climbSpeed": 20
+          }
+        },
+        "statusIds": [],
+        "abilityIds": [
+          "f6a8b7c9-0d1e-4f2a-8b4c-5d6e7f8a9b0c",
+          "a7b9c8d0-1e2f-4a3b-9c5d-6e7f8a9b0c1d",
+          "b8c0d9e1-2f3a-4b4c-ad6e-7f8a9b0c1d2e"
+        ],
+        "inventory": [
+          {
+            "itemId": "c3d5e4f6-7a8b-4c9d-8e1f-2a3b4c5d6e7f",
+            "quantity": "1",
+            "dropChance": 0.75
+          },
+          {
+            "itemId": "d4e6f5a7-8b9c-4d0e-9f2a-3b4c5d6e7f8a",
+            "quantity": "1",
+            "dropChance": 0.5
+          },
+          {
+            "itemId": "e5f7a6b8-9c0d-4e1f-aa3b-4c5d6e7f8a9b",
+            "quantity": "1",
+            "dropChance": 0.2
+          }
+        ],
+        "images": [],
+        "notes": "<p><strong>Combat Notes:</strong> The troll will attack the nearest creature and press the assault relentlessly. It uses Thick Hide as a reaction when struck, and leads every round with Crushing Slam. It will not flee.</p><p><strong>Regeneration:</strong> Remind players after the first round that wounds are closing — the clock is ticking. Without fire or acid damage, attrition heavily favors the troll.</p>",
+        "createdAt": "2024-09-01T13:00:00.000Z",
+        "updatedAt": "2024-09-01T13:00:00.000Z"
+      }
+    ]
+  }
+}
