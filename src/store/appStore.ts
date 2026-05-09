@@ -39,6 +39,8 @@ interface AppState {
   error: string | null;
   searchQuery: string;
   selectedId: string | null;
+  /** Incremented when `navigateToEntry` completes so consumers can react even if `selectedId` is unchanged. */
+  navigationNonce: number;
   editOnSelect: boolean;
   gameEnums: GameEnums | null;
   // Version counter to prevent race conditions in async fetches
@@ -135,6 +137,7 @@ export const useAppStore = create<AppState & AppActions>()(
     error: null,
     searchQuery: "",
     selectedId: null,
+    navigationNonce: 0,
     editOnSelect: false,
     gameEnums: null,
     fetchVersion: 0,
@@ -445,9 +448,16 @@ export const useAppStore = create<AppState & AppActions>()(
       ensureEntriesLoaded("abilities", abilityIds),
 
     navigateToEntry: async (context, id) => {
-      if (get().data[context].entries.has(id)) {
+      const finishNavigation = () => {
         get().setCurrentContext(context);
         get().setSelectedId(id);
+        set((state) => {
+          state.navigationNonce += 1;
+        });
+      };
+
+      if (get().data[context].entries.has(id)) {
+        finishNavigation();
         return;
       }
 
@@ -465,8 +475,7 @@ export const useAppStore = create<AppState & AppActions>()(
         return;
       }
 
-      get().setCurrentContext(context);
-      get().setSelectedId(id);
+      finishNavigation();
     },
     };
   })

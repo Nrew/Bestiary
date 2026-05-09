@@ -1,7 +1,8 @@
-import React, { Suspense, useCallback, useRef } from "react";
+import React, { Suspense, useCallback, useLayoutEffect, useRef } from "react";
 import { AppHeader } from "./AppHeader";
 import { ErrorDisplay } from "@/components/shared/ErrorDisplay";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { useAppStore } from "@/store/appStore";
 import { useKeyboardShortcut, APP_SHORTCUTS } from "@/lib/keyboard-shortcuts";
 import type { SidebarSearchRef } from "@/components/features/sidebar/Sidebar";
 
@@ -12,7 +13,16 @@ const Sidebar = React.lazy(() =>
 
 export const Layout: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [isTocOpen, setIsTocOpen] = React.useState(false);
+  const selectedId = useAppStore((s) => s.selectedId);
+  const navigationNonce = useAppStore((s) => s.navigationNonce);
   const searchRef = useRef<SidebarSearchRef>(null);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const scroller = contentScrollRef.current;
+    if (!scroller) return;
+    scroller.scrollTop = 0;
+  }, [selectedId, navigationNonce]);
 
   useKeyboardShortcut(
     APP_SHORTCUTS.SEARCH,
@@ -33,7 +43,10 @@ export const Layout: React.FC<React.PropsWithChildren> = ({ children }) => {
       </Suspense>
       <AppHeader onTocOpen={() => setIsTocOpen(true)} />
 
-      <div className="flex-1 overflow-auto relative [overflow-anchor:none]">
+      <div
+        ref={contentScrollRef}
+        className="flex-1 overflow-auto relative [overflow-anchor:none]"
+      >
         <ErrorDisplay />
         <main className="p-4 sm:p-6 md:p-8">
           <div className="codex-page min-h-full">

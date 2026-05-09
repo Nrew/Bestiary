@@ -32,6 +32,7 @@ const EntryLink: React.FC<{
       onMouseDown={(e) => e.preventDefault()}
       onClick={(e) => {
         e.currentTarget.blur();
+        window.getSelection()?.removeAllRanges();
         onNavigate(id, type);
       }}
       onMouseEnter={(e) => { if (id) showTooltip(id, type, e.currentTarget); }}
