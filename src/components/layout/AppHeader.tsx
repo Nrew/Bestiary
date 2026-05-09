@@ -6,6 +6,8 @@ import { BookOpen, Crown, PlusCircle } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
 import { useNavigationGuard } from "@/hooks/useNavigationGuard";
 import { useKeyboardShortcut, APP_SHORTCUTS, formatShortcutKey } from "@/lib/keyboard-shortcuts";
+import { DiceTypePicker } from "@/components/features/entry-creation/DiceTypePicker";
+import type { ViewContext } from "@/types";
 
 const ShortcutsDialog = React.lazy(() =>
   import("./ShortcutsDialog").then((module) => ({ default: module.ShortcutsDialog }))
@@ -21,15 +23,21 @@ const EncounterBuilder = React.lazy(() =>
 export const AppHeader: React.FC<{ onTocOpen: () => void }> = ({ onTocOpen }) => {
   const currentContext = useAppStore((s) => s.currentContext);
   const { createEntry } = useNavigationGuard();
+  const [isDiceTypePickerOpen, setIsDiceTypePickerOpen] = React.useState(false);
 
   const handleCreate = useCallback(() => {
-    void createEntry(currentContext);
-  }, [createEntry, currentContext]);
+    setIsDiceTypePickerOpen(true);
+  }, []);
+
+  const handleCreateConfirm = useCallback(
+    (context: ViewContext) => createEntry(context),
+    [createEntry]
+  );
 
   useKeyboardShortcut(
     APP_SHORTCUTS.NEW,
     handleCreate,
-    { description: "Create new entry" }
+    { description: "Open new entry picker" }
   );
 
   return (
@@ -61,13 +69,19 @@ export const AppHeader: React.FC<{ onTocOpen: () => void }> = ({ onTocOpen }) =>
         initial="hidden"
         animate="visible"
       >
+        <DiceTypePicker
+          open={isDiceTypePickerOpen}
+          currentContext={currentContext}
+          onOpenChange={setIsDiceTypePickerOpen}
+          onConfirm={handleCreateConfirm}
+        />
         <React.Suspense fallback={null}>
           <ShortcutsDialog />
           <EncounterBuilder />
           <SettingsDialog />
         </React.Suspense>
         <Button
-        onClick={handleCreate}
+          onClick={handleCreate}
           className="btn-codex-primary gap-2 px-4 sm:px-6"
           title={`Create new entry (${formatShortcutKey(APP_SHORTCUTS.NEW)})`}
         >

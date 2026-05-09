@@ -10,12 +10,13 @@ export type ContextEntryType<T extends ViewContext> =
   T extends 'abilities' ? Ability :
   never;
 
+export type ContextIconName = 'crown' | 'gem' | 'shield' | 'sparkles';
 
 export interface ContextUIConfig {
   /** Display label (e.g., "Creatures") */
   readonly displayLabel: string;
   /** Lucide icon name (resolved to component in UI layer) */
-  readonly iconName: 'crown' | 'gem' | 'shield' | 'sparkles';
+  readonly iconName: ContextIconName;
   readonly colorClass: string;
   readonly description: string;
   readonly variant: 'entity' | 'item' | 'status' | 'ability';

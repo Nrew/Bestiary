@@ -365,6 +365,9 @@ export const useAppStore = create<AppState & AppActions>()(
       }
 
       set({ isCreatingEntry: true });
+      if (get().currentContext !== context) {
+        get().setCurrentContext(context);
+      }
       const { setSearchQuery, setSelectedId, setError } = get();
       const config = getContextConfig(context);
 

@@ -206,6 +206,19 @@ describe("appStore saveEntry", () => {
     expect(useAppStore.getState().data.items.entries.has(draftId)).toBe(false);
   });
 
+  it("switches context before creating a draft in another codex", async () => {
+    useAppStore.setState({ currentContext: "items", selectedId: null });
+
+    await useAppStore.getState().createNewEntry("statuses");
+
+    const state = useAppStore.getState();
+    const draftId = requireSelectedId();
+    expect(state.currentContext).toBe("statuses");
+    expect(state.editOnSelect).toBe(true);
+    expect(state.data.statuses.entries.has(draftId)).toBe(true);
+    expect(state.data.items.entries.has(draftId)).toBe(false);
+  });
+
   it("bumps nameVersion after preload completes", async () => {
     // Reset fetchVersion and nameVersion, then install a search mock that
     // returns a non-empty result so the preload branch bumps nameVersion.
