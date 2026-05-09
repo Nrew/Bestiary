@@ -44,7 +44,7 @@ export type SpellComponents = { verbal: boolean, somatic: boolean, material: str
 
 export type StackingBehavior = "no" | "refresh" | "stack";
 
-export type StatBlock = { hp: number | null, armor: number | null, speed: number | null, strength: number | null, dexterity: number | null, constitution: number | null, intelligence: number | null, wisdom: number | null, charisma: number | null, custom: Record<string, number | string>, };
+export type StatBlock = { hp: number | null, hitDice: string | null, armor: number | null, armorNote: string | null, speed: number | null, burrowSpeed: number | null, climbSpeed: number | null, flySpeed: number | null, swimSpeed: number | null, hoverSpeed: number | null, initiativeBonus: number | null, strength: number | null, dexterity: number | null, constitution: number | null, intelligence: number | null, wisdom: number | null, charisma: number | null, custom: Record<string, number | string>, };
 
 export type StatValue = { "type": "flat", value: number, } | { "type": "percentAdd", value: number, } | { "type": "percentMult", value: number, };
 

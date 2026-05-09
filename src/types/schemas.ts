@@ -153,8 +153,16 @@ const requiredUuid = (fieldName: string) =>
 
 const statBlockSchema = z.object({
   hp: nullableNumber.pipe(z.number().int().positive().nullable()),
+  hitDice: nullableString,
   armor: nullableNumber.pipe(z.number().int().nonnegative().nullable()),
+  armorNote: nullableString,
   speed: nullableNumber.pipe(z.number().nonnegative().nullable()),
+  burrowSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()),
+  climbSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()),
+  flySpeed: nullableNumber.pipe(z.number().nonnegative().nullable()),
+  swimSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()),
+  hoverSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()),
+  initiativeBonus: nullableNumber.pipe(z.number().int().nullable()),
   strength: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()),
   dexterity: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()),
   constitution: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()),
@@ -282,7 +290,9 @@ export const entitySchema = baseSchema.extend({
   senses: z.array(z.string()).default([]),
   languages: z.array(z.string()).default([]),
   statBlock: statBlockSchema.default({
-    hp: null, armor: null, speed: null,
+    hp: null, hitDice: null, armor: null, armorNote: null,
+    speed: null, burrowSpeed: null, climbSpeed: null, flySpeed: null,
+    swimSpeed: null, hoverSpeed: null, initiativeBonus: null,
     strength: null, dexterity: null, constitution: null,
     intelligence: null, wisdom: null, charisma: null,
     custom: {},

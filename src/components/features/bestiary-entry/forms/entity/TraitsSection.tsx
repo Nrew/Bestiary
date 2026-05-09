@@ -11,7 +11,8 @@ export const SensesSection: React.FC = () => {
         <StringArrayField<Entity>
           name="senses"
           label="Senses"
-          placeholder="e.g., darkvision 60 ft., passive Perception 14"
+          placeholder="e.g., darkvision 60 ft., tremorsense 30 ft."
+          description="Passive Perception is calculated automatically from Wisdom and skill proficiency."
           addButtonLabel="Add Sense"
         />
       </div>

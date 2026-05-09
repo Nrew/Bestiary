@@ -9,8 +9,16 @@ import {
 
 const DEFAULT_STAT_BLOCK: StatBlock = {
   hp: null,
+  hitDice: null,
   armor: null,
+  armorNote: null,
   speed: null,
+  burrowSpeed: null,
+  climbSpeed: null,
+  flySpeed: null,
+  swimSpeed: null,
+  hoverSpeed: null,
+  initiativeBonus: null,
   strength: null,
   dexterity: null,
   constitution: null,
@@ -73,18 +81,18 @@ export function useComputedEntityStats(entity: Entity | null | undefined): Compu
     const wisModifier = calculateAbilityModifier(wis);
     const chaModifier = calculateAbilityModifier(cha);
 
-    const isPerceptionProficient = skills && 'perception' in skills;
-    const isInvestigationProficient = skills && 'investigation' in skills;
-    const isInsightProficient = skills && 'insight' in skills;
-
-    const passivePerception = calculatePassivePerception(
-      wis,
-      proficiencyBonus,
-      isPerceptionProficient
-    );
-
-    const passiveInvestigation = 10 + intModifier + (isInvestigationProficient ? proficiencyBonus : 0);
-    const passiveInsight = 10 + wisModifier + (isInsightProficient ? proficiencyBonus : 0);
+    const passivePerception =
+      skills.perception !== undefined
+        ? 10 + skills.perception
+        : calculatePassivePerception(wis, proficiencyBonus, false);
+    const passiveInvestigation =
+      skills.investigation !== undefined
+        ? 10 + skills.investigation
+        : 10 + intModifier;
+    const passiveInsight =
+      skills.insight !== undefined
+        ? 10 + skills.insight
+        : 10 + wisModifier;
 
     let hitDice: string | null = null;
     let averageHP: number | null = null;
@@ -117,7 +125,7 @@ export function useComputedEntityStats(entity: Entity | null | undefined): Compu
       passiveInsight,
       hitDice,
       averageHP,
-      initiative: dexModifier,
+      initiative: statBlock.initiativeBonus ?? dexModifier,
     };
   }, [entity]);
 }

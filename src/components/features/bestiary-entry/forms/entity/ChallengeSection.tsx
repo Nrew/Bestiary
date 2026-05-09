@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CR_OPTIONS, CR_TO_XP } from "@/lib/dnd/constants";
-import { formatChallengeRating } from "@/lib/dnd";
+import { formatChallengeRating, calculateProficiencyBonus } from "@/lib/dnd";
 import type { Entity } from "@/types";
 
 export const ChallengeSection: React.FC = () => {
@@ -14,8 +14,8 @@ export const ChallengeSection: React.FC = () => {
 
   React.useEffect(() => {
     if (challengeRating !== null && challengeRating !== undefined) {
-      const xp = CR_TO_XP[challengeRating] || 0;
-      setValue("experiencePoints", xp);
+      setValue("experiencePoints", CR_TO_XP[challengeRating] || 0);
+      setValue("proficiencyBonus", calculateProficiencyBonus(challengeRating));
     }
   }, [challengeRating, setValue]);
 
@@ -46,8 +46,10 @@ export const ChallengeSection: React.FC = () => {
           id="experiencePoints"
           type="number"
           {...register("experiencePoints", { valueAsNumber: true })}
-          placeholder="Auto-calculated from CR"
+          readOnly
+          className="bg-muted/40 cursor-not-allowed"
         />
+        <p className="text-xs text-muted-foreground">Derived from CR</p>
       </div>
 
       <div className="space-y-2">
@@ -56,8 +58,10 @@ export const ChallengeSection: React.FC = () => {
           id="proficiencyBonus"
           type="number"
           {...register("proficiencyBonus", { valueAsNumber: true })}
-          placeholder="e.g., +2, +3, +4..."
+          readOnly
+          className="bg-muted/40 cursor-not-allowed"
         />
+        <p className="text-xs text-muted-foreground">Derived from CR</p>
       </div>
 
       <div className="space-y-2">

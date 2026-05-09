@@ -168,8 +168,16 @@ pub struct StatusEffectPayload {
 #[serde(rename_all = "camelCase")]
 pub struct StatBlock {
     pub hp: Option<i32>,
+    pub hit_dice: Option<String>,
     pub armor: Option<i32>,
+    pub armor_note: Option<String>,
     pub speed: Option<f32>,
+    pub burrow_speed: Option<f32>,
+    pub climb_speed: Option<f32>,
+    pub fly_speed: Option<f32>,
+    pub swim_speed: Option<f32>,
+    pub hover_speed: Option<f32>,
+    pub initiative_bonus: Option<i32>,
     pub strength: Option<i32>,
     pub dexterity: Option<i32>,
     pub constitution: Option<i32>,

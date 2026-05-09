@@ -290,7 +290,7 @@
         "updatedAt": "2024-09-01T12:45:00.000Z"
       },
       {
-        "id": "a5b6c7d8-9e0f-4a1b-c2d3-4e5f6a7b8c9d",
+        "id": "a5b6c7d8-9e0f-4a1b-82d3-4e5f6a7b8c9d",
         "name": "Rank Spore Cloud",
         "slug": "rank-spore-cloud",
         "description": "<p>Rot spores erupt from cracks in the lair walls. Each creature within 20 ft. of the troll must succeed on a <strong>DC 12 Constitution saving throw</strong> or take <strong>2d6 poison damage</strong> and be <span class=\"wiki-link wiki-link--found\" data-wiki-id=\"b2e4d3c5-6f7a-4b8d-9e0f-1a2b3c4d5e6f\" data-wiki-type=\"statuses\" tabindex=\"0\" role=\"link\">Poisoned</span> until the start of its next turn.</p>",
@@ -336,7 +336,7 @@
         },
         "skills": {
           "perception": 2,
-          "stealth": 2
+          "stealth": 4
         },
         "damageResistances": [
           { "damageType": "bludgeoning", "level": "resistant" },
@@ -344,23 +344,29 @@
           { "damageType": "acid", "level": "vulnerable" }
         ],
         "statusImmunities": [],
-        "senses": ["darkvision 60 ft.", "passive Perception 12"],
+        "senses": ["darkvision 60 ft."],
         "languages": ["Giant"],
         "habitats": ["forest", "swamp", "hills", "caves"],
         "description": "<h2>Appearance</h2><p>A hulking, moss-covered brute that lopes through old-growth forests on knuckled fists, its rubbery green hide dappled with lichen and old scars. Standing nearly 9 feet tall, the Forest Troll is a study in ugly efficiency — all reach and muscle and hunger.</p><h2>The <span class=\"wiki-link wiki-link--found\" data-wiki-id=\"f6a8b7c9-0d1e-4f2a-8b4c-5d6e7f8a9b0c\" data-wiki-type=\"abilities\" tabindex=\"0\" role=\"link\">Regeneration</span> Problem</h2><p>Forest Trolls are infamous for their ability to close wounds almost as fast as a blade can open them. Adventurers who have never faced one before are often horrified to watch a deep cut seal over in seconds. Only fire and acid leave wounds that truly stay open — a fact that separates experienced monster hunters from unlucky beginners.</p>",
         "statBlock": {
           "hp": 84,
+          "hitDice": null,
           "armor": 15,
+          "armorNote": null,
           "speed": 30.0,
+          "burrowSpeed": null,
+          "climbSpeed": 20,
+          "flySpeed": null,
+          "swimSpeed": null,
+          "hoverSpeed": null,
+          "initiativeBonus": null,
           "strength": 18,
           "dexterity": 13,
           "constitution": 20,
           "intelligence": 7,
           "wisdom": 9,
           "charisma": 7,
-          "custom": {
-            "climbSpeed": 20
-          }
+          "custom": {}
         },
         "statusIds": [],
         "abilityIds": [
@@ -371,7 +377,7 @@
           "d2e3f4a5-6b7c-4d8e-9f0a-1b2c3d4e5f6a",
           "e3f4a5b6-7c8d-4e9f-a0b1-2c3d4e5f6a7b",
           "f4a5b6c7-8d9e-4f0a-b1c2-3d4e5f6a7b8c",
-          "a5b6c7d8-9e0f-4a1b-c2d3-4e5f6a7b8c9d"
+          "a5b6c7d8-9e0f-4a1b-82d3-4e5f6a7b8c9d"
         ],
         "inventory": [
           {

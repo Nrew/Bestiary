@@ -213,10 +213,25 @@ ${ability.description || ''}
 }
 
 export async function copyStatBlock(statBlock: StatBlock): Promise<void> {
+  const speeds = [
+    statBlock.speed !== null ? `${statBlock.speed} ft.` : null,
+    statBlock.burrowSpeed !== null ? `burrow ${statBlock.burrowSpeed} ft.` : null,
+    statBlock.climbSpeed !== null ? `climb ${statBlock.climbSpeed} ft.` : null,
+    statBlock.flySpeed !== null ? `fly ${statBlock.flySpeed} ft.` : null,
+    statBlock.swimSpeed !== null ? `swim ${statBlock.swimSpeed} ft.` : null,
+    statBlock.hoverSpeed !== null ? `hover ${statBlock.hoverSpeed} ft.` : null,
+  ].filter((speed): speed is string => speed !== null).join(", ");
+  const armor = statBlock.armorNote
+    ? `${statBlock.armor ?? 'N/A'} (${statBlock.armorNote})`
+    : `${statBlock.armor ?? 'N/A'}`;
+  const hp = statBlock.hitDice
+    ? `${statBlock.hp ?? 'N/A'} (${statBlock.hitDice})`
+    : `${statBlock.hp ?? 'N/A'}`;
+
   const plain = `
-HP: ${statBlock.hp || 'N/A'}
-AC: ${statBlock.armor || 'N/A'}
-Speed: ${statBlock.speed || 'N/A'} ft.
+HP: ${hp}
+AC: ${armor}
+Speed: ${speeds || 'N/A'}
 
 STR: ${statBlock.strength || 10}
 DEX: ${statBlock.dexterity || 10}
