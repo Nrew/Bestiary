@@ -1,25 +1,22 @@
 import React, { useEffect, useMemo } from "react";
 import { useAbilitiesMap, useAppStore } from "@/store/appStore";
-import { sanitizeInlineHtml } from "@/lib/sanitize";
+import { escapeHtml } from "@/lib/sanitize";
+import { RichTextViewer } from "@/components/shared/RichTextViewer";
 import type { Entity, Ability } from "@/types";
 
-const AbilityText: React.FC<{ ability: Ability }> = ({ ability }) => {
-  const sanitizedHtml = useMemo(
-    () => sanitizeInlineHtml(ability.description),
-    [ability.description]
+
+export function buildAbilityHtml(name: string, description: string): string {
+  const content = description.replace(/^<p>/, "").replace(/<\/p>\s*$/, "");
+  return `<p><strong><em>${escapeHtml(name)}.</em></strong> ${content}</p>`;
+}
+
+export const AbilityText: React.FC<{ ability: Ability }> = ({ ability }) => {
+  const html = useMemo(
+    () => buildAbilityHtml(ability.name, ability.description),
+    [ability.name, ability.description]
   );
 
-  return (
-    <div className="viewer-prose text-[16px]">
-      <p>
-        <strong className="font-bold italic text-ink">{ability.name}.</strong>
-        <span
-          className="text-ink/90"
-          dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-        />
-      </p>
-    </div>
-  );
+  return <RichTextViewer html={html} className="text-[16px]" />;
 };
 
 export const AbilitiesSection: React.FC<{ data: Entity }> = ({ data }) => {
@@ -55,7 +52,6 @@ export const AbilitiesSection: React.FC<{ data: Entity }> = ({ data }) => {
     reactions: Ability[];
     legendaryActions: Ability[];
     mythicActions: Ability[];
-    lairActions: Ability[];
   };
 
   const groupedAbilities = entityAbilities.reduce<AbilityGroup>(
@@ -66,22 +62,53 @@ export const AbilitiesSection: React.FC<{ data: Entity }> = ({ data }) => {
         case "reaction": acc.reactions.push(ability); break;
         case "legendary": acc.legendaryActions.push(ability); break;
         case "mythic": acc.mythicActions.push(ability); break;
-        case "lair": acc.lairActions.push(ability); break;
         case "passive": acc.traits.push(ability); break;
+        case "lair": break;
       }
       return acc;
     },
-    { traits: [], actions: [], bonusActions: [], reactions: [], legendaryActions: [], mythicActions: [], lairActions: [] }
+    {
+      traits: [],
+      actions: [],
+      bonusActions: [],
+      reactions: [],
+      legendaryActions: [],
+      mythicActions: [],
+    }
   );
 
   const renderGroup = (abilities: Ability[], header?: string) => {
     if (abilities.length === 0) return null;
     return (
       <div className="space-y-2">
-        {header && <h3 className="stat-block-actions-header">{header}</h3>}
+        {header && <h3>{header}</h3>}
         {abilities.map((ability) => (
           <AbilityText key={ability.id} ability={ability} />
         ))}
+      </div>
+    );
+  };
+
+  const renderSpecialGroup = (
+    abilities: Ability[],
+    header: string,
+    badge?: string
+  ) => {
+    if (abilities.length === 0) return null;
+    return (
+      <div className="space-y-3">
+        <hr className="stat-block-divider" />
+        <div className="flex flex-col items-center gap-0.5">
+          <h3 className="font-display text-base tracking-widest uppercase text-leather">{header}</h3>
+          {badge && (
+            <span className="text-[11px] font-serif uppercase tracking-widest text-ink/40">{badge}</span>
+          )}
+        </div>
+        <div className="space-y-2">
+          {abilities.map((ability) => (
+            <AbilityText key={ability.id} ability={ability} />
+          ))}
+        </div>
       </div>
     );
   };
@@ -92,9 +119,17 @@ export const AbilitiesSection: React.FC<{ data: Entity }> = ({ data }) => {
       {renderGroup(groupedAbilities.actions, "Actions")}
       {renderGroup(groupedAbilities.bonusActions, "Bonus Actions")}
       {renderGroup(groupedAbilities.reactions, "Reactions")}
-      {renderGroup(groupedAbilities.legendaryActions, "Legendary Actions")}
-      {renderGroup(groupedAbilities.mythicActions, "Mythic Actions")}
-      {renderGroup(groupedAbilities.lairActions, "Lair Actions")}
+      {renderSpecialGroup(
+        groupedAbilities.legendaryActions,
+        "Legendary Actions",
+        data.legendaryActionsPerRound != null && data.legendaryActionsPerRound > 0
+          ? `${data.legendaryActionsPerRound} per round`
+          : undefined
+      )}
+      {renderSpecialGroup(
+        groupedAbilities.mythicActions,
+        "Mythic Actions"
+      )}
       {missingAbilityIds.length > 0 && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
           {missingAbilityIds.length === 1

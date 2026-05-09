@@ -4,6 +4,7 @@ import {
   OverviewSection,
   StatBlockSection,
   AbilitiesSection,
+  LairActionsPanel,
   ConditionsSection,
   LootSection,
   NotesSection,
@@ -97,6 +98,7 @@ const EntityViewer: React.FC<{ data: Entity }> = ({ data }) => (
     <div className="lg:col-span-2 space-y-12">
       <Section><OverviewSection data={data} /></Section>
       <Section><AbilitiesSection data={data} /></Section>
+      <Section><LairActionsPanel data={data} /></Section>
       <Section><ConditionsSection data={data} /></Section>
       <Section><GallerySection data={data} /></Section>
       <Section><NotesSection data={data} /></Section>
