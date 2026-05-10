@@ -54,20 +54,21 @@ export const ApplyStatusSubEditor: React.FC<{ index: number }> = ({ index }) => 
                 id={dcId}
                 type="number"
                 value={effect.savingThrow.dc}
-                onChange={(e) =>
-                  setValue(`effects.${index}.savingThrow.dc`, parseInt(e.target.value), { shouldDirty: true })
-                }
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  setValue(`effects.${index}.savingThrow.dc`, Number.isFinite(v) ? v : 15, { shouldDirty: true });
+                }}
               />
             </div>
             <div className="space-y-2">
-              <Label>Attribute</Label>
+              <Label htmlFor={`effect-${index}-saving-throw-attribute`}>Attribute</Label>
               <Select
                 value={effect.savingThrow.attribute}
                 onValueChange={(v: Attribute) =>
                   setValue(`effects.${index}.savingThrow.attribute`, v, { shouldDirty: true })
                 }
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id={`effect-${index}-saving-throw-attribute`}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {gameEnums?.attributes.map((attr) => (
                     <SelectItem key={attr} value={attr}>{ABILITY_SCORE_LABELS[attr]}</SelectItem>

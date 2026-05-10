@@ -37,14 +37,14 @@ export const AbilityForm: React.FC = () => {
         <FormInput<Ability> name="slug" label="Slug" placeholder="fireball" />
 
         <div className="space-y-2">
-          <Label>Type</Label>
+          <Label htmlFor="ability-type">Type</Label>
           <Select
             value={watch("type") || "passive"}
             onValueChange={(value: AbilityType) =>
               setValue("type", value, { shouldDirty: true })
             }
           >
-            <SelectTrigger>
+            <SelectTrigger id="ability-type">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -92,7 +92,7 @@ export const AbilityForm: React.FC = () => {
       <FormSection title="Targeting" iconCategory="combat" iconName="target">
         <div className="col-span-full space-y-4">
           <div className="space-y-2">
-            <Label>Target Type</Label>
+            <Label htmlFor="ability-target-type">Target Type</Label>
             <Select
               value={targetType || "none"}
               onValueChange={(value) => {
@@ -107,7 +107,7 @@ export const AbilityForm: React.FC = () => {
                 }
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger id="ability-target-type">
                 <SelectValue placeholder="No targeting (passive)" />
               </SelectTrigger>
               <SelectContent>
@@ -119,42 +119,48 @@ export const AbilityForm: React.FC = () => {
             </Select>
           </div>
 
-          {targetType === "target" && target?.type === "target" && (
+          {target?.type === "target" && (
             <div className="grid grid-cols-2 gap-4 ml-4">
               <div className="space-y-2">
-                <Label>Range (feet)</Label>
+                <Label htmlFor="ability-target-range">Range (feet)</Label>
                 <Input
+                  id="ability-target-range"
+                  name="target.range"
                   type="number"
                   value={target.range}
-                  onChange={(e) =>
-                    setValue("target", { ...target, range: parseInt(e.target.value) || 0 }, { shouldDirty: true })
-                  }
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setValue("target", { ...target, range: Number.isFinite(v) ? v : 0 }, { shouldDirty: true });
+                  }}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Target Count</Label>
+                <Label htmlFor="ability-target-count">Target Count</Label>
                 <Input
+                  id="ability-target-count"
+                  name="target.count"
                   type="number"
                   value={target.count}
-                  onChange={(e) =>
-                    setValue("target", { ...target, count: parseInt(e.target.value) || 1 }, { shouldDirty: true })
-                  }
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setValue("target", { ...target, count: Number.isFinite(v) ? v : 1 }, { shouldDirty: true });
+                  }}
                 />
               </div>
             </div>
           )}
 
-          {targetType === "area" && target?.type === "area" && (
+          {target?.type === "area" && (
             <div className="grid grid-cols-2 gap-4 ml-4">
               <div className="space-y-2">
-                <Label>Shape</Label>
+                <Label htmlFor="ability-target-shape">Shape</Label>
                 <Select
                   value={target.shape}
                   onValueChange={(shape: AoeShape) =>
                     setValue("target", { ...target, shape }, { shouldDirty: true })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="ability-target-shape">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -167,13 +173,16 @@ export const AbilityForm: React.FC = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Range (feet)</Label>
+                <Label htmlFor="ability-area-range">Range (feet)</Label>
                 <Input
+                  id="ability-area-range"
+                  name="target.range"
                   type="number"
                   value={target.range}
-                  onChange={(e) =>
-                    setValue("target", { ...target, range: parseInt(e.target.value) || 0 }, { shouldDirty: true })
-                  }
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setValue("target", { ...target, range: Number.isFinite(v) ? v : 0 }, { shouldDirty: true });
+                  }}
                 />
               </div>
             </div>
@@ -186,7 +195,7 @@ export const AbilityForm: React.FC = () => {
           <div className="flex items-center space-x-2">
             <Checkbox
               id="hasComponents"
-              checked={watch("components") !== null}
+              checked={!!watch("components")}
               onCheckedChange={(checked) => {
                 if (checked) {
                   setValue("components", { verbal: false, somatic: false, material: null }, { shouldDirty: true });
@@ -200,7 +209,7 @@ export const AbilityForm: React.FC = () => {
             </Label>
           </div>
 
-          {watch("components") !== null && (
+          {!!watch("components") && (
             <div className="ml-6 space-y-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -276,6 +285,7 @@ export const AbilityForm: React.FC = () => {
       <FormSection title="Description" iconCategory="ui" iconName="book">
         <div className="col-span-full">
           <RichTextEditor
+            ariaLabel="Ability description"
             content={watch("description") || ""}
             onChange={(html) =>
               setValue("description", html, { shouldDirty: true })

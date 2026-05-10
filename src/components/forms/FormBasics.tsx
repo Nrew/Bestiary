@@ -445,6 +445,7 @@ function ColorPickerInner({
         />
         <Input
           id={name}
+          name={name}
           value={localColor}
           onChange={handleTextChange}
           onBlur={handleTextBlur}

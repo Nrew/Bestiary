@@ -11,6 +11,7 @@ export const DescriptionSection: React.FC = () => {
     <FormSection title="Description" iconCategory="game" iconName="source-book">
       <div className="col-span-full">
         <RichTextEditor
+          ariaLabel="Entity description"
           content={watch("description") || ""}
           onChange={(html) => setValue("description", html, { shouldDirty: true })}
         />
@@ -26,6 +27,7 @@ export const NotesSection: React.FC = () => {
     <FormSection title="Research Notes" iconCategory="ui" iconName="book">
       <div className="col-span-full">
         <RichTextEditor
+          ariaLabel="Research notes"
           content={watch("notes") || ""}
           onChange={(html) => setValue("notes", html, { shouldDirty: true })}
         />

@@ -1,5 +1,5 @@
 import { useFormContext, Path, FieldValues, PathValue } from "react-hook-form";
-import { useState, useCallback, useMemo, useEffect, useId } from "react";
+import { useState, useCallback, useEffect, useRef, useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -19,10 +19,14 @@ interface ArrayItem {
   value: string;
 }
 
+function toStringArray(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.filter((v): v is string => typeof v === "string") : [];
+}
+
 /**
- * Uses stable per-item keys to prevent DOM reuse issues on reorder/delete.
- * useFieldArray requires object arrays; this component uses watch/setValue
- * instead to handle primitive string arrays.
+ * Local state drives inputs (no per-keystroke RHF writes).
+ * Commits to form state on blur, add, or remove.
+ * Resyncs from form state only when external content changes (entry navigation, form reset).
  */
 export function StringArrayField<T extends FieldValues>({
   name,
@@ -34,45 +38,65 @@ export function StringArrayField<T extends FieldValues>({
   const { watch, setValue } = useFormContext<T>();
   const groupLabelId = useId();
 
-  const watchedValue: unknown = watch(name);
-  const values = useMemo(
-    () => (Array.isArray(watchedValue) ? watchedValue.filter((value): value is string => typeof value === "string") : []),
-    [watchedValue]
+  const formValues = watch(name);
+
+  const [items, setItems] = useState<ArrayItem[]>(() =>
+    toStringArray(formValues).map((value) => ({ id: generateUuid(), value }))
   );
 
-  // Stable per-item key so React doesn't remount inputs on reorder or delete
-  const [itemIds, setItemIds] = useState<string[]>(() =>
-    values.map(() => generateUuid())
-  );
+  // Keep a ref so blur/add/remove callbacks always read the latest items
+  // without stale closure issues.
+  const itemsRef = useRef(items);
+  useEffect(() => { itemsRef.current = items; }, [items]);
 
+  // Resync local state when external form content changes (e.g. entry navigation,
+  // form reset). Compare by value so our own blur commits don't trigger a re-sync.
   useEffect(() => {
-    if (itemIds.length !== values.length) {
-      setItemIds((prev) => values.map((_, i) => prev[i] || generateUuid()));
+    const external = toStringArray(formValues);
+    const local = itemsRef.current.map((i) => i.value);
+    const same =
+      local.length === external.length && local.every((v, i) => v === external[i]);
+    if (!same) {
+      setItems(external.map((value, i) => ({
+        id: itemsRef.current[i]?.id ?? generateUuid(),
+        value,
+      })));
     }
-  // Depend on length only; including `values` would regenerate IDs on every keystroke
-  }, [values.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [formValues]);
 
-  const items: ArrayItem[] = useMemo(() => {
-    return values.map((value, i) => ({ id: itemIds[i] ?? generateUuid(), value }));
-  }, [values, itemIds]);
+  // Only updates local state — no RHF write on every keystroke.
+  const handleChange = useCallback((index: number, value: string) => {
+    setItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], value };
+      return next;
+    });
+  }, []);
+
+  // Commits the accumulated local edits to RHF once the user leaves the field.
+  const handleBlur = useCallback(() => {
+    setValue(
+      name,
+      itemsRef.current.map((i) => i.value) as PathValue<T, Path<T>>,
+      { shouldDirty: true }
+    );
+  }, [name, setValue]);
 
   const handleAdd = useCallback(() => {
-    const newId = generateUuid();
-    setItemIds(prev => [...prev, newId]);
-    setValue(name, [...values, ""] as PathValue<T, Path<T>>, { shouldDirty: true });
-  }, [name, values, setValue]);
+    const newItem = { id: generateUuid(), value: "" };
+    const next = [...itemsRef.current, newItem];
+    setItems(next);
+    setValue(name, next.map((i) => i.value) as PathValue<T, Path<T>>, { shouldDirty: true });
+    requestAnimationFrame(() => {
+      document.getElementById(newItem.id)?.focus();
+    });
+  }, [name, setValue]);
 
   const handleRemove = useCallback((index: number) => {
-    setItemIds(prev => prev.filter((_, i) => i !== index));
-    const newValues = values.filter((_, i) => i !== index);
-    setValue(name, newValues as PathValue<T, Path<T>>, { shouldDirty: true });
-  }, [name, values, setValue]);
-
-  const handleChange = useCallback((index: number, value: string) => {
-    const newValues = [...values];
-    newValues[index] = value;
-    setValue(name, newValues as PathValue<T, Path<T>>, { shouldDirty: true });
-  }, [name, values, setValue]);
+    const next = itemsRef.current.filter((_, i) => i !== index);
+    setItems(next);
+    setValue(name, next.map((i) => i.value) as PathValue<T, Path<T>>, { shouldDirty: true });
+  }, [name, setValue]);
 
   return (
     <div className="space-y-4" role="group" aria-labelledby={groupLabelId}>
@@ -93,17 +117,17 @@ export function StringArrayField<T extends FieldValues>({
             id={item.id}
             value={item.value}
             onChange={(e) => handleChange(index, e.target.value)}
+            onBlur={handleBlur}
             placeholder={placeholder}
             className="flex-1"
             aria-label={`${label} item ${index + 1}`}
-            aria-labelledby={groupLabelId}
           />
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={() => handleRemove(index)}
-            className="shrink-0"
+            className="shrink-0 text-muted-foreground hover:text-destructive"
             aria-label={`Remove ${label.toLowerCase()} item ${index + 1}`}
           >
             <Trash2 className="w-4 h-4" />
@@ -113,7 +137,7 @@ export function StringArrayField<T extends FieldValues>({
 
       {items.length === 0 && (
         <p className="text-sm text-muted-foreground italic">
-          No items added yet. Click "{addButtonLabel}" to add one.
+          No items added yet. Click &quot;{addButtonLabel}&quot; to add one.
         </p>
       )}
     </div>

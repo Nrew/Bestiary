@@ -34,6 +34,10 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
       : null;
 
     React.useEffect(() => {
+      setFetchedName(null);
+    }, [value]);
+
+    React.useEffect(() => {
       if (!value || entriesMap.has(value) || fetchedName !== null) return;
       let cancelled = false;
       getContextConfig(context).api.getDetails(value)
@@ -46,7 +50,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
       return () => {
         cancelled = true;
       };
-    }, [context, entriesMap, fetchedName, value]);
+    }, [context, entriesMap, value]);
 
     React.useEffect(() => {
       if (!isOpen) return;
@@ -67,11 +71,9 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
       };
     }, [context, isOpen, search]);
 
-    const filteredEntries = remoteEntries;
-
     React.useEffect(() => {
       setActiveIndex(0);
-    }, [filteredEntries.length]);
+    }, [search]);
 
     const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => {
       if (!isOpen) return;
@@ -79,7 +81,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
-          setActiveIndex(i => Math.min(i + 1, filteredEntries.length - 1));
+          setActiveIndex(i => Math.min(i + 1, remoteEntries.length - 1));
           break;
         case "ArrowUp":
           e.preventDefault();
@@ -87,8 +89,8 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
           break;
         case "Enter":
           e.preventDefault();
-          if (filteredEntries[activeIndex]) {
-            onChange(filteredEntries[activeIndex].id);
+          if (remoteEntries[activeIndex]) {
+            onChange(remoteEntries[activeIndex].id);
             setIsOpen(false);
             setSearch("");
           }
@@ -99,7 +101,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
           setSearch("");
           break;
       }
-    }, [isOpen, activeIndex, filteredEntries, onChange]);
+    }, [isOpen, activeIndex, remoteEntries, onChange]);
 
     React.useEffect(() => {
       if (!isOpen) return;
@@ -152,6 +154,8 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
               aria-label={`Search ${context}`}
             >
               <Input
+                id={`${listboxId}-search`}
+                name={`${listboxId}-search`}
                 placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -160,12 +164,13 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
                 autoFocus
                 aria-controls={listboxId}
                 aria-autocomplete="list"
+                aria-label={`Search ${context}`}
               />
               {isSearching ? (
                 <p className="text-sm text-muted-foreground p-2" role="status">
                   Searching...
                 </p>
-              ) : filteredEntries.length === 0 ? (
+              ) : remoteEntries.length === 0 ? (
                 <p className="text-sm text-muted-foreground p-2" role="status">
                   No entries found
                 </p>
@@ -175,7 +180,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
                   role="listbox"
                   aria-label={`${context} options`}
                 >
-                  {filteredEntries.map((entry, index) => (
+                  {remoteEntries.map((entry, index) => (
                     <button
                       key={entry.id}
                       type="button"

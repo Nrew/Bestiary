@@ -25,17 +25,17 @@ const STATUS_ENTITY_KEYS = new Set([
   "relatedEntity",
 ]);
 
+const STACKING_OPTIONS = [
+  { value: "no", label: "Does Not Stack" },
+  { value: "refresh", label: "Refresh Duration" },
+  { value: "stack", label: "Stack (Intensify)" },
+];
+
 export const StatusForm: React.FC = React.memo(() => {
   const {
     watch,
     setValue,
   } = useFormContext<Status>();
-
-  const stackingOptions = [
-    { value: "no", label: "Does Not Stack" },
-    { value: "refresh", label: "Refresh Duration" },
-    { value: "stack", label: "Stack (Intensify)" },
-  ];
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -81,7 +81,7 @@ export const StatusForm: React.FC = React.memo(() => {
           name="payload.stacks"
           label="Stacking Behavior"
           placeholder="Select stacking..."
-          options={stackingOptions}
+          options={STACKING_OPTIONS}
           description="How multiple applications interact"
         />
 
@@ -147,6 +147,7 @@ export const StatusForm: React.FC = React.memo(() => {
       <FormSection title="Full Description" iconCategory="ui" iconName="book">
         <div className="col-span-full">
           <RichTextEditor
+            ariaLabel="Status full description"
             content={watch("description") || ""}
             onChange={(html) => setValue("description", html, { shouldDirty: true })}
           />

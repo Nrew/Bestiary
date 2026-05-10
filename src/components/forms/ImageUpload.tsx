@@ -138,7 +138,7 @@ export function ImageUpload<T extends FieldValues>({
   description,
   maxImages = 10,
 }: ImageUploadProps<T>) {
-  const { control } = useFormContext<T>();
+  const { control, setValue } = useFormContext<T>();
   const toast = useToast();
   const [isUploading, setIsUploading] = React.useState(false);
   const [dragOver, setDragOver] = React.useState(false);
@@ -235,7 +235,10 @@ export function ImageUpload<T extends FieldValues>({
 
         const removeImage = (index: number, e: React.MouseEvent) => {
           e.stopPropagation();
-          field.onChange(images.filter((_, i) => i !== index));
+          setValue(name, images.filter((_, i) => i !== index) as Parameters<typeof setValue>[1], {
+            shouldDirty: true,
+            shouldTouch: true,
+          });
         };
 
         const handleDrop = (e: React.DragEvent) => {

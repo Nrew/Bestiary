@@ -58,6 +58,7 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = React.memo(
         <div className="flex gap-2">
           <Input
             id={keyInputId}
+            name={keyInputId}
             placeholder="Key"
             value={newKey}
             onChange={(e) => setNewKey(e.target.value)}
@@ -66,6 +67,7 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = React.memo(
           />
           <Input
             id={valueInputId}
+            name={valueInputId}
             placeholder="Value"
             value={newValue}
             onChange={(e) => setNewValue(e.target.value)}

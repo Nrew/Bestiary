@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,15 @@ interface NestedEffectsEditorProps {
   parentIndex: number;
 }
 
+const NESTED_EFFECT_DEFAULTS: Record<string, AbilityEffect> = {
+  damage: { type: "damage", formula: "1d8", damageType: "bludgeoning" },
+  heal: { type: "heal", formula: "2d8" },
+  applyStatus: { type: "applyStatus", statusId: "", duration: "1 minute", savingThrow: null },
+  modifyStat: { type: "modifyStat", attribute: "strength", value: { type: "flat", value: 2 }, durationRounds: 10 },
+  move: { type: "move", distance: 10, direction: "forward" },
+  custom: { type: "custom", description: "", data: {} },
+};
+
 /**
  * Minimal effect editor for nested AoE sub-effects. Caps depth at 1: an
  * `areaOfEffect` parent contains a flat list of damage/heal/applyStatus/
@@ -23,6 +32,14 @@ export const NestedEffectsEditor: React.FC<NestedEffectsEditorProps> = ({ parent
   const { watch, setValue } = useFormContext<Ability>();
   const gameEnums = useGameEnums();
   const nestedEffects: AbilityEffect[] = watch(`effects.${parentIndex}.effects`) || [];
+  const idsRef = React.useRef<string[]>([]);
+
+  const effectIds = useMemo(() => {
+    const prev = idsRef.current;
+    const next = nestedEffects.map((_, i) => prev[i] ?? crypto.randomUUID());
+    idsRef.current = next;
+    return next;
+  }, [nestedEffects.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addNestedEffect = () => {
     setValue(
@@ -53,7 +70,7 @@ export const NestedEffectsEditor: React.FC<NestedEffectsEditorProps> = ({ parent
         <p className="text-xs text-muted-foreground italic">No sub-effects. Add effects that apply within the area.</p>
       )}
       {nestedEffects.map((sub, subIndex) => (
-        <div key={subIndex} className="border border-border/50 rounded-md p-3 space-y-3 bg-muted/20">
+        <div key={effectIds[subIndex]} className="border border-border/50 rounded-md p-3 space-y-3 bg-muted/20">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">Sub-effect #{subIndex + 1}</span>
             <Button type="button" variant="ghost" size="sm" onClick={() => removeNestedEffect(subIndex)}>
@@ -61,23 +78,15 @@ export const NestedEffectsEditor: React.FC<NestedEffectsEditorProps> = ({ parent
             </Button>
           </div>
           <div className="space-y-2">
-            <Label className="text-xs">Type</Label>
+            <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-type`} className="text-xs">Type</Label>
             <Select
               value={sub.type}
               onValueChange={(type: AbilityEffect["type"]) => {
                 if (type === "areaOfEffect") return; // prevent infinite nesting
-                const defaults: Record<string, AbilityEffect> = {
-                  damage: { type: "damage", formula: "1d8", damageType: "bludgeoning" },
-                  heal: { type: "heal", formula: "2d8" },
-                  applyStatus: { type: "applyStatus", statusId: "", duration: "1 minute", savingThrow: null },
-                  modifyStat: { type: "modifyStat", attribute: "strength", value: { type: "flat", value: 2 }, durationRounds: 10 },
-                  move: { type: "move", distance: 10, direction: "forward" },
-                  custom: { type: "custom", description: "", data: {} },
-                };
-                updateNestedEffect(subIndex, (defaults[type] ?? defaults.custom));
+                updateNestedEffect(subIndex, (NESTED_EFFECT_DEFAULTS[type] ?? NESTED_EFFECT_DEFAULTS.custom));
               }}
             >
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger id={`nested-effect-${parentIndex}-${subIndex}-type`} className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="damage">Damage</SelectItem>
                 <SelectItem value="heal">Heal</SelectItem>
@@ -91,16 +100,21 @@ export const NestedEffectsEditor: React.FC<NestedEffectsEditorProps> = ({ parent
           {sub.type === "damage" && (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-xs">Formula</Label>
-                <Input className="h-8 text-xs" value={sub.formula}
+                <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-damage-formula`} className="text-xs">Formula</Label>
+                <Input
+                  id={`nested-effect-${parentIndex}-${subIndex}-damage-formula`}
+                  name={`effects.${parentIndex}.effects.${subIndex}.formula`}
+                  className="h-8 text-xs"
+                  value={sub.formula}
                   onChange={(e) => updateNestedEffect(subIndex, { ...sub, formula: e.target.value })}
                   placeholder="e.g., 2d6" />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Damage Type</Label>
-                <Select value={sub.damageType}
+                <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-damage-type`} className="text-xs">Damage Type</Label>
+                <Select
+                  value={sub.damageType}
                   onValueChange={(t: DamageType) => updateNestedEffect(subIndex, { ...sub, damageType: t })}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id={`nested-effect-${parentIndex}-${subIndex}-damage-type`} className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {gameEnums?.damageTypes.map((t) => (
                       <SelectItem key={t} value={t}>{DAMAGE_TYPE_LABELS[t]}</SelectItem>
@@ -112,16 +126,24 @@ export const NestedEffectsEditor: React.FC<NestedEffectsEditorProps> = ({ parent
           )}
           {sub.type === "heal" && (
             <div className="space-y-1">
-              <Label className="text-xs">Heal Formula</Label>
-              <Input className="h-8 text-xs" value={sub.formula}
+              <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-heal-formula`} className="text-xs">Heal Formula</Label>
+              <Input
+                id={`nested-effect-${parentIndex}-${subIndex}-heal-formula`}
+                name={`effects.${parentIndex}.effects.${subIndex}.formula`}
+                className="h-8 text-xs"
+                value={sub.formula}
                 onChange={(e) => updateNestedEffect(subIndex, { ...sub, formula: e.target.value })}
                 placeholder="e.g., 2d8 + 3" />
             </div>
           )}
           {sub.type === "custom" && (
             <div className="space-y-1">
-              <Label className="text-xs">Description</Label>
-              <Input className="h-8 text-xs" value={sub.description}
+              <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-description`} className="text-xs">Description</Label>
+              <Input
+                id={`nested-effect-${parentIndex}-${subIndex}-description`}
+                name={`effects.${parentIndex}.effects.${subIndex}.description`}
+                className="h-8 text-xs"
+                value={sub.description}
                 onChange={(e) => updateNestedEffect(subIndex, { ...sub, description: e.target.value })}
                 placeholder="Describe the effect" />
             </div>
@@ -129,13 +151,26 @@ export const NestedEffectsEditor: React.FC<NestedEffectsEditorProps> = ({ parent
           {sub.type === "move" && (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-xs">Distance (ft)</Label>
-                <Input className="h-8 text-xs" type="number" value={sub.distance} min={1}
-                  onChange={(e) => updateNestedEffect(subIndex, { ...sub, distance: parseInt(e.target.value) || 5 })} />
+                <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-distance`} className="text-xs">Distance (ft)</Label>
+                <Input
+                  id={`nested-effect-${parentIndex}-${subIndex}-distance`}
+                  name={`effects.${parentIndex}.effects.${subIndex}.distance`}
+                  className="h-8 text-xs"
+                  type="number"
+                  value={sub.distance}
+                  min={1}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    updateNestedEffect(subIndex, { ...sub, distance: Number.isFinite(v) ? v : 5 });
+                  }} />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Direction</Label>
-                <Input className="h-8 text-xs" value={sub.direction}
+                <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-direction`} className="text-xs">Direction</Label>
+                <Input
+                  id={`nested-effect-${parentIndex}-${subIndex}-direction`}
+                  name={`effects.${parentIndex}.effects.${subIndex}.direction`}
+                  className="h-8 text-xs"
+                  value={sub.direction}
                   onChange={(e) => updateNestedEffect(subIndex, { ...sub, direction: e.target.value })}
                   placeholder="e.g., away" />
               </div>

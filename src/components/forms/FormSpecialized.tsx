@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useFormContext, Controller, FieldValues, Path } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,7 +70,8 @@ export function FormStatValueInput<T extends FieldValues>({
             {isEnabled && (
               <div className="flex items-center gap-2 ml-6">
                 <Select onValueChange={handleTypeChange} value={currentType}>
-                  <SelectTrigger id={`${name}-type`} className="w-40" aria-label={`${label} type`}>
+                  <label htmlFor={`${name}-type`} className="sr-only">{label} type</label>
+                  <SelectTrigger id={`${name}-type`} className="w-40">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -84,9 +86,10 @@ export function FormStatValueInput<T extends FieldValues>({
                   type="number"
                   step="0.01"
                   value={currentValue}
-                  onChange={(e) =>
-                    handleValueChange(parseFloat(e.target.value) || 0)
-                  }
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    handleValueChange(Number.isFinite(v) ? v : 0);
+                  }}
                   className="w-24"
                 />
               </div>
@@ -128,6 +131,7 @@ export function FormTagInput<T extends FieldValues>({
       control={control}
       render={({ field, fieldState: { error } }) => {
         const tags: string[] = field.value || [];
+        const [inputValue, setInputValue] = useState('');
 
         const addTag = (newTagValue: string) => {
           const newTag = newTagValue.trim();
@@ -158,15 +162,19 @@ export function FormTagInput<T extends FieldValues>({
                 </Badge>
               ))}
               <input
+                ref={field.ref}
                 id={name}
+                name={name}
                 placeholder={tags.length === 0 ? placeholder || 'Add tags...' : ''}
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ',') {
                     e.preventDefault();
-                    addTag(e.currentTarget.value);
-                    e.currentTarget.value = '';
-                  } else if (e.key === 'Backspace' && e.currentTarget.value === '' && tags.length > 0) {
+                    addTag(inputValue);
+                    setInputValue('');
+                  } else if (e.key === 'Backspace' && inputValue === '' && tags.length > 0) {
                     removeTag(tags[tags.length - 1]);
                   }
                 }}

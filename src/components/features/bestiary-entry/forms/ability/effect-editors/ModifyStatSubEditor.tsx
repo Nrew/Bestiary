@@ -58,7 +58,7 @@ export const ModifyStatSubEditor: React.FC<{ index: number }> = ({ index }) => {
             type="number"
             value={effect.value.value}
             onChange={(e) =>
-              setValue(`effects.${index}.value`, { ...effect.value, value: parseFloat(e.target.value) || 0 }, { shouldDirty: true })
+              setValue(`effects.${index}.value`, { ...effect.value, value: Number.isFinite(parseFloat(e.target.value)) ? parseFloat(e.target.value) : 0 }, { shouldDirty: true })
             }
           />
         </div>
@@ -71,7 +71,7 @@ export const ModifyStatSubEditor: React.FC<{ index: number }> = ({ index }) => {
           value={effect.durationRounds}
           min={1}
           onChange={(e) =>
-            setValue(`effects.${index}.durationRounds`, parseInt(e.target.value) || 1, { shouldDirty: true })
+            setValue(`effects.${index}.durationRounds`, Math.max(1, parseInt(e.target.value, 10) || 1), { shouldDirty: true })
           }
         />
       </div>

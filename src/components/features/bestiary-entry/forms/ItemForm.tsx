@@ -18,11 +18,17 @@ export const ItemForm: React.FC = React.memo(() => {
   } = useFormContext<Item>();
   const gameEnums = useGameEnums();
 
-  const hasDurability = watch("durability") !== null;
   const durability = watch("durability");
+  const hasDurability = durability !== null && durability !== undefined;
 
-  const itemTypeOptions = gameEnums?.itemTypes.map(t => ({ value: t, label: ITEM_TYPE_LABELS[t] })) || [];
-  const rarityOptions = gameEnums?.rarities.map(r => ({ value: r, label: RARITY_LABELS[r] })) || [];
+  const itemTypeOptions = React.useMemo(
+    () => gameEnums?.itemTypes.map(t => ({ value: t, label: ITEM_TYPE_LABELS[t] })) || [],
+    [gameEnums]
+  );
+  const rarityOptions = React.useMemo(
+    () => gameEnums?.rarities.map(r => ({ value: r, label: RARITY_LABELS[r] })) || [],
+    [gameEnums]
+  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -132,6 +138,7 @@ export const ItemForm: React.FC = React.memo(() => {
       <FormSection title="Description" iconCategory="ui" iconName="book">
         <div className="col-span-full">
           <RichTextEditor
+            ariaLabel="Item description"
             content={watch("description") || ""}
             onChange={(html) =>
               setValue("description", html, { shouldDirty: true })

@@ -83,7 +83,7 @@ export const MoveSubEditor: React.FC<{ index: number }> = ({ index }) => {
           value={effect.distance}
           min={1}
           onChange={(e) =>
-            setValue(`effects.${index}.distance`, parseInt(e.target.value) || 1, { shouldDirty: true })
+            setValue(`effects.${index}.distance`, Math.max(1, parseInt(e.target.value, 10) || 1), { shouldDirty: true })
           }
         />
       </div>
@@ -128,7 +128,7 @@ export const AoeSubEditor: React.FC<{ index: number }> = ({ index }) => {
             value={effect.range}
             min={1}
             onChange={(e) =>
-              setValue(`effects.${index}.range`, parseInt(e.target.value) || 1, { shouldDirty: true })
+              setValue(`effects.${index}.range`, Math.max(1, parseInt(e.target.value, 10) || 1), { shouldDirty: true })
             }
           />
         </div>

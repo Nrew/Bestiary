@@ -19,13 +19,18 @@ export const LootSection: React.FC = () => {
   // Without this, items already stored in `inventory` would appear as "Select item..."
   // indistinguishably from unselected rows on first render.
   const inventoryWatch = useWatch({ control, name: "inventory" });
+
+  const inventoryIdKey = useMemo(
+    () => (inventoryWatch ?? []).map(item => item?.itemId ?? '').join(','),
+    [inventoryWatch]
+  );
+
   useEffect(() => {
-    if (!Array.isArray(inventoryWatch) || inventoryWatch.length === 0) return;
-    const ids = inventoryWatch
-      .map((loot) => loot?.itemId)
+    const ids = (inventoryWatch ?? [])
+      .map((item) => item?.itemId)
       .filter((id): id is string => Boolean(id));
     if (ids.length > 0) void ensureItemsLoaded(ids);
-  }, [inventoryWatch, ensureItemsLoaded]);
+  }, [inventoryIdKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { fields: inventoryFields, append: appendInventory, remove: removeInventory } = useFieldArray({
     control,
@@ -48,7 +53,7 @@ export const LootSection: React.FC = () => {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => appendInventory({ itemId: itemOptions[0]?.value ?? "", quantity: "1", dropChance: 1.0 })}
+            onClick={() => appendInventory({ itemId: "", quantity: "1", dropChance: 1.0 })}
           >
             <Plus className="w-4 h-4 mr-1" /> Add Loot
           </Button>
@@ -68,13 +73,14 @@ export const LootSection: React.FC = () => {
 
           return (
             <div key={field.id} className="flex gap-3 items-end p-3 rounded-lg bg-muted/30 border border-border/50">
-              <div className="flex-2 space-y-2">
-                <Label>Item</Label>
+              <div className="flex-[2_1_0%] space-y-2">
+                <Label htmlFor={`inventory-${index}-item`}>Item</Label>
                 <Select
                   value={selectedItemId || ""}
                   onValueChange={(value) => setValue(`inventory.${index}.itemId`, value, { shouldDirty: true })}
                 >
                   <SelectTrigger
+                    id={`inventory-${index}-item`}
                     className={cn(isBrokenRef && "text-destructive border-destructive/40")}
                     aria-invalid={isBrokenRef || undefined}
                     aria-describedby={isBrokenRef ? brokenRefMessageId : undefined}
@@ -99,17 +105,19 @@ export const LootSection: React.FC = () => {
               </div>
 
               <div className="flex-1 space-y-2">
-                <Label>Quantity</Label>
+                <Label htmlFor={`inventory-${index}-quantity`}>Quantity</Label>
                 <Input
+                  id={`inventory-${index}-quantity`}
                   {...register(`inventory.${index}.quantity`)}
                   placeholder="e.g., 1, 1d4, 2d6"
                 />
               </div>
 
               <div className="flex-1 space-y-2">
-                <Label>Drop Chance</Label>
+                <Label htmlFor={`inventory-${index}-drop-chance`}>Drop Chance</Label>
                 <div className="flex items-center gap-1">
                   <Input
+                    id={`inventory-${index}-drop-chance`}
                     type="number"
                     min="0"
                     max="100"
@@ -132,8 +140,9 @@ export const LootSection: React.FC = () => {
                 size="icon"
                 onClick={() => removeInventory(index)}
                 className="shrink-0"
+                aria-label="Remove loot entry"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4" aria-hidden="true" />
               </Button>
             </div>
           );
