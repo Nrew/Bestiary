@@ -151,7 +151,7 @@ const LootRow = React.memo<{
     <div className={cn(
       "group flex items-center gap-3 py-3 border-b border-rune/15 last:border-0 -mx-5 px-5 rounded-sm transition-all duration-300",
       !hasResult && "hover:bg-rune/4",
-      hasResult && dropped && "bg-jade/15 border-l-2 border-jade/50",
+      hasResult && dropped && "bg-jade/15",
       hasResult && !dropped && "opacity-40",
     )}>
       <Icon
