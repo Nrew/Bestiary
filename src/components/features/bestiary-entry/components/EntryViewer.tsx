@@ -195,7 +195,7 @@ export const EntryViewer: React.FC<{
               variant="outline"
               size="sm"
               onClick={onEdit}
-              className="absolute top-6 right-6 md:top-8 md:right-8 z-10 border-leather/50 bg-parchment/90 text-leather hover:bg-leather/10 hover:border-leather backdrop-blur-sm"
+              className="absolute top-6 right-6 md:top-8 md:right-8 z-10 border-leather/70 bg-parchment/90 text-leather shadow-sm hover:bg-leather/10 hover:border-leather backdrop-blur-sm"
             >
               <Edit className="w-4 h-4 mr-2" /> Edit Page
             </Button>

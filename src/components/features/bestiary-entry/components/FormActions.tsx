@@ -1,16 +1,16 @@
-import React from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
+import { useFormState } from "react-hook-form";
+import type { Control, FieldValues } from "react-hook-form";
 import { EASE_OUT, DURATION } from "@/lib/animations";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 
-interface FormActionsProps {
+interface FormActionsProps<T extends FieldValues> {
+  control: Control<T>;
   formId: string;
   onCancel: () => void;
-  isDirty: boolean;
-  isSubmitting: boolean;
 }
 
 const panelVariants: Variants = {
@@ -23,12 +23,13 @@ const panelVariants: Variants = {
   exit: { opacity: 0, x: 40, transition: { duration: DURATION.fast, ease: EASE_OUT } },
 };
 
-export const FormActions: React.FC<FormActionsProps> = ({
+export function FormActions<T extends FieldValues>({
+  control,
   formId,
   onCancel,
-  isDirty,
-  isSubmitting,
-}) => {
+}: FormActionsProps<T>) {
+  const { isDirty, isSubmitting } = useFormState({ control });
+
   return createPortal(
     <motion.div
       variants={panelVariants}
@@ -67,4 +68,4 @@ export const FormActions: React.FC<FormActionsProps> = ({
     </motion.div>,
     document.body
   );
-};
+}

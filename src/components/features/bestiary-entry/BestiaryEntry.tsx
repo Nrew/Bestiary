@@ -25,6 +25,7 @@ import {
 } from "@/types";
 import { getContextConfig } from "@/lib/context-config";
 import { getErrorMessage } from "@/lib/errors";
+import { normalizeEntityCombatBonuses } from "@/lib/dnd";
 import { useToast } from "@/components/ui/toast";
 
 interface BestiaryEntryProps {
@@ -37,7 +38,7 @@ const ItemForm = lazy(() => import('./forms/ItemForm').then(module => ({ default
 const StatusForm = lazy(() => import('./forms/StatusForm').then(module => ({ default: module.StatusForm })));
 const AbilityForm = lazy(() => import('./forms/AbilityForm').then(module => ({ default: module.AbilityForm })));
 
-const FORM_COMPONENTS: Record<ViewContext, React.FC> = {
+const FORM_COMPONENTS: Record<ViewContext, React.ComponentType> = {
   entities: EntityForm,
   items: ItemForm,
   statuses: StatusForm,
@@ -118,8 +119,6 @@ export const BestiaryEntry: React.FC<BestiaryEntryProps> = React.memo(({ entry, 
     reValidateMode: 'onBlur',
   });
 
-  const { isSubmitting, isDirty } = form.formState;
-
   const {
     mode,
     animationKey,
@@ -138,7 +137,11 @@ export const BestiaryEntry: React.FC<BestiaryEntryProps> = React.memo(({ entry, 
 
   const handleSave = form.handleSubmit(async (data: FormData) => {
     try {
-      await saveAction(data);
+      const normalizedData =
+        entryType === "entities"
+          ? normalizeEntityCombatBonuses(data as Entity)
+          : data;
+      await saveAction(normalizedData);
       handleModeChange("view");
       setError(null);
       toast.success(`${config.label} saved successfully`);
@@ -202,17 +205,17 @@ export const BestiaryEntry: React.FC<BestiaryEntryProps> = React.memo(({ entry, 
       <AnimatePresence>
         {mode === "edit" && (
           <FormActions
+            control={form.control}
             formId={`entry-form-${entry.id}`}
             onCancel={() => {
-              void (async () => {
-                const didCancel = await confirmCancelEdit();
-                if (didCancel && isDraft) {
-                  discardDraftEntry(entryType, entry.id);
-                }
-              })();
+              confirmCancelEdit()
+                .then((didCancel) => {
+                  if (didCancel && isDraft) {
+                    discardDraftEntry(entryType, entry.id);
+                  }
+                })
+                .catch((err: unknown) => setError(getErrorMessage(err)));
             }}
-            isDirty={isDirty}
-            isSubmitting={isSubmitting}
           />
         )}
       </AnimatePresence>

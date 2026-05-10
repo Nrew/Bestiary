@@ -72,4 +72,23 @@ describe("migrateLegacyCustomStats", () => {
     expect(result.updates).toEqual({});
     expect(result.custom).toEqual({ SpellPower: 15 });
   });
+
+  it("reports no change and returns an empty custom object when custom is empty", () => {
+    const result = migrateLegacyCustomStats(createStatBlock({}));
+
+    expect(result.changed).toBe(false);
+    expect(result.updates).toEqual({});
+    expect(result.custom).toEqual({});
+  });
+
+  it("is case-insensitive when matching legacy keys", () => {
+    // "ClimbSpeed" and "CLIMBSPEED" both lower-case to "climbspeed"
+    const result = migrateLegacyCustomStats(
+      createStatBlock({ ClimbSpeed: "15" })
+    );
+
+    expect(result.changed).toBe(true);
+    expect(result.updates).toEqual({ climbSpeed: 15 });
+    expect(result.custom).toEqual({});
+  });
 });

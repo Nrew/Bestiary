@@ -1,33 +1,49 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { FormSection } from "@/components/forms/FormSection";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CR_OPTIONS, CR_TO_XP } from "@/lib/dnd/constants";
-import { formatChallengeRating, calculateProficiencyBonus } from "@/lib/dnd";
+import { CR_OPTIONS } from "@/lib/dnd/constants";
+import { formatChallengeRating, calculateProficiencyBonus, getMonsterXP } from "@/lib/dnd";
 import type { Entity } from "@/types";
 
 export const ChallengeSection: React.FC = () => {
-  const { register, watch, setValue } = useFormContext<Entity>();
-  const challengeRating = watch("challengeRating");
+  const { register, control, getValues, setValue } = useFormContext<Entity>();
+  const challengeRating = useWatch({ control, name: "challengeRating" });
 
-  React.useEffect(() => {
-    if (challengeRating !== null && challengeRating !== undefined) {
-      setValue("experiencePoints", CR_TO_XP[challengeRating] || 0);
-      setValue("proficiencyBonus", calculateProficiencyBonus(challengeRating));
+  const syncChallengeDerivedFields = React.useCallback((
+    nextChallengeRating: number | null,
+    options?: { shouldDirty?: boolean }
+  ) => {
+    const nextExperiencePoints =
+      nextChallengeRating === null ? null : getMonsterXP(nextChallengeRating);
+    const nextProficiencyBonus =
+      nextChallengeRating === null ? null : calculateProficiencyBonus(nextChallengeRating);
+
+    if (getValues("experiencePoints") !== nextExperiencePoints) {
+      setValue("experiencePoints", nextExperiencePoints, options);
     }
-  }, [challengeRating, setValue]);
+    if (getValues("proficiencyBonus") !== nextProficiencyBonus) {
+      setValue("proficiencyBonus", nextProficiencyBonus, options);
+    }
+  }, [getValues, setValue]);
+
+  const handleChallengeRatingChange = React.useCallback((value: string) => {
+    const nextChallengeRating = value ? parseFloat(value) : null;
+    setValue("challengeRating", nextChallengeRating, { shouldDirty: true });
+    syncChallengeDerivedFields(nextChallengeRating, { shouldDirty: true });
+  }, [setValue, syncChallengeDerivedFields]);
 
   return (
     <FormSection title="Challenge & Experience" iconCategory="dice" iconName="d20">
       <div className="space-y-2">
         <Label htmlFor="challengeRating">Challenge Rating</Label>
         <Select
-          value={challengeRating?.toString() || ""}
-          onValueChange={(value) => setValue("challengeRating", value ? parseFloat(value) : null, { shouldDirty: true })}
+          value={challengeRating?.toString() ?? ""}
+          onValueChange={handleChallengeRatingChange}
         >
-          <SelectTrigger>
+          <SelectTrigger id="challengeRating">
             <SelectValue placeholder="Select CR..." />
           </SelectTrigger>
           <SelectContent>

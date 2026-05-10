@@ -245,7 +245,7 @@ export const StatBlockSection: React.FC = () => {
       </div>
 
       <div className="col-span-full space-y-4 pt-4 border-t border-border/50">
-        <Label className="block">Movement</Label>
+        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Movement</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="statBlock.speed">Walking</Label>
@@ -262,7 +262,7 @@ export const StatBlockSection: React.FC = () => {
               id="statBlock.burrowSpeed"
               type="number"
               {...register("statBlock.burrowSpeed", { valueAsNumber: true })}
-              placeholder="Optional"
+              placeholder="e.g., 20"
             />
           </div>
           <div className="space-y-2">
@@ -271,7 +271,7 @@ export const StatBlockSection: React.FC = () => {
               id="statBlock.climbSpeed"
               type="number"
               {...register("statBlock.climbSpeed", { valueAsNumber: true })}
-              placeholder="Optional"
+              placeholder="e.g., 30"
             />
           </div>
           <div className="space-y-2">
@@ -280,7 +280,7 @@ export const StatBlockSection: React.FC = () => {
               id="statBlock.flySpeed"
               type="number"
               {...register("statBlock.flySpeed", { valueAsNumber: true })}
-              placeholder="Optional"
+              placeholder="e.g., 60"
             />
           </div>
           <div className="space-y-2">
@@ -289,7 +289,7 @@ export const StatBlockSection: React.FC = () => {
               id="statBlock.swimSpeed"
               type="number"
               {...register("statBlock.swimSpeed", { valueAsNumber: true })}
-              placeholder="Optional"
+              placeholder="e.g., 30"
             />
           </div>
           <div className="space-y-2">
@@ -298,7 +298,7 @@ export const StatBlockSection: React.FC = () => {
               id="statBlock.hoverSpeed"
               type="number"
               {...register("statBlock.hoverSpeed", { valueAsNumber: true })}
-              placeholder="Optional"
+              placeholder="e.g., 30"
             />
           </div>
         </div>
