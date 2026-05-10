@@ -75,7 +75,7 @@ export const GallerySection: React.FC<{ data: Entity | Item }> = ({ data }) => {
               type="button"
               key={imageRefKey(imageRef, index)}
               className="aspect-square rounded-lg overflow-hidden border border-border/30 shadow-sm bg-muted group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              onClick={() => setLightboxIndex(index)}
+              onClick={() => setLightboxIndex(Math.min(index, images.length - 1))}
               aria-label={`Open ${data.name} illustration ${index + 1} in image viewer`}
             >
               <ManagedImage
@@ -88,13 +88,16 @@ export const GallerySection: React.FC<{ data: Entity | Item }> = ({ data }) => {
         </div>
       </ViewSection>
 
-      {lightboxIndex !== null && (
-        <ImageLightbox
-          images={images}
-          initialIndex={lightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-        />
-      )}
+      {lightboxIndex !== null && (() => {
+        const safeIndex = Math.min(lightboxIndex, images.length - 1);
+        return (
+          <ImageLightbox
+            images={images}
+            initialIndex={safeIndex}
+            onClose={() => setLightboxIndex(null)}
+          />
+        );
+      })()}
     </>
   );
 };

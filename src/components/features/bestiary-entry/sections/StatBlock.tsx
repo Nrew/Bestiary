@@ -190,7 +190,11 @@ function useStatusImmunityNames(statusIds: string[]) {
 
 export const StatBlockSection: React.FC<{ data: Entity }> = ({ data }) => {
   const { statBlock: stats, savingThrows, skills, damageResistances } = data;
-  const conditionImmunityNames = useStatusImmunityNames(data.statusImmunities || []);
+  const statusImmunities = React.useMemo(
+    () => data.statusImmunities ?? [],
+    [data.statusImmunities]
+  );
+  const conditionImmunityNames = useStatusImmunityNames(statusImmunities);
   const computed = useComputedEntityStats(data);
 
   const filteredSenses = React.useMemo(() => {
@@ -224,16 +228,20 @@ export const StatBlockSection: React.FC<{ data: Entity }> = ({ data }) => {
     isPresent(stats.armor) ||
     isPresent(stats.hp) ||
     Boolean(speedLine) ||
-    isPresent(initiativeBonus) ||
-    isPresent(stats.dexterity);
-  const displayCustomEntries = Object.entries(customStats).filter(
-    ([key]) => !STRUCTURED_STAT_KEYS.has(key.toLowerCase())
+    isPresent(initiativeBonus);
+  const displayCustomEntries = React.useMemo(
+    () =>
+      Object.entries(customStats).filter(
+        ([key]) => !STRUCTURED_STAT_KEYS.has(key.toLowerCase())
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stats.custom]
   );
   const hasCombatProfile =
     (savingThrows && Object.keys(savingThrows).length > 0) ||
     (skills && Object.keys(skills).length > 0) ||
     (damageResistances && damageResistances.length > 0) ||
-    (data.statusImmunities && data.statusImmunities.length > 0);
+    statusImmunities.length > 0;
   const hasSensesProfile =
     filteredSenses.length > 0 ||
     hasAbilityScores ||
@@ -360,7 +368,7 @@ export const StatBlockSection: React.FC<{ data: Entity }> = ({ data }) => {
             })}
           </>
         )}
-        {data.statusImmunities && data.statusImmunities.length > 0 && (
+        {statusImmunities.length > 0 && (
           <div>
             <span className="stat-block-property">Condition Immunities</span>{" "}
             {conditionImmunityNames.join(", ")}
@@ -391,7 +399,7 @@ export const StatBlockSection: React.FC<{ data: Entity }> = ({ data }) => {
         {data.challengeRating !== null && data.challengeRating !== undefined && (
           <div>
             <span className="stat-block-property">Challenge</span>{" "}
-            {formatChallengeRating(data.challengeRating)} ({data.experiencePoints?.toLocaleString() || 0} XP)
+            {formatChallengeRating(data.challengeRating)} ({data.experiencePoints?.toLocaleString() ?? "—"} XP)
           </div>
         )}
         {data.challengeRating !== null && data.challengeRating !== undefined && (

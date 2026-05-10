@@ -125,6 +125,69 @@ describe("StatBlockSection", () => {
     expect(markup).toContain("Initiative");
   });
 
+  it("renders string-valued custom stats as their raw string", () => {
+    const entity = createEntity({
+      statBlock: {
+        hp: null, hitDice: null, armor: null, armorNote: null,
+        speed: null, burrowSpeed: null, climbSpeed: null, flySpeed: null,
+        swimSpeed: null, hoverSpeed: null, initiativeBonus: null,
+        strength: null, dexterity: null, constitution: null,
+        intelligence: null, wisdom: null, charisma: null,
+        custom: { breathWeapon: "Fire (30 ft. cone)" },
+      },
+    });
+
+    const markup = renderToStaticMarkup(<StatBlockSection data={entity} />);
+
+    expect(markup).toContain("Breath Weapon");
+    expect(markup).toContain("Fire (30 ft. cone)");
+  });
+
+  it("renders underscore-separated custom keys as spaced labels", () => {
+    // formatCustomLabel replaces underscores with spaces and capitalises only
+    // the first character, so "spell_slots" becomes "Spell slots".
+    const entity = createEntity({
+      statBlock: {
+        hp: null, hitDice: null, armor: null, armorNote: null,
+        speed: null, burrowSpeed: null, climbSpeed: null, flySpeed: null,
+        swimSpeed: null, hoverSpeed: null, initiativeBonus: null,
+        strength: null, dexterity: null, constitution: null,
+        intelligence: null, wisdom: null, charisma: null,
+        custom: { spell_slots: 3 },
+      },
+    });
+
+    const markup = renderToStaticMarkup(<StatBlockSection data={entity} />);
+
+    expect(markup).toContain("Spell slots");
+    expect(markup).not.toContain("spell_slots");
+  });
+
+  it("does not render structured-key custom entries as custom properties", () => {
+    // Keys that match STRUCTURED_STAT_KEYS (case-insensitive) are consumed by
+    // the speed/hitDice/initiative display logic and must not appear in the
+    // custom-properties section as raw entries.
+    const entity = createEntity({
+      statBlock: {
+        hp: null, hitDice: null, armor: null, armorNote: null,
+        speed: null, burrowSpeed: null, climbSpeed: null, flySpeed: null,
+        swimSpeed: null, hoverSpeed: null, initiativeBonus: null,
+        strength: null, dexterity: null, constitution: null,
+        intelligence: null, wisdom: null, charisma: null,
+        custom: { hitdice: "6d8", SpellPower: 15 },
+      },
+    });
+
+    const markup = renderToStaticMarkup(<StatBlockSection data={entity} />);
+
+    // "hitdice" is in STRUCTURED_STAT_KEYS and should be used for display only,
+    // not re-emitted as a raw custom property label.
+    expect(markup).not.toContain(">Hit Dice<");
+    expect(markup).not.toContain(">Hitdice<");
+    // SpellPower is a genuine custom key and should still appear.
+    expect(markup).toContain("Spell Power");
+  });
+
   it("renders combat and metadata rows even without primary stat block values", () => {
     const entity = createEntity({
       skills: { perception: 4 },

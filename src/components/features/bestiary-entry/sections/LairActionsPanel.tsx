@@ -1,19 +1,12 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { isAbility } from "@/lib/type-guards";
-import { useAbilitiesMap, useAppStore } from "@/store/appStore";
+import { useAbilitiesMap } from "@/store/appStore";
 import { AbilityText } from "./Abilities";
 import type { Ability, Entity } from "@/types";
 
 export const LairActionsPanel: React.FC<{ data: Entity }> = ({ data }) => {
   const abilities = useAbilitiesMap();
-  const ensureAbilitiesLoaded = useAppStore((s) => s.ensureAbilitiesLoaded);
   const abilityIds = useMemo(() => data.abilityIds ?? [], [data.abilityIds]);
-
-  useEffect(() => {
-    if (abilityIds.length > 0) {
-      void ensureAbilitiesLoaded(abilityIds);
-    }
-  }, [abilityIds, ensureAbilitiesLoaded]);
 
   const lairActions = useMemo(
     () =>

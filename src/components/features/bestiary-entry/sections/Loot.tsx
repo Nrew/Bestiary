@@ -94,7 +94,7 @@ const LootRollButton: React.FC<{
     onClick={onRoll}
     disabled={isRolling}
     aria-busy={isRolling}
-    className="group flex items-center gap-2 rounded-full border border-rune/30 bg-rune/5 px-4 py-1.5 text-sm font-serif text-ink/70 transition-colors hover:bg-rune/10 hover:text-ink/90 disabled:cursor-default disabled:hover:bg-rune/5"
+    className="group flex items-center gap-2 rounded-full border border-rune/50 bg-rune/5 px-4 py-1.5 text-sm font-serif text-ink/70 transition-colors hover:bg-rune/10 hover:border-rune/80 hover:text-ink/90 disabled:cursor-default disabled:hover:bg-rune/5"
     style={animation?.style}
   >
     <span className="relative grid h-7 w-7 place-items-center overflow-hidden rounded-full border border-rune/20 bg-parchment/60">
@@ -118,11 +118,11 @@ const LootRollButton: React.FC<{
   </button>
 );
 
-const LootRow: React.FC<{
+const LootRow = React.memo<{
   loot: LootDrop;
   result?: RollResult;
   revealIndex: number;
-}> = ({ loot, result, revealIndex }) => {
+}>(({ loot, result, revealIndex }) => {
   const item = useItem(loot.itemId);
   const { navigateToEntry } = useNavigationGuard();
   const { showTooltip, hideTooltip } = useWikiLink();
@@ -151,7 +151,7 @@ const LootRow: React.FC<{
     <div className={cn(
       "group flex items-center gap-3 py-3 border-b border-rune/15 last:border-0 -mx-5 px-5 rounded-sm transition-all duration-300",
       !hasResult && "hover:bg-rune/4",
-      hasResult && dropped && "bg-jade/8",
+      hasResult && dropped && "bg-jade/15 border-l-2 border-jade/50",
       hasResult && !dropped && "opacity-40",
     )}>
       <Icon
@@ -205,10 +205,18 @@ const LootRow: React.FC<{
       </div>
     </div>
   );
-};
+});
+
+LootRow.displayName = "LootRow";
+
+type LootRowWithKey = LootDrop & { _rowKey: string };
 
 export const LootSection: React.FC<{ data: Entity }> = ({ data }) => {
-  const inventory = useMemo(() => data.inventory || [], [data.inventory]);
+  const inventory = useMemo(() => data.inventory ?? [], [data.inventory]);
+  const rows = useMemo<LootRowWithKey[]>(
+    () => inventory.map((item, i) => ({ ...item, _rowKey: `${item.itemId}-${i}` })),
+    [inventory]
+  );
   const ensureItemsLoaded = useAppStore((s) => s.ensureItemsLoaded);
   const [results, setResults] = useState<RollResult[] | null>(null);
   const [isRolling, setIsRolling] = useState(false);
@@ -290,9 +298,9 @@ export const LootSection: React.FC<{ data: Entity }> = ({ data }) => {
         )}
       </header>
       <div className="stone-plate mt-4 py-1">
-        {inventory.map((loot, index) => (
+        {rows.map((loot, index) => (
           <LootRow
-            key={`${loot.itemId}-${index}`}
+            key={loot._rowKey}
             loot={loot}
             result={results?.[index]}
             revealIndex={index}
