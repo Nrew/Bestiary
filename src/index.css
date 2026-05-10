@@ -170,6 +170,60 @@
   --animate-bounce-gentle: bounceGentle 2.8s ease-in-out infinite;
   --animate-border-glow: border-glow 3s ease-in-out infinite alternate;
   --animate-pulse-warn: pulse-warning 2s ease-in-out infinite;
+  --animate-loot-result: loot-result 0.24s var(--ease-medieval) both;
+  --animate-loot-die-roll: loot-die-roll 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-loot-die-glow: loot-die-glow 900ms ease-out both;
+
+  @keyframes loot-die-roll {
+    0% {
+      transform:
+        translate3d(var(--loot-roll-x-0, -2px), var(--loot-roll-y-0, 0px), 0)
+        rotate(var(--loot-roll-r-0, -28deg))
+        scale(var(--loot-roll-s-0, 0.9));
+    }
+    10% {
+      transform:
+        translate3d(var(--loot-roll-x-1, 2px), var(--loot-roll-y-1, -1px), 0)
+        rotate(var(--loot-roll-r-1, 54deg))
+        scale(var(--loot-roll-s-1, 1.08));
+    }
+    24% {
+      transform:
+        translate3d(var(--loot-roll-x-2, -1px), var(--loot-roll-y-2, 0px), 0)
+        rotate(var(--loot-roll-r-2, 142deg))
+        scale(var(--loot-roll-s-2, 0.98));
+    }
+    46% {
+      transform:
+        translate3d(var(--loot-roll-x-3, 1px), var(--loot-roll-y-3, 0px), 0)
+        rotate(var(--loot-roll-r-3, 236deg))
+        scale(var(--loot-roll-s-3, 1.04));
+    }
+    72% {
+      transform:
+        translate3d(var(--loot-roll-x-4, 0px), var(--loot-roll-y-4, 0px), 0)
+        rotate(var(--loot-roll-r-4, 318deg))
+        scale(var(--loot-roll-s-4, 0.99));
+    }
+    100% {
+      transform:
+        translate3d(0, 0, 0)
+        rotate(var(--loot-roll-r-final, 360deg))
+        scale(1);
+    }
+  }
+
+  @keyframes loot-die-glow {
+    0%  { opacity: 0; transform: scale(0.7); }
+    18% { opacity: var(--loot-glow-opacity, 0.5); transform: scale(1); }
+    58% { opacity: 0.24; transform: scale(var(--loot-glow-scale, 1.35)); }
+    100% { opacity: 0.12; transform: scale(1.55); }
+  }
+
+  @keyframes loot-result {
+    from { opacity: 0; transform: translateY(-2px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
 }
 
 /* ============================================================================
@@ -329,6 +383,21 @@
 
 @utility animate-bounce-gentle {
   animation: var(--animate-bounce-gentle);
+}
+
+@utility animate-loot-die-roll {
+  animation: loot-die-roll var(--loot-roll-duration, 900ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: 50% 55%;
+  will-change: transform;
+}
+
+@utility animate-loot-die-glow {
+  animation: loot-die-glow var(--loot-roll-duration, 900ms) ease-out both;
+  will-change: opacity, transform;
+}
+
+@utility animate-loot-result {
+  animation: var(--animate-loot-result);
 }
 
 @utility skeleton-shimmer {
