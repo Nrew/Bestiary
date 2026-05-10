@@ -67,6 +67,7 @@ export const useBackendInitialization = (): BackendState & { retry: () => void }
 
   const retry = useCallback(() => {
     if (!state.canRetry || isRequestInFlight.current) return;
+    isRequestInFlight.current = true;
 
     if (retryTimerRef.current !== null) {
       clearTimeout(retryTimerRef.current);
@@ -82,6 +83,7 @@ export const useBackendInitialization = (): BackendState & { retry: () => void }
 
     retryTimerRef.current = setTimeout(() => {
       retryTimerRef.current = null;
+      isRequestInFlight.current = false;
       if (isMounted.current) void performInit(state.retryCount);
     }, backoffMs);
   }, [state.canRetry, state.retryCount, performInit]);

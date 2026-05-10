@@ -61,7 +61,7 @@ export function sanitizeHtml(html: string): string {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
 
-  const walker = document.createTreeWalker(
+  const walker = doc.createTreeWalker(
     doc.body,
     NodeFilter.SHOW_ELEMENT,
     null
@@ -71,6 +71,11 @@ export function sanitizeHtml(html: string): string {
 
   let node = walker.nextNode();
   while (node) {
+    if (nodesToRemove.some(n => n.contains(node))) {
+      node = walker.nextNode();
+      continue;
+    }
+
     const element = node as Element;
     const tagName = element.tagName.toLowerCase();
 
@@ -83,6 +88,12 @@ export function sanitizeHtml(html: string): string {
     const attrs = Array.from(element.attributes);
     for (const attr of attrs) {
       const attrName = attr.name.toLowerCase();
+
+      if (attrName.startsWith('on')) {
+        element.removeAttribute(attr.name);
+        continue;
+      }
+
       const tagAllowedAttrs = ALLOWED_ATTRS[tagName] || new Set();
       const globalAllowedAttrs = ALLOWED_ATTRS['*'] || new Set();
 
@@ -91,16 +102,10 @@ export function sanitizeHtml(html: string): string {
         continue;
       }
 
-      // href must reference a local document path, not an external scheme.
       if (attrName === 'href') {
         if (!isAllowedRichTextHref(attr.value)) {
           element.removeAttribute(attr.name);
         }
-      }
-
-      // Remove any event handlers that might have slipped through
-      if (attrName.startsWith('on')) {
-        element.removeAttribute(attr.name);
       }
     }
 

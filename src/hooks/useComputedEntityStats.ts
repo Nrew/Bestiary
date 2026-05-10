@@ -6,6 +6,11 @@ import {
   formatAbilityModifier,
   calculatePassivePerception,
 } from '@/lib/dnd';
+import {
+  estimateHitDiceCount,
+  getHitDieFromSize,
+  calculateHitPoints,
+} from '@/lib/dnd/calculations';
 
 const DEFAULT_STAT_BLOCK: StatBlock = {
   hp: null,
@@ -97,12 +102,13 @@ export function useComputedEntityStats(entity: Entity | null | undefined): Compu
     let hitDice: string | null = null;
     let averageHP: number | null = null;
 
-    if (statBlock.hp && entity?.size) {
-      const hitDieSize = getHitDieSize(entity.size);
+    if (statBlock.hp !== null && statBlock.hp !== undefined && entity?.size) {
+      const hitDieSize = getHitDieFromSize(entity.size);
       if (hitDieSize) {
-        const numDice = Math.floor(statBlock.hp / ((hitDieSize + 1) / 2 + conModifier));
-        hitDice = `${numDice}d${hitDieSize}`;
-        averageHP = Math.floor(numDice * ((hitDieSize + 1) / 2) + numDice * conModifier);
+        const numDice = estimateHitDiceCount(statBlock.hp, entity.size, conModifier);
+        const hp = calculateHitPoints(numDice, hitDieSize, conModifier);
+        hitDice = hp.hitDice;
+        averageHP = hp.average;
       }
     }
 
@@ -130,23 +136,11 @@ export function useComputedEntityStats(entity: Entity | null | undefined): Compu
   }, [entity]);
 }
 
-function getHitDieSize(size: string): number | null {
-  const sizeMap: Record<string, number> = {
-    tiny: 4,
-    small: 6,
-    medium: 8,
-    large: 10,
-    huge: 12,
-    gargantuan: 20,
-  };
-  return sizeMap[size.toLowerCase()] ?? null;
-}
-
 export function calculateAverageFromHitDice(hitDice: string, modifier: number = 0): number {
   const match = hitDice.match(/^(\d+)d(\d+)$/);
   if (!match) return 0;
 
   const [, numDice, dieSize] = match;
-  const avgPerDie = (parseInt(dieSize) + 1) / 2;
-  return Math.floor(parseInt(numDice) * avgPerDie + modifier);
+  const avgPerDie = (parseInt(dieSize, 10) + 1) / 2;
+  return Math.floor(parseInt(numDice, 10) * avgPerDie + modifier);
 }

@@ -23,6 +23,10 @@ const apiMocks = vi.hoisted(() => {
 
 vi.mock("@/lib/api", () => apiMocks);
 
+vi.mock("@/lib/idle", () => ({
+  scheduleIdle: (cb: () => void) => { cb(); return () => {}; },
+}));
+
 const { useAppStore } = await import("./appStore");
 
 const createItem = (name: string): Item => ({

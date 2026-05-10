@@ -160,7 +160,6 @@ export const useAppStore = create<AppState & AppActions>()(
         state.searchQuery = "";
         state.hasUnsavedChanges = false;
         state.error = null;
-        state.isLoading = false;
       }),
 
     setSearchQuery: (query) =>
@@ -400,17 +399,15 @@ export const useAppStore = create<AppState & AppActions>()(
       }),
 
     fetchPage: async (context, isNew = false) => {
-      const { searchQuery, isLoading, setError, mergeEntries, setCount, fetchVersion } = get();
+      const { searchQuery, setError, mergeEntries, setCount, fetchVersion } = get();
       const config = getContextConfig(context);
 
-      if (isLoading) return;
-
       const requestVersion = fetchVersion;
+      const snapshotSize = get().data[context].entries.size;
       set({ isLoading: true });
 
       try {
-        const currentData = get().data[context];
-        const offset = isNew ? 0 : currentData.entries.size;
+        const offset = isNew ? 0 : snapshotSize;
         const resultsPromise = config.api.search(searchQuery, PAGE_SIZE, offset);
         const countPromise = isNew ? config.api.count(searchQuery) : Promise.resolve(undefined);
         const [results, count] = await Promise.all([resultsPromise, countPromise]);
