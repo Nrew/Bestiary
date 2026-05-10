@@ -180,83 +180,85 @@ export const SidebarItem = React.memo<SidebarItemProps>(({
   }, [onDeleteRequest, item.id, item.name]);
 
   return (
-    <motion.div
-      variants={burnVariants}
-      initial="hidden"
-      animate="visible"
-      className={cn(
-        sidebarItemVariants({ variant, isSelected, className })
-      )}
-      onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      aria-label={`${displayName} - ${contextConfig.label.slice(0, -1)}`}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
-    >
-      {isSelected && (
-        <div
-          className={cn(
-            "absolute left-0 top-0 bottom-0 w-1",
-            styling.gradientClass
-          )}
-          aria-hidden="true"
-        />
-      )}
-
-      <div
+    <li className="list-none">
+      <motion.div
+        variants={burnVariants}
+        initial="hidden"
+        animate="visible"
         className={cn(
-          "relative shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all",
-          isSelected ? styling.bg : "bg-secondary/50 group-hover:bg-brass/10"
+          sidebarItemVariants({ variant, isSelected, className })
         )}
+        onClick={handleClick}
+        role="button"
+        tabIndex={0}
+        aria-label={`${displayName} - ${contextConfig.label.slice(0, -1)}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleClick();
+          }
+        }}
       >
-        <IconComponent
-          className={cn(
-            "w-5 h-5 transition-colors",
-            isSelected
-              ? styling.color
-              : "text-muted-foreground group-hover:text-brass"
-          )}
-          aria-hidden="true"
-        />
         {isSelected && (
           <div
             className={cn(
-              "absolute inset-0 rounded-lg blur-sm -z-10",
-              styling.bg
+              "absolute left-0 top-0 bottom-0 w-1",
+              styling.gradientClass
             )}
             aria-hidden="true"
           />
         )}
-      </div>
 
-      <div className="flex-1 min-w-0">
-        <h4
+        <div
           className={cn(
-            "font-serif font-semibold text-base truncate",
-            isSelected ? "text-foreground" : "text-foreground/90"
+            "relative shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+            isSelected ? styling.bg : "bg-secondary/50 group-hover:bg-brass/10"
           )}
-          title={item.name}
         >
-          <SearchHighlight
-            text={displayName}
-            indices={matchIndices}
-            highlightClassName="bg-rune/30 text-leather font-bold rounded-sm px-0.5"
+          <IconComponent
+            className={cn(
+              "w-5 h-5 transition-colors",
+              isSelected
+                ? styling.color
+                : "text-muted-foreground group-hover:text-brass"
+            )}
+            aria-hidden="true"
           />
-        </h4>
-      </div>
+          {isSelected && (
+            <div
+              className={cn(
+                "absolute inset-0 rounded-lg blur-sm -z-10",
+                styling.bg
+              )}
+              aria-hidden="true"
+            />
+          )}
+        </div>
 
-      <SidebarItemActions
-        onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        isSelected={isSelected}
-      />
-    </motion.div>
+        <div className="flex-1 min-w-0">
+          <h4
+            className={cn(
+              "font-serif font-semibold text-base truncate",
+              isSelected ? "text-foreground" : "text-foreground/90"
+            )}
+            title={item.name}
+          >
+            <SearchHighlight
+              text={displayName}
+              indices={matchIndices}
+              highlightClassName="bg-rune/30 text-leather font-bold rounded-sm px-0.5"
+            />
+          </h4>
+        </div>
+
+        <SidebarItemActions
+          onView={handleView}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          isSelected={isSelected}
+        />
+      </motion.div>
+    </li>
   );
 });
 

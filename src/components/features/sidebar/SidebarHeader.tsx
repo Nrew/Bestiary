@@ -9,7 +9,6 @@ export const SidebarHeader = React.memo(() => {
   return (
     <header
       className="shrink-0 flex items-center justify-between p-6 border-b border-rune/30"
-      role="banner"
     >
       <div className="flex items-center gap-3">
         <div

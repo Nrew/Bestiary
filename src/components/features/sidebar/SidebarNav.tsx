@@ -67,7 +67,7 @@ export const SidebarNav = React.memo(() => {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3" aria-label="Section selection">
+      <div className="grid grid-cols-2 gap-3">
         {typedKeys(CONTEXT_CONFIG).map(renderContextButton)}
       </div>
 
@@ -76,7 +76,6 @@ export const SidebarNav = React.memo(() => {
         <p
           className="text-sm text-muted-foreground font-serif italic"
           aria-live="polite"
-          aria-label={`Currently viewing: ${CONTEXT_CONFIG[currentContext].description}`}
         >
           {CONTEXT_CONFIG[currentContext].description}
         </p>

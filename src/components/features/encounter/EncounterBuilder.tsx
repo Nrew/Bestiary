@@ -238,7 +238,7 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
       </div>
 
-      {open && results.length > 0 && (
+      {open && query.trim().length > 0 && (
         <ul
           id={listboxId}
           role="listbox"
@@ -249,7 +249,16 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
             "py-1"
           )}
         >
-          {results.map((entity, index) => {
+          {isSearching ? (
+            <li
+              role="option"
+              aria-disabled="true"
+              aria-selected={false}
+              className="px-3 py-3 text-sm text-muted-foreground font-serif italic text-center"
+            >
+              Searching...
+            </li>
+          ) : results.length > 0 ? results.map((entity, index) => {
             const cr = entity.challengeRating;
             const crLabel = cr !== null ? `CR ${formatChallengeRating(cr)}` : "CR —";
             const xp = cr !== null ? getMonsterXP(cr) : 0;
@@ -262,7 +271,6 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
                 aria-selected={isActive}
                 onMouseEnter={() => setActiveIndex(index)}
                 onMouseDown={(e) => {
-                  // mousedown prevents blur before click fires
                   e.preventDefault();
                   handleSelect(entity);
                 }}
@@ -280,17 +288,17 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
                 </span>
               </li>
             );
-          })}
+          }) : (
+            <li
+              role="option"
+              aria-disabled="true"
+              aria-selected={false}
+              className="px-3 py-3 text-sm text-muted-foreground font-serif italic text-center"
+            >
+              No creatures found for &ldquo;{query}&rdquo;
+            </li>
+          )}
         </ul>
-      )}
-
-      {open && query.trim().length > 0 && (isSearching || results.length === 0) && (
-        <div className={cn(
-          "absolute z-60 mt-1 w-full rounded-md border border-border bg-popover shadow-lg",
-          "px-3 py-3 text-sm text-muted-foreground font-serif italic text-center"
-        )}>
-          {isSearching ? "Searching..." : <>No creatures found for &ldquo;{query}&rdquo;</>}
-        </div>
       )}
     </div>
   );
@@ -300,7 +308,12 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
 export const EncounterBuilder: React.FC = () => {
   const [open, setOpen] = useState(false);
 
-  const [partyLevels, setPartyLevels] = useState<number[]>([1, 1, 1, 1]);
+  const [partyLevels, setPartyLevels] = useState<{ id: string; level: number }[]>([
+    { id: crypto.randomUUID(), level: 1 },
+    { id: crypto.randomUUID(), level: 1 },
+    { id: crypto.randomUUID(), level: 1 },
+    { id: crypto.randomUUID(), level: 1 },
+  ]);
 
   const [monsters, setMonsters] = useState<MonsterEntry[]>([]);
 
@@ -309,19 +322,17 @@ export const EncounterBuilder: React.FC = () => {
 
   const addCharacter = useCallback(() => {
     if (partyLevels.length >= MAX_PARTY_SIZE) return;
-    setPartyLevels((prev) => [...prev, 1]);
+    setPartyLevels((prev) => [...prev, { id: crypto.randomUUID(), level: 1 }]);
   }, [partyLevels.length]);
 
-  const removeCharacter = useCallback((index: number) => {
-    setPartyLevels((prev) => prev.filter((_, i) => i !== index));
+  const removeCharacter = useCallback((id: string) => {
+    setPartyLevels((prev) => prev.filter((m) => m.id !== id));
   }, []);
 
-  const setCharacterLevel = useCallback((index: number, level: number) => {
-    setPartyLevels((prev) => {
-      const next = [...prev];
-      next[index] = level;
-      return next;
-    });
+  const setCharacterLevel = useCallback((id: string, level: number) => {
+    setPartyLevels((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, level } : m))
+    );
   }, []);
 
 
@@ -337,19 +348,24 @@ export const EncounterBuilder: React.FC = () => {
   const encounterResult = useMemo<EncounterResult | null>(() => {
     if (partyLevels.length === 0) return null;
     const monsterCRs = monsters.map((m) => m.cr);
-    return calculateEncounterDifficulty(partyLevels, monsterCRs);
+    return calculateEncounterDifficulty(partyLevels.map((m) => m.level), monsterCRs);
   }, [partyLevels, monsters]);
 
 
   const resetEncounter = useCallback(() => {
-    setPartyLevels([1, 1, 1, 1]);
+    setPartyLevels([
+      { id: crypto.randomUUID(), level: 1 },
+      { id: crypto.randomUUID(), level: 1 },
+      { id: crypto.randomUUID(), level: 1 },
+      { id: crypto.randomUUID(), level: 1 },
+    ]);
     setMonsters([]);
   }, []);
 
   const handleOpenChange = useCallback(
     (o: boolean) => {
-      // Use ConfirmDialog instead of window.confirm for proper a11y focus trapping.
       if (!o && monsters.length > 0) {
+        if (confirmState.open) return;
         void confirm({
           title: "Close the encounter builder?",
           description: "Your current encounter will be lost.",
@@ -372,7 +388,7 @@ export const EncounterBuilder: React.FC = () => {
         startTransition(resetEncounter);
       }
     },
-    [monsters.length, confirm, resetEncounter]
+    [monsters.length, confirm, confirmState.open, resetEncounter]
   );
 
 
@@ -456,17 +472,18 @@ export const EncounterBuilder: React.FC = () => {
                   </p>
                 ) : (
                   <ul className="space-y-2" aria-label="Party members">
-                    {partyLevels.map((level, idx) => (
+                    {partyLevels.map((member, idx) => (
                       <li
-                        key={idx}
+                        key={member.id}
                         className="flex items-center gap-2"
                       >
                         <span className="text-xs text-muted-foreground font-serif w-5 text-right shrink-0">
                           {idx + 1}.
                         </span>
                         <select
-                          value={level}
-                          onChange={(e) => setCharacterLevel(idx, parseInt(e.target.value, 10))}
+                          name={`character-${member.id}-level`}
+                          value={member.level}
+                          onChange={(e) => setCharacterLevel(member.id, parseInt(e.target.value, 10))}
                           aria-label={`Character ${idx + 1} level`}
                           className="flex-1 h-8 px-2 text-sm font-serif rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
                         >
@@ -477,7 +494,7 @@ export const EncounterBuilder: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => removeCharacter(idx)}
+                          onClick={() => removeCharacter(member.id)}
                           aria-label={`Remove character ${idx + 1}`}
                           className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
                         >

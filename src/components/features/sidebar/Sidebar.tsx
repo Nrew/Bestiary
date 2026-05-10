@@ -89,6 +89,8 @@ const SidebarImpl = forwardRef<SidebarSearchRef>((_, ref) => {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        const nestedDialog = document.querySelector('[role="alertdialog"][data-state="open"], [role="dialog"][aria-modal="true"]:not([aria-label="Table of Contents"])');
+        if (nestedDialog) return;
         event.preventDefault();
         onClose();
         return;
