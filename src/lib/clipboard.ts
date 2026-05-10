@@ -11,31 +11,11 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
       return true;
-    } else {
-      return fallbackCopyToClipboard(text);
     }
+    log.error('Clipboard API unavailable');
+    return false;
   } catch (error) {
     log.error('Failed to copy to clipboard:', error);
-    return false;
-  }
-}
-
-function fallbackCopyToClipboard(text: string): boolean {
-  const textArea = document.createElement('textarea');
-  textArea.value = text;
-  textArea.style.position = 'fixed';
-  textArea.style.left = '-999999px';
-  textArea.style.top = '-999999px';
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-
-  try {
-    const successful = document.execCommand('copy');
-    document.body.removeChild(textArea);
-    return successful;
-  } catch (_error) {
-    document.body.removeChild(textArea);
     return false;
   }
 }
@@ -101,69 +81,8 @@ export async function copyFormattedText(
 }
 
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-
-export interface CopyState {
-  copied: boolean;
-  error: string | null;
-}
-
-export function useCopyToClipboard(
-  resetDelay: number = 2000
-): [CopyState, (text: string) => Promise<void>] {
-  const [state, setState] = useState<CopyState>({
-    copied: false,
-    error: null,
-  });
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  const copy = useCallback(
-    async (text: string) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-
-      try {
-        const success = await copyToClipboard(text);
-
-        if (success) {
-          setState({ copied: true, error: null });
-
-          timeoutRef.current = setTimeout(() => {
-            setState({ copied: false, error: null });
-            timeoutRef.current = null;
-          }, resetDelay);
-        } else {
-          setState({ copied: false, error: 'Failed to copy' });
-        }
-      } catch (error) {
-        setState({
-          copied: false,
-          error: error instanceof Error ? error.message : 'Failed to copy',
-        });
-      }
-    },
-    [resetDelay]
-  );
-
-  return [state, copy];
-}
-
-
 export async function copyEntityJSON(entity: EntityExport): Promise<void> {
-  const success = await copyJSONToClipboard(entity);
-  if (success) {
-    toast.success('Entity copied as JSON');
-  }
+  await copyJSONToClipboard(entity);
 }
 
 export async function copyEntityFormatted(entity: EntityExport): Promise<void> {
@@ -233,12 +152,12 @@ HP: ${hp}
 AC: ${armor}
 Speed: ${speeds || 'N/A'}
 
-STR: ${statBlock.strength || 10}
-DEX: ${statBlock.dexterity || 10}
-CON: ${statBlock.constitution || 10}
-INT: ${statBlock.intelligence || 10}
-WIS: ${statBlock.wisdom || 10}
-CHA: ${statBlock.charisma || 10}
+STR: ${statBlock.strength ?? 10}
+DEX: ${statBlock.dexterity ?? 10}
+CON: ${statBlock.constitution ?? 10}
+INT: ${statBlock.intelligence ?? 10}
+WIS: ${statBlock.wisdom ?? 10}
+CHA: ${statBlock.charisma ?? 10}
   `.trim();
 
   const success = await copyToClipboard(plain);
@@ -293,7 +212,7 @@ export async function copyAsCSV(
 
   const headers = columns.map(escapeCSV).join(',');
   const rows = data
-    .map(row => columns.map(col => escapeCSV(row[col] || '')).join(','))
+    .map(row => columns.map(col => escapeCSV(row[col] ?? '')).join(','))
     .join('\n');
 
   const csv = `${headers}\n${rows}`;

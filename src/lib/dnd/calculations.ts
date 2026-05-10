@@ -1,5 +1,15 @@
-import { CR_TO_XP, CR_OPTIONS } from "./constants";
-import type { Attribute, EntitySize } from "@/types";
+import {
+  CR_TO_XP,
+  CR_OPTIONS,
+  SKILL_ABILITIES,
+  ABILITY_SCORE_NAMES,
+  SAVE_DC_BASE,
+  PASSIVE_CHECK_BASE,
+  SHIELD_AC_BONUS,
+  CR_FRACTION_DISPLAY,
+  type SkillKey,
+} from "./constants";
+import type { Attribute, Entity, EntitySize } from "@/types";
 
 
 /** How a creature contributes its proficiency bonus to a skill or save. */
@@ -38,21 +48,15 @@ export function calculateProficiencyBonus(cr: number): number {
 
 /** Formats a CR as a human-readable fraction or integer: "1/8", "1/4", "1/2", "5". */
 export function formatChallengeRating(cr: number): string {
-  if (cr === 0.125) return "1/8";
-  if (cr === 0.25)  return "1/4";
-  if (cr === 0.5)   return "1/2";
+  const fraction = CR_FRACTION_DISPLAY[cr];
+  if (fraction) return fraction;
   return cr.toString();
-}
-
-/** Returns the XP award for defeating a monster of the given CR. */
-export function getExperiencePoints(cr: number): number {
-  return CR_TO_XP[cr] ?? 0;
 }
 
 
 /** SRD: Save DC = 8 + proficiency bonus + ability modifier. */
 export function calculateSaveDC(abilityScore: number, proficiencyBonus: number): number {
-  return 8 + calculateAbilityModifier(abilityScore) + proficiencyBonus;
+  return SAVE_DC_BASE + calculateAbilityModifier(abilityScore) + proficiencyBonus;
 }
 
 /** Attack bonus = ability modifier + (proficiency bonus if proficient). */
@@ -98,7 +102,7 @@ export function calculateSkillModifier(
  * Use for passive Perception, passive Investigation, passive Insight, etc.
  */
 export function calculatePassiveCheck(skillModifier: number): number {
-  return 10 + skillModifier;
+  return PASSIVE_CHECK_BASE + skillModifier;
 }
 
 /**
@@ -152,31 +156,44 @@ export function calculateArmorClass(
     case "medium": ac += Math.min(dexterityModifier, 2); break;
     // heavy: no dexterity contribution
   }
-  return shield ? ac + 2 : ac;
+  return shield ? ac + SHIELD_AC_BONUS : ac;
 }
 
 
-/** Maps each D&D 5e skill (camelCase) to its governing ability score. */
-export const SKILL_ABILITIES: Readonly<Record<string, Attribute>> = {
-  acrobatics:    "dexterity",
-  animalHandling:"wisdom",
-  arcana:        "intelligence",
-  athletics:     "strength",
-  deception:     "charisma",
-  history:       "intelligence",
-  insight:       "wisdom",
-  intimidation:  "charisma",
-  investigation: "intelligence",
-  medicine:      "wisdom",
-  nature:        "intelligence",
-  perception:    "wisdom",
-  performance:   "charisma",
-  persuasion:    "charisma",
-  religion:      "intelligence",
-  sleightOfHand: "dexterity",
-  stealth:       "dexterity",
-  survival:      "wisdom",
-} as const;
+function calculateEntityProficientBonus(
+  entity: Entity,
+  attribute: Attribute,
+  proficiencyBonus: number
+): number {
+  return calculateAbilityModifier(entity.statBlock[attribute] ?? 10) + proficiencyBonus;
+}
+
+function normalizeSelectedBonuses(
+  selected: Record<string, number>,
+  calculateBonus: (key: string) => number | null
+): Record<string, number> {
+  return Object.fromEntries(
+    Object.keys(selected).map((key) => [key, calculateBonus(key) ?? selected[key]])
+  );
+}
+
+export function normalizeEntityCombatBonuses(entity: Entity): Entity {
+  const proficiencyBonus =
+    entity.proficiencyBonus ?? calculateProficiencyBonus(entity.challengeRating ?? 0);
+
+  return {
+    ...entity,
+    savingThrows: normalizeSelectedBonuses(entity.savingThrows ?? {}, (key) =>
+      ABILITY_SCORE_NAMES.includes(key as Attribute)
+        ? calculateEntityProficientBonus(entity, key as Attribute, proficiencyBonus)
+        : null
+    ),
+    skills: normalizeSelectedBonuses(entity.skills ?? {}, (key) => {
+      const ability = SKILL_ABILITIES[key as SkillKey];
+      return ability ? calculateEntityProficientBonus(entity, ability, proficiencyBonus) : null;
+    }),
+  };
+}
 
 
 interface ParsedDice {
@@ -351,6 +368,8 @@ const DMG_STATS = new Map<number, MonsterStatProfile>([
   [30,    { profBonus: 9, acExpected: 19, hpMin: 806, hpMax: 850, attackBonus: 14, dprMin: 303, dprMax: 320, saveDC: 23 }],
 ]);
 
+const DMG_STAT_ENTRIES = [...DMG_STATS.entries()];
+
 /**
  * Returns the DMG expected statistics for a monster at the given CR,
  * or `null` for CRs outside the standard 0-30 range.
@@ -386,14 +405,13 @@ export function estimateDefensiveCR(hp: number, ac: number): number {
   // The outer assignment (outside the if) tracks the last entry visited so that
   // HP values above all table ranges map to the highest CR rather than zero.
   let baseCRIndex = 0;
-  const entries = [...DMG_STATS.entries()];
-  for (let i = 0; i < entries.length; i++) {
-    const [, stats] = entries[i];
+  for (let i = 0; i < DMG_STAT_ENTRIES.length; i++) {
+    const [, stats] = DMG_STAT_ENTRIES[i];
     if (hp <= stats.hpMax) { baseCRIndex = i; break; }
     baseCRIndex = i;
   }
 
-  const baseCREntry = entries[baseCRIndex];
+  const baseCREntry = DMG_STAT_ENTRIES[baseCRIndex];
   if (!baseCREntry) return 0;
 
   const [baseCR, stats] = baseCREntry;
@@ -419,16 +437,14 @@ export function estimateOffensiveCR(
   dpr: number,
   { attackBonus, saveDC }: { attackBonus?: number; saveDC?: number } = {}
 ): number {
-  const entries = [...DMG_STATS.entries()];
-
   let baseCRIndex = 0;
-  for (let i = 0; i < entries.length; i++) {
-    const [, stats] = entries[i];
+  for (let i = 0; i < DMG_STAT_ENTRIES.length; i++) {
+    const [, stats] = DMG_STAT_ENTRIES[i];
     if (dpr <= stats.dprMax) { baseCRIndex = i; break; }
     baseCRIndex = i;
   }
 
-  const baseCREntry = entries[baseCRIndex];
+  const baseCREntry = DMG_STAT_ENTRIES[baseCRIndex];
   if (!baseCREntry) return 0;
 
   const [baseCR, stats] = baseCREntry;

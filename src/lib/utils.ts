@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { CR_FRACTION_DISPLAY } from "@/lib/dnd/constants";
 
 export {
   isEntity,
@@ -13,7 +14,6 @@ export {
 export {
   calculateAbilityModifier,
   formatAbilityModifier,
-  getExperiencePoints,
   formatChallengeRating,
   calculateProficiencyBonus,
   calculateSaveDC,
@@ -31,8 +31,10 @@ export function capitalize(text: string): string {
 
 export function formatLabel(text: string): string {
   if (!text) return "";
-  const result = text.replace(/([A-Z])/g, " $1");
-  return result.charAt(0).toUpperCase() + result.slice(1);
+  return text
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+    .replace(/^./, (c) => c.toUpperCase());
 }
 
 /**
@@ -67,11 +69,8 @@ export function stripHtml(html: string): string {
 // === Number helpers ===
 
 export function formatCR(cr: number): string {
-  if (cr === 0.125) return "1/8";
-  if (cr === 0.25) return "1/4";
-  if (cr === 0.5) return "1/2";
-  return String(cr);
-};
+  return CR_FRACTION_DISPLAY[cr] ?? cr.toString();
+}
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));

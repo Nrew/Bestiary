@@ -6,7 +6,6 @@ import {
   // Proficiency & CR
   calculateProficiencyBonus,
   formatChallengeRating,
-  getExperiencePoints,
   // Derived stats
   calculateSaveDC,
   calculateAttackBonus,
@@ -15,6 +14,7 @@ import {
   calculateConcentrationDC,
   calculateInitiativeModifier,
   calculateArmorClass,
+  normalizeEntityCombatBonuses,
   // Dice & damage
   parseDamageFormula,
   applyDamageModifier,
@@ -33,6 +33,7 @@ import {
   calculateXPThresholds,
   calculateEncounterDifficulty,
 } from "./dnd";
+import type { Entity } from "@/types";
 
 
 describe("calculateAbilityModifier", () => {
@@ -87,15 +88,6 @@ describe("formatChallengeRating", () => {
   });
 });
 
-describe("getExperiencePoints", () => {
-  it("returns correct XP for standard CRs", () => {
-    expect(getExperiencePoints(0)).toBe(10);
-    expect(getExperiencePoints(1)).toBe(200);
-    expect(getExperiencePoints(20)).toBe(25000);
-  });
-});
-
-
 describe("calculateSaveDC", () => {
   it("follows the SRD formula: 8 + prof + ability mod", () => {
     // Ability 18 (+4 mod) + proficiency 3 = DC 15
@@ -148,6 +140,15 @@ describe("calculateConcentrationDC", () => {
     expect(calculateConcentrationDC(1)).toBe(10);   // half is 0, min 10 applies
     expect(calculateConcentrationDC(21)).toBe(10);  // half is 10 (floor), equals min
   });
+
+  it("returns 10 when half damage exactly equals the minimum", () => {
+    // floor(20 / 2) = 10 — ties with the minimum, so max(10, 10) = 10
+    expect(calculateConcentrationDC(20)).toBe(10);
+  });
+
+  it("returns 10 when damage is zero", () => {
+    expect(calculateConcentrationDC(0)).toBe(10);
+  });
 });
 
 describe("calculateInitiativeModifier", () => {
@@ -177,6 +178,95 @@ describe("calculateArmorClass", () => {
 
   it("shield adds +2", () => {
     expect(calculateArmorClass(0, 2, "none", true)).toBe(14);
+  });
+});
+
+describe("normalizeEntityCombatBonuses", () => {
+  const createEntity = (overrides: Partial<Entity> = {}): Entity => ({
+    id: "550e8400-e29b-41d4-a716-446655440000",
+    name: "Auto Creature",
+    slug: "auto-creature",
+    taxonomy: { genus: null, species: null, subspecies: null },
+    size: null,
+    threatLevel: null,
+    alignment: null,
+    challengeRating: 5,
+    experiencePoints: null,
+    proficiencyBonus: null,
+    legendaryActionsPerRound: null,
+    savingThrows: {},
+    skills: {},
+    damageResistances: [],
+    statusImmunities: [],
+    senses: [],
+    languages: [],
+    habitats: [],
+    description: "",
+    statBlock: {
+      hp: null,
+      hitDice: null,
+      armor: null,
+      armorNote: null,
+      speed: null,
+      burrowSpeed: null,
+      climbSpeed: null,
+      flySpeed: null,
+      swimSpeed: null,
+      hoverSpeed: null,
+      initiativeBonus: null,
+      strength: 18,
+      dexterity: 14,
+      constitution: 10,
+      intelligence: 10,
+      wisdom: 12,
+      charisma: 8,
+      custom: {},
+    },
+    notes: "",
+    statusIds: [],
+    abilityIds: [],
+    inventory: [],
+    images: [],
+    createdAt: "2026-05-10T00:00:00.000Z",
+    updatedAt: "2026-05-10T00:00:00.000Z",
+    ...overrides,
+  });
+
+  it("normalizes selected skills and saving throws from current D&D stats", () => {
+    const normalized = normalizeEntityCombatBonuses(createEntity({
+      savingThrows: { strength: 0 },
+      skills: { perception: 0, stealth: 0 },
+    }));
+
+    expect(normalized.savingThrows).toEqual({ strength: 7 });
+    expect(normalized.skills).toEqual({ perception: 4, stealth: 5 });
+  });
+
+  it("returns empty objects unchanged when no saves or skills are selected", () => {
+    const entity = createEntity({ savingThrows: {}, skills: {} });
+    const normalized = normalizeEntityCombatBonuses(entity);
+
+    expect(normalized.savingThrows).toEqual({});
+    expect(normalized.skills).toEqual({});
+  });
+
+  it("correctly normalizes a skill whose ability has a negative modifier", () => {
+    // WIS 6 → mod -2; proficiency at CR 0 = +2; proficient Perception = -2 + 2 = 0
+    const entity = createEntity({
+      challengeRating: 0,
+      skills: { perception: 0 },
+      statBlock: {
+        hp: null, hitDice: null, armor: null, armorNote: null,
+        speed: null, burrowSpeed: null, climbSpeed: null, flySpeed: null,
+        swimSpeed: null, hoverSpeed: null, initiativeBonus: null,
+        strength: 10, dexterity: 10, constitution: 10,
+        intelligence: 10, wisdom: 6, charisma: 10,
+        custom: {},
+      },
+    });
+    const normalized = normalizeEntityCombatBonuses(entity);
+
+    expect(normalized.skills).toEqual({ perception: 0 });
   });
 });
 
@@ -233,6 +323,13 @@ describe("isValidDiceFormula", () => {
     expect(isValidDiceFormula("not-dice")).toBe(false);
     expect(isValidDiceFormula("d6")).toBe(false);
     expect(isValidDiceFormula("")).toBe(false);
+  });
+
+  it("accepts zero-count or zero-side dice — the regex does not enforce minimums", () => {
+    // The implementation uses a pure regex match and does not validate that
+    // numDice > 0 or dieSize > 0. These are syntactically valid formulas.
+    expect(isValidDiceFormula("0d6")).toBe(true);
+    expect(isValidDiceFormula("1d0")).toBe(true);
   });
 });
 
@@ -293,6 +390,32 @@ describe("getMonsterStatsByCR", () => {
     expect(half?.hpMin).toBe(50);
     expect(half?.hpMax).toBe(70);
   });
+
+  it("returns a profile for the lowest boundary CR 0", () => {
+    const cr0 = getMonsterStatsByCR(0);
+    expect(cr0).not.toBeNull();
+    expect(cr0?.hpMin).toBe(1);
+    expect(cr0?.hpMax).toBe(6);
+    expect(cr0?.profBonus).toBe(2);
+  });
+
+  it("returns a profile for the highest boundary CR 30", () => {
+    const cr30 = getMonsterStatsByCR(30);
+    expect(cr30).not.toBeNull();
+    expect(cr30?.profBonus).toBe(9);
+    expect(cr30?.attackBonus).toBe(14);
+    expect(cr30?.saveDC).toBe(23);
+  });
+
+  it("returns the correct profile for CR 1/8", () => {
+    const cr1_8 = getMonsterStatsByCR(0.125);
+    expect(cr1_8).not.toBeNull();
+    expect(cr1_8?.hpMin).toBe(7);
+    expect(cr1_8?.hpMax).toBe(35);
+    expect(cr1_8?.dprMin).toBe(2);
+    expect(cr1_8?.dprMax).toBe(3);
+    expect(cr1_8?.profBonus).toBe(2);
+  });
 });
 
 describe("estimateDefensiveCR", () => {
@@ -339,6 +462,11 @@ describe("estimateMonsterCR", () => {
     // Average 1.5 is equidistant between CR 1 and CR 2, so it rounds up.
     expect(estimateMonsterCR(1, 2)).toBe(2);
   });
+
+  it("returns the same CR when defensive and offensive are equal", () => {
+    // Average of 5 and 5 is exactly 5 — no rounding needed.
+    expect(estimateMonsterCR(5, 5)).toBe(5);
+  });
 });
 
 
@@ -373,6 +501,16 @@ describe("calculateXPThresholds", () => {
   it("clamps levels to the [1, 20] table range", () => {
     const t = calculateXPThresholds([0, 25]);
     expect(t).toEqual({ easy: 2825, medium: 5750, hard: 8575, deadly: 12800 });
+  });
+
+  it("returns the correct thresholds for a single level-1 character", () => {
+    const t = calculateXPThresholds([1]);
+    expect(t).toEqual({ easy: 25, medium: 50, hard: 75, deadly: 100 });
+  });
+
+  it("returns all zeros for an empty party", () => {
+    const t = calculateXPThresholds([]);
+    expect(t).toEqual({ easy: 0, medium: 0, hard: 0, deadly: 0 });
   });
 });
 
