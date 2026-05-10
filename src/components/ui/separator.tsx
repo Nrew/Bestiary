@@ -44,32 +44,31 @@ export interface SeparatorProps
   extends Omit<React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>, 'orientation'>,
     VariantProps<typeof separatorVariants> {
   decorative?: boolean;
+  ref?: React.Ref<React.ComponentRef<typeof SeparatorPrimitive.Root>>;
 }
 
-const Separator = React.forwardRef<
-  React.ComponentRef<typeof SeparatorPrimitive.Root>,
-  SeparatorProps
->(({
+function Separator({
   className,
   orientation = "horizontal",
   variant,
   size,
   spacing,
   decorative = true,
+  ref,
   ...props
-}, ref) => (
-  <SeparatorPrimitive.Root
-    ref={ref}
-    decorative={decorative}
-    orientation={orientation ?? undefined}
-    className={cn(
-      separatorVariants({ orientation, variant, size, spacing }),
-      className
-    )}
-    {...props}
-  />
-));
-
-Separator.displayName = SeparatorPrimitive.Root.displayName;
+}: SeparatorProps) {
+  return (
+    <SeparatorPrimitive.Root
+      ref={ref}
+      decorative={decorative}
+      orientation={orientation ?? undefined}
+      className={cn(
+        separatorVariants({ orientation, variant, size, spacing }),
+        className
+      )}
+      {...props}
+    />
+  );
+}
 
 export { Separator, separatorVariants };

@@ -50,34 +50,34 @@ export interface CheckboxProps
   indeterminate?: boolean;
   icon?: React.ComponentType<{ className?: string }>;
   indeterminateIcon?: React.ComponentType<{ className?: string }>;
+  ref?: React.Ref<React.ComponentRef<typeof CheckboxPrimitive.Root>>;
 }
 
-const Checkbox = React.forwardRef<
-  React.ComponentRef<typeof CheckboxPrimitive.Root>,
-  CheckboxProps
->(({
+function Checkbox({
   className,
   variant,
   size,
   indeterminate,
   icon: Icon = Check,
   indeterminateIcon: IndeterminateIcon = Minus,
+  ref,
   ...props
-}, ref) => (
-  <CheckboxPrimitive.Root
-    ref={ref}
-    className={cn(checkboxVariants({ variant, size }), className)}
-    {...props}
-    checked={indeterminate ? "indeterminate" : props.checked}
-  >
-    <CheckboxPrimitive.Indicator
-      className={cn(checkboxIndicatorVariants({ size }))}
+}: CheckboxProps) {
+  return (
+    <CheckboxPrimitive.Root
+      ref={ref}
+      className={cn(checkboxVariants({ variant, size }), className)}
+      {...props}
+      checked={indeterminate ? "indeterminate" : props.checked}
     >
-      {indeterminate ? <IndeterminateIcon /> : <Icon />}
-    </CheckboxPrimitive.Indicator>
-  </CheckboxPrimitive.Root>
-));
-Checkbox.displayName = CheckboxPrimitive.Root.displayName;
+      <CheckboxPrimitive.Indicator
+        className={cn(checkboxIndicatorVariants({ size }))}
+      >
+        {indeterminate ? <IndeterminateIcon /> : <Icon />}
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
+  );
+}
 
 export {
   Checkbox,

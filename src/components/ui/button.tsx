@@ -39,6 +39,7 @@ export interface ButtonProps
    * disabled button remains disabled regardless of loading state.
    */
   loading?: boolean;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
 const LoadingSpinner = () => (
@@ -65,56 +66,50 @@ const LoadingSpinner = () => (
   </svg>
 );
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      className,
-      variant,
-      size,
-      asChild = false,
-      type = "button",
-      loading = false,
-      disabled,
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    const Comp = asChild ? Slot : "button";
-    const isDisabled = disabled || loading;
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  type = "button",
+  loading = false,
+  disabled,
+  children,
+  ref,
+  ...props
+}: ButtonProps) {
+  const Comp = asChild ? Slot : "button";
+  const isDisabled = disabled || loading;
 
-    // Slot requires exactly one child element, so when `asChild` is true we
-    // don't inject a spinner sibling. Consumers using asChild can render their
-    // own loading UI; we still forward aria-busy / disabled semantics.
-    const content = asChild ? (
-      children
-    ) : (
-      <>
-        {loading && <LoadingSpinner />}
-        {children}
-      </>
-    );
+  // Slot requires exactly one child element, so when `asChild` is true we
+  // don't inject a spinner sibling. Consumers using asChild can render their
+  // own loading UI; we still forward aria-busy / disabled semantics.
+  const content = asChild ? (
+    children
+  ) : (
+    <>
+      {loading && <LoadingSpinner />}
+      {children}
+    </>
+  );
 
-    return (
-      <Comp
-        className={cn(
-          buttonVariants({ variant, size }),
-          loading && "cursor-wait",
-          className
-        )}
-        ref={ref}
-        type={asChild ? undefined : type}
-        disabled={isDisabled}
-        aria-busy={loading || undefined}
-        aria-disabled={isDisabled || undefined}
-        {...props}
-      >
-        {content}
-      </Comp>
-    );
-  }
-);
-
-Button.displayName = "Button";
+  return (
+    <Comp
+      className={cn(
+        buttonVariants({ variant, size }),
+        loading && "cursor-wait",
+        className
+      )}
+      ref={ref}
+      type={asChild ? undefined : type}
+      disabled={isDisabled}
+      aria-busy={loading || undefined}
+      aria-disabled={isDisabled || undefined}
+      {...props}
+    >
+      {content}
+    </Comp>
+  );
+}
 
 export { Button, buttonVariants };

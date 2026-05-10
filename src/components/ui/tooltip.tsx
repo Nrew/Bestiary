@@ -38,36 +38,37 @@ const tooltipContentVariants = cva(
 
 export interface TooltipContentProps
   extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>,
-    VariantProps<typeof tooltipContentVariants> {}
+    VariantProps<typeof tooltipContentVariants> {
+  ref?: React.Ref<React.ComponentRef<typeof TooltipPrimitive.Content>>;
+}
 
 const TooltipProvider = TooltipPrimitive.Provider;
 const Tooltip = TooltipPrimitive.Root;
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
-const TooltipContent = React.forwardRef<
-  React.ComponentRef<typeof TooltipPrimitive.Content>,
-  TooltipContentProps
->(({
+function TooltipContent({
   className,
   variant,
   size,
   rounded,
   sideOffset = 4,
+  ref,
   ...props
-}, ref) => (
-  <TooltipPrimitive.Portal>
-    <TooltipPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(
-        tooltipContentVariants({ variant, size, rounded }),
-        className
-      )}
-      {...props}
-    />
-  </TooltipPrimitive.Portal>
-));
-TooltipContent.displayName = TooltipPrimitive.Content.displayName;
+}: TooltipContentProps) {
+  return (
+    <TooltipPrimitive.Portal>
+      <TooltipPrimitive.Content
+        ref={ref}
+        sideOffset={sideOffset}
+        className={cn(
+          tooltipContentVariants({ variant, size, rounded }),
+          className
+        )}
+        {...props}
+      />
+    </TooltipPrimitive.Portal>
+  );
+}
 
 // Root `TooltipProvider` lives in `main.tsx`; `delayDuration` is forwarded per-tooltip.
 interface SimpleTooltipProps {

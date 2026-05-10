@@ -306,14 +306,6 @@
    UTILITY CLASSES
    ============================================================================ */
 
-/* Shared glass effect base - DRY principle */
-@utility glass-base {
-  position: relative;
-  backdrop-filter: blur(12px) saturate(1.2);
-  border: 1px solid var(--color-border-30);
-  contain: layout style paint;
-}
-
 @utility glass-backdrop {
   backdrop-filter: blur(12px) saturate(1.2);
 }
@@ -450,7 +442,6 @@
   }
 }
 
-/* Consolidated glass utilities - extending glass-base */
 @utility glass-panel {
   position: relative;
   background: linear-gradient(135deg, var(--color-card-90) 0%, var(--color-card-70) 100%);
@@ -473,19 +464,6 @@
   contain: layout style paint;
 }
 
-@utility glass-header {
-  position: relative;
-  background: linear-gradient(90deg,
-    var(--color-secondary-95) 0%,
-    var(--color-card-90) 50%,
-    var(--color-secondary-95) 100%
-  );
-  backdrop-filter: blur(12px) saturate(1.2);
-  border: 1px solid var(--color-border-30);
-  border-bottom: 3px solid var(--color-rune-60);
-  box-shadow: 0 2px 16px var(--color-ink-10), inset 0 -1px 0 var(--color-rune-40);
-  contain: layout style paint;
-}
 
 @utility codex-border {
   position: relative;
@@ -1110,11 +1088,6 @@
     font-size: 0.875rem;
   }
 
-  .glass-header {
-    padding-inline: var(--spacing-sidebar-padding);
-    height: var(--spacing-header-height-mobile);
-  }
-
   .prose-medieval {
     font-size: 0.875rem;
     line-height: 1.5;
@@ -1177,8 +1150,7 @@
   }
 
   .glass-panel,
-  .glass-sidebar,
-  .glass-header {
+  .glass-sidebar {
     background-color: white;
     border-color: #d1d5db;
     backdrop-filter: none;

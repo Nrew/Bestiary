@@ -31,28 +31,34 @@ const inputVariants = cva(
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement>,
-    VariantProps<typeof inputVariants> {}
+    VariantProps<typeof inputVariants> {
+  ref?: React.Ref<HTMLInputElement>;
+}
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, variant, type, autoComplete = "off", ...props }, ref) => {
-    return (
-      <input
-        type={type}
-        autoComplete={autoComplete}
-        className={cn(
-          inputVariants({ variant }),
-          // Automatically reflect aria-invalid into the visual error state
-          // so React Hook Form (or any consumer setting aria-invalid="true")
-          // activates the destructive styling without needing an explicit variant.
-          "aria-invalid:border-destructive aria-invalid:focus-visible:ring-destructive",
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
-Input.displayName = "Input";
+function Input({
+  className,
+  variant,
+  type,
+  autoComplete = "off",
+  ref,
+  ...props
+}: InputProps) {
+  return (
+    <input
+      type={type}
+      autoComplete={autoComplete}
+      className={cn(
+        inputVariants({ variant }),
+        // Automatically reflect aria-invalid into the visual error state
+        // so React Hook Form (or any consumer setting aria-invalid="true")
+        // activates the destructive styling without needing an explicit variant.
+        "aria-invalid:border-destructive aria-invalid:focus-visible:ring-destructive",
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  );
+}
 
 export { Input, inputVariants };

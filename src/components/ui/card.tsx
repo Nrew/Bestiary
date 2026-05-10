@@ -67,81 +67,76 @@ const useCardContext = () => React.useContext(CardContext);
 
 export interface CardProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof cardVariants> {}
+    VariantProps<typeof cardVariants> {
+  ref?: React.Ref<HTMLDivElement>;
+}
 
-const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant = "default", size = "default", ...props }, ref) => (
+function Card({
+  className,
+  variant = "default",
+  size = "default",
+  ref,
+  ...props
+}: CardProps) {
+  return (
     <CardContext.Provider value={{ size, variant }}>
       <div ref={ref} className={cn(cardVariants({ variant, size, className }))} {...props} />
     </CardContext.Provider>
-  )
-);
-Card.displayName = "Card";
+  );
+}
 
 // Each accepts an optional explicit `size` that overrides the context value,
 // so a child can be rendered with a different size when needed.
 
 interface CardChildProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: CardSize;
+  ref?: React.Ref<HTMLDivElement>;
 }
 
-const CardHeader = React.forwardRef<HTMLDivElement, CardChildProps>(
-  ({ className, size, ...props }, ref) => {
-    const ctx = useCardContext();
-    return (
-      <div ref={ref} className={cn(cardHeaderVariants({ size: size ?? ctx.size }), className)} {...props} />
-    );
-  }
-);
-CardHeader.displayName = "CardHeader";
+function CardHeader({ className, size, ref, ...props }: CardChildProps) {
+  const ctx = useCardContext();
+  return (
+    <div ref={ref} className={cn(cardHeaderVariants({ size: size ?? ctx.size }), className)} {...props} />
+  );
+}
 
 interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
   size?: CardSize;
+  ref?: React.Ref<HTMLParagraphElement>;
 }
 
-const CardTitle = React.forwardRef<HTMLParagraphElement, CardTitleProps>(
-  ({ className, size, ...props }, ref) => {
-    const ctx = useCardContext();
-    return (
-      <h3 ref={ref} className={cn(cardTitleVariants({ size: size ?? ctx.size }), className)} {...props} />
-    );
-  }
-);
-CardTitle.displayName = "CardTitle";
+function CardTitle({ className, size, ref, ...props }: CardTitleProps) {
+  const ctx = useCardContext();
+  return (
+    <h3 ref={ref} className={cn(cardTitleVariants({ size: size ?? ctx.size }), className)} {...props} />
+  );
+}
 
 interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
   size?: CardSize;
+  ref?: React.Ref<HTMLParagraphElement>;
 }
 
-const CardDescription = React.forwardRef<HTMLParagraphElement, CardDescriptionProps>(
-  ({ className, size, ...props }, ref) => {
-    const ctx = useCardContext();
-    return (
-      <p ref={ref} className={cn(cardDescriptionVariants({ size: size ?? ctx.size }), className)} {...props} />
-    );
-  }
-);
-CardDescription.displayName = "CardDescription";
+function CardDescription({ className, size, ref, ...props }: CardDescriptionProps) {
+  const ctx = useCardContext();
+  return (
+    <p ref={ref} className={cn(cardDescriptionVariants({ size: size ?? ctx.size }), className)} {...props} />
+  );
+}
 
-const CardContent = React.forwardRef<HTMLDivElement, CardChildProps>(
-  ({ className, size, ...props }, ref) => {
-    const ctx = useCardContext();
-    return (
-      <div ref={ref} className={cn(cardContentVariants({ size: size ?? ctx.size }), className)} {...props} />
-    );
-  }
-);
-CardContent.displayName = "CardContent";
+function CardContent({ className, size, ref, ...props }: CardChildProps) {
+  const ctx = useCardContext();
+  return (
+    <div ref={ref} className={cn(cardContentVariants({ size: size ?? ctx.size }), className)} {...props} />
+  );
+}
 
-const CardFooter = React.forwardRef<HTMLDivElement, CardChildProps>(
-  ({ className, size, ...props }, ref) => {
-    const ctx = useCardContext();
-    return (
-      <div ref={ref} className={cn(cardFooterVariants({ size: size ?? ctx.size }), className)} {...props} />
-    );
-  }
-);
-CardFooter.displayName = "CardFooter";
+function CardFooter({ className, size, ref, ...props }: CardChildProps) {
+  const ctx = useCardContext();
+  return (
+    <div ref={ref} className={cn(cardFooterVariants({ size: size ?? ctx.size }), className)} {...props} />
+  );
+}
 
 export {
   Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent,

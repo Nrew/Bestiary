@@ -25,24 +25,30 @@ const textareaVariants = cva(
 
 export interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement>,
-    VariantProps<typeof textareaVariants> {}
+    VariantProps<typeof textareaVariants> {
+  ref?: React.Ref<HTMLTextAreaElement>;
+}
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, variant, size, "aria-invalid": ariaInvalid, ...props }, ref) => {
-    return (
-      <textarea
-        className={cn(
-          textareaVariants({ variant, size }),
-          "aria-invalid:border-destructive aria-invalid:focus-visible:ring-destructive",
-          className
-        )}
-        aria-invalid={ariaInvalid}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
-Textarea.displayName = "Textarea";
+function Textarea({
+  className,
+  variant,
+  size,
+  "aria-invalid": ariaInvalid,
+  ref,
+  ...props
+}: TextareaProps) {
+  return (
+    <textarea
+      className={cn(
+        textareaVariants({ variant, size }),
+        "aria-invalid:border-destructive aria-invalid:focus-visible:ring-destructive",
+        className
+      )}
+      aria-invalid={ariaInvalid}
+      ref={ref}
+      {...props}
+    />
+  );
+}
 
 export { Textarea, textareaVariants };
