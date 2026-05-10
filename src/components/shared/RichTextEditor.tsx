@@ -31,8 +31,6 @@ import { Separator } from "@/components/ui/separator";
 import { getLogger } from "@/lib/logger";
 import { sanitizeHtml } from "@/lib/sanitize";
 
-export { sanitizeHtml } from "@/lib/sanitize";
-
 const log = getLogger("RichTextEditor");
 
 interface EditorErrorBoundaryState {
@@ -167,6 +165,7 @@ interface RichTextEditorProps {
   editable?: boolean;
   placeholder?: string;
   id?: string;
+  ariaLabel?: string;
   ariaDescribedBy?: string;
   ariaLabelledBy?: string;
   ariaInvalid?: boolean;
@@ -178,6 +177,7 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
   onChange,
   editable = true,
   id,
+  ariaLabel,
   ariaDescribedBy,
   ariaLabelledBy,
   ariaInvalid,
@@ -208,8 +208,13 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
     callbacksRef.current = { showTooltip, toastError: toast.error };
   }, [showTooltip, toast.error]);
 
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+
   const nameLookupRef = useRef(nameLookup);
   useEffect(() => { nameLookupRef.current = nameLookup; }, [nameLookup]);
+
+  const pendingContentRef = useRef<string | null>(null);
 
   const [suggestion, setSuggestion] = useState<{
     query: string;
@@ -265,21 +270,27 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
     []
   );
 
+  const SUGGESTION_LISTBOX_ID = "wiki-link-suggestions";
+
   const editorAttributes = useMemo(() => {
     const attributes: Record<string, string> = {
       role: "textbox",
       "aria-multiline": "true",
+      "aria-haspopup": "listbox",
+      "aria-expanded": suggestion ? "true" : "false",
+      "aria-controls": SUGGESTION_LISTBOX_ID,
       class: cn(
         "prose dark:prose-invert max-w-none focus:outline-none p-4 min-h-[150px] font-serif",
         editable ? "is-editable" : "viewer-prose"
       ),
     };
     if (id) attributes.id = id;
+    if (ariaLabel) attributes["aria-label"] = ariaLabel;
     if (ariaDescribedBy) attributes["aria-describedby"] = ariaDescribedBy;
     if (ariaLabelledBy) attributes["aria-labelledby"] = ariaLabelledBy;
     if (ariaInvalid) attributes["aria-invalid"] = "true";
     return attributes;
-  }, [ariaDescribedBy, ariaInvalid, ariaLabelledBy, editable, id]);
+  }, [ariaDescribedBy, ariaInvalid, ariaLabel, ariaLabelledBy, editable, id, suggestion]);
 
   const editor = useEditor({
     extensions,
@@ -290,7 +301,16 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
         return;
       }
       const html = editor.getHTML();
-      onChange(sanitizeHtml(html));
+      onChangeRef.current(sanitizeHtml(html));
+    },
+    onBlur: ({ editor }) => {
+      if (pendingContentRef.current === null) return;
+      const pending = pendingContentRef.current;
+      pendingContentRef.current = null;
+      const currentHtml = editor.getHTML();
+      if (currentHtml !== pending) {
+        editor.commands.setContent(pending);
+      }
     },
     // Toolbar reacts via useEditorState; omit full re-renders on selection-only transactions.
     shouldRerenderOnTransaction: false,
@@ -317,7 +337,10 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
     // tags, attribute order), which would otherwise blow away the user's
     // cursor position on every keystroke as the parent re-sends sanitized
     // content via onChange.
-    if (editor.isFocused) return;
+    if (editor.isFocused) {
+      pendingContentRef.current = sanitizedContent;
+      return;
+    }
     const currentHtml = editor.getHTML();
     if (currentHtml !== sanitizedContent) {
       editor.commands.setContent(sanitizedContent);
@@ -387,6 +410,7 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
       <EditorContent editor={editor} />
       {suggestion && editable && suggestionItems.length > 0 && (
         <div
+          id={SUGGESTION_LISTBOX_ID}
           className="fixed z-100 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-64 overflow-y-auto min-w-52"
           style={{ top: suggestion.coords.top + 4, left: suggestion.coords.left }}
           role="listbox"

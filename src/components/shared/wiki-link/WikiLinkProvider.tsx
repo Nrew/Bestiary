@@ -69,7 +69,10 @@ export const WikiLinkProvider: React.FC<{ children: React.ReactNode }> = ({
     const key = `${type}:${id}`;
     let p = entryCacheRef.current.get(key);
     if (!p) {
-      p = CONTEXT_REGISTRY[type].api.getDetails(id);
+      p = CONTEXT_REGISTRY[type].api.getDetails(id).catch((err) => {
+        entryCacheRef.current.delete(key);
+        throw err;
+      });
       entryCacheRef.current.set(key, p);
     }
     return p;

@@ -7,16 +7,17 @@ export const EmptyState: React.FC = () => {
     <div className="flex h-full flex-1 items-center justify-center p-8">
       <div className="text-center font-serif max-w-4xl flex flex-col items-center gap-8 animate-fade-in">
         <div className="relative w-40 h-40">
-          <div className="absolute inset-0 bg-linear-to-br from-rune/20 via-leather/15 to-rune/20 rounded-3xl blur-lg animate-glow"></div>
-          <div className="relative w-full h-full glass-panel rounded-3xl flex items-center justify-center shadow-2xl border-4 border-rune/60">
+          <div className="absolute inset-0 bg-linear-to-br from-rune/20 via-leather/15 to-rune/20 rounded-3xl animate-glow"></div>
+          <div className="relative w-full h-full rounded-3xl flex items-center justify-center shadow-2xl border-4 border-rune/60 bg-card/90">
             <BookOpen className="w-16 h-16 text-leather relative z-10 animate-bounce-gentle" />
           </div>
         </div>
 
         <div className="space-y-6">
-          <div className="flex items-center justify-center gap-4">
-            <IlluminatedLetter letter="B" />
-            <div className="text-left">
+          <div className="flex items-center justify-center gap-4" aria-label="Bestiary">
+            <span className="sr-only">Bestiary</span>
+            <IlluminatedLetter letter="B" aria-hidden="true" />
+            <div className="text-left" aria-hidden="true">
               <h2 className="text-5xl font-bold font-display text-leather tracking-wide">
                 estiary
               </h2>

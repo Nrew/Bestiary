@@ -35,6 +35,10 @@ const ManagedImageComponent: React.FC<ManagedImageProps> = ({
   const [loadError, setLoadError] = React.useState(false);
 
   React.useEffect(() => {
+    setLoadError(false);
+  }, [url]);
+
+  React.useEffect(() => {
     const image = imageRef.current;
     if (!image || !url) return;
     const handleError = () => setLoadError(true);

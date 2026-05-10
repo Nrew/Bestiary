@@ -39,11 +39,10 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
 
   const handleKeyDown = React.useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") handlePrev();
-      if (e.key === "ArrowRight") handleNext();
+      if (e.key === "ArrowLeft") { e.preventDefault(); handlePrev(); }
+      if (e.key === "ArrowRight") { e.preventDefault(); handleNext(); }
     },
-    [onClose, handlePrev, handleNext]
+    [handlePrev, handleNext]
   );
 
   React.useEffect(() => {
