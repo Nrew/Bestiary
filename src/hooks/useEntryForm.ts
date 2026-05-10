@@ -47,8 +47,8 @@ export function useEntryFormManager({
   // Track the latest `entry` prop so async dialog callbacks don't operate on a
   // stale closure value. Also track mount state so we don't call setState on an
   // unmounted component if the user confirms the dialog after navigating away.
-  const latestEntryRef = useRef(entry);
-  latestEntryRef.current = entry;
+  const modeRef = useRef<"view" | "edit">("view");
+  const isDirtyRef = useRef(false);
   const isMountedRef = useRef(true);
   useEffect(() => {
     isMountedRef.current = true;
@@ -57,7 +57,24 @@ export function useEntryFormManager({
     };
   }, []);
 
-  const { isSubmitting, isDirty } = form.formState;
+  useEffect(() => {
+    return form.subscribe({
+      formState: {
+        isDirty: true,
+      },
+      callback: ({ isDirty }) => {
+        if (typeof isDirty === "boolean") {
+          isDirtyRef.current = isDirty;
+        }
+        setHasUnsavedChanges(modeRef.current === "edit" && isDirtyRef.current);
+      },
+    });
+  }, [form, setHasUnsavedChanges]);
+
+  useEffect(() => {
+    modeRef.current = mode;
+    if (mode !== "edit") setHasUnsavedChanges(false);
+  }, [mode, setHasUnsavedChanges]);
 
 
   const handleModeChange = useCallback((newMode: "view" | "edit") => {
@@ -72,7 +89,7 @@ export function useEntryFormManager({
    * Returns true if cancelled, false if user chose to stay.
    */
   const confirmCancelEdit = useCallback(async (): Promise<boolean> => {
-    if (isDirty) {
+    if (isDirtyRef.current) {
       const confirmed = await confirm({
         title: "Discard Changes?",
         description: "You have unsaved changes. Are you sure you want to discard them?",
@@ -83,9 +100,11 @@ export function useEntryFormManager({
       if (!confirmed) return false;
     }
     form.reset(entry);
+    isDirtyRef.current = false;
+    setHasUnsavedChanges(false);
     handleModeChange("view");
     return true;
-  }, [isDirty, form, entry, handleModeChange, confirm]);
+  }, [form, entry, setHasUnsavedChanges, handleModeChange, confirm]);
 
   useEffect(() => {
     const entryChanged = prevEntryIdRef.current !== entry.id;
@@ -98,7 +117,7 @@ export function useEntryFormManager({
     const shouldReset =
       entryChanged ||
       editOnSelect ||
-      (!isDirty && entry !== prevEntryRef.current);
+      (!isDirtyRef.current && entry !== prevEntryRef.current);
 
     prevEntryRef.current = entry;
 
@@ -107,20 +126,19 @@ export function useEntryFormManager({
     }
 
     // If user has unsaved changes and entry changed, warn them
-    if (isDirty && entryChanged && mode === "edit") {
-      // Concurrent external update while the form is dirty
+    if (isDirtyRef.current && entryChanged && mode === "edit") {
+      const targetEntry = entry;
       void confirm({
         title: "Entry Changed",
         description: "The entry has changed externally. Your unsaved edits will be lost. Continue?",
         confirmLabel: "Continue",
         destructive: true,
       }).then((confirmed) => {
-        // Guard every async state update: the component may have unmounted or the
-        // entry may have changed again while the dialog was open.
         if (!isMountedRef.current) return;
         if (!confirmed) return;
-        const latestEntry = latestEntryRef.current;
-        form.reset(latestEntry);
+        form.reset(targetEntry);
+        isDirtyRef.current = false;
+        setHasUnsavedChanges(false);
         if (editOnSelect) { setMode("edit"); clearEditOnSelect(); }
         else { setMode("view"); }
         setAnimationKey((k) => k + 1);
@@ -129,6 +147,8 @@ export function useEntryFormManager({
     }
 
     form.reset(entry);
+    isDirtyRef.current = false;
+    setHasUnsavedChanges(false);
 
     if (editOnSelect) {
       setMode("edit");
@@ -140,12 +160,7 @@ export function useEntryFormManager({
       setMode("view");
       setAnimationKey((k) => k + 1);
     }
-  }, [entry, form, editOnSelect, clearEditOnSelect, isDirty, mode, confirm]);
-
-
-  useEffect(() => {
-    setHasUnsavedChanges(mode === "edit" && isDirty);
-  }, [isDirty, mode, setHasUnsavedChanges]);
+  }, [entry, form, editOnSelect, clearEditOnSelect, mode, confirm, setHasUnsavedChanges]);
 
   useEffect(() => {
     return () => setHasUnsavedChanges(false);
@@ -156,7 +171,7 @@ export function useEntryFormManager({
     if (mode !== "edit") return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!isDirty) return;
+      if (!isDirtyRef.current) return;
 
       e.preventDefault();
       e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
@@ -164,7 +179,7 @@ export function useEntryFormManager({
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [mode, isDirty]);
+  }, [mode]);
 
 
   const saveShortcutOptions = useMemo(
@@ -180,10 +195,10 @@ export function useEntryFormManager({
   useKeyboardShortcut(
     APP_SHORTCUTS.SAVE,
     useCallback(() => {
-      if (mode === "edit" && isDirty && !isSubmitting) {
+      if (mode === "edit" && isDirtyRef.current && !form.formState.isSubmitting) {
         formRef.current?.requestSubmit();
       }
-    }, [mode, isDirty, isSubmitting, formRef]),
+    }, [mode, form, formRef]),
     saveShortcutOptions
   );
 

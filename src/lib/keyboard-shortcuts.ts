@@ -154,19 +154,24 @@ export function useKeyboardShortcut(
     idRef.current = `shortcut-${key}-${Math.random().toString(36).slice(2)}`;
   }
 
+  const handlerRef = useRef(handler);
+  useEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
+
   useEffect(() => {
     const id = idRef.current;
     if (!id) return undefined;
     const unregister = keyboardManager.register(id, {
       key,
-      handler,
+      handler: (e) => handlerRef.current(e),
       description,
       preventDefault,
       scope,
       enabled,
     });
     return unregister;
-  }, [key, handler, description, preventDefault, scope, enabled]);
+  }, [key, description, preventDefault, scope, enabled]);
 }
 
 export function useKeyboardShortcuts(
@@ -194,8 +199,13 @@ export const APP_SHORTCUTS = {
   ESCAPE: 'escape',
 } as const;
 
+interface NavigatorUAData {
+  platform: string;
+}
+
 export function formatShortcutKey(key: string): string {
-  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const uaData = (navigator as Navigator & { userAgentData?: NavigatorUAData }).userAgentData;
+  const isMac = (uaData?.platform ?? navigator.platform).toUpperCase().indexOf('MAC') >= 0;
 
   return key
     .replace(/ctrl\+/gi, isMac ? '⌃' : 'Ctrl+')
