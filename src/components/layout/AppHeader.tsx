@@ -57,7 +57,7 @@ export const AppHeader: React.FC<{ onTocOpen: () => void }> = ({ onTocOpen }) =>
           </div>
         </div>
 
-        <Button onClick={onTocOpen} className="btn-codex gap-2">
+        <Button onClick={onTocOpen} variant="codex" className="gap-2">
           <BookOpen className="w-4 h-4" />
           Contents
         </Button>
@@ -82,7 +82,8 @@ export const AppHeader: React.FC<{ onTocOpen: () => void }> = ({ onTocOpen }) =>
         </React.Suspense>
         <Button
           onClick={handleCreate}
-          className="btn-codex-primary gap-2 px-4 sm:px-6"
+          variant="codex-primary"
+          className="gap-2 px-4 sm:px-6"
           title={`Create new entry (${formatShortcutKey(APP_SHORTCUTS.NEW)})`}
         >
           <PlusCircle className="w-4 h-4" />

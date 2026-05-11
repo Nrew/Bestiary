@@ -14,6 +14,14 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        codex:
+          "relative border border-border bg-card/90 text-foreground backdrop-blur-sm font-serif tracking-wide rounded-sm shadow-[0_1px_3px_var(--color-ink-10)] transition-all duration-[250ms] ease-medieval contrast-more:border-[3px]",
+        "codex-primary":
+          "relative border-2 border-leather bg-linear-135 from-leather to-leather/85 text-parchment font-display font-semibold tracking-wider shadow-[0_2px_8px_oklch(18%_0.01_45/0.25),inset_0_1px_0_oklch(94%_0.02_75/0.2)] transition-all duration-[250ms] ease-medieval hover:from-leather-lifted hover:to-leather-lifted/78 contrast-more:border-[3px]",
+        medieval:
+          "relative border-2 border-leather/60 bg-linear-135 from-rune to-rune/90 text-foreground font-serif font-semibold tracking-wide rounded-sm shadow-[0_2px_4px_var(--color-ink-20),inset_0_1px_0_oklch(94%_0.02_75/0.4)] transition-all duration-300 ease-medieval hover:text-parchment hover:from-leather hover:to-leather/90 motion-safe:hover:-translate-y-0.5 motion-safe:lg:hover:-translate-y-1 motion-safe:lg:hover:scale-105 hover:shadow-[0_4px_12px_var(--color-ink-30),inset_0_1px_0_var(--color-parchment-60)] active:translate-y-0 active:shadow-[0_2px_4px_var(--color-ink-20)] focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:shadow-[0_0_0_2px_var(--color-rune),0_0_0_4px_var(--color-rune-20)] print:bg-gray-200 print:text-black print:border-gray-400 print:shadow-none contrast-more:border-[3px]",
+        save:
+          "border border-brass bg-wine text-primary-foreground font-serif font-semibold tracking-wide rounded-sm transition-[background-color,border-color,transform] duration-[120ms] ease-[ease] hover:bg-[oklch(36%_0.14_20)] hover:border-[oklch(76%_0.12_70)] active:scale-[0.97] active:bg-[oklch(28%_0.14_20)] focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:shadow-[0_0_0_2px_var(--color-wine),0_0_0_4px_oklch(72%_0.12_70/0.25)]",
       },
       size: {
         default: "h-10 px-4 py-2",
@@ -22,6 +30,9 @@ const buttonVariants = cva(
         icon: "h-10 w-10",
       },
     },
+    compoundVariants: [
+      { variant: "codex-primary", size: "default", class: "h-auto px-5 py-2.5" },
+    ],
     defaultVariants: {
       variant: "default",
       size: "default",

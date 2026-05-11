@@ -66,6 +66,7 @@
   /* Medieval Color Palette - oklch for v4 */
   --color-parchment: oklch(94% 0.02 75);
   --color-leather: oklch(38% 0.08 45);
+  --color-leather-lifted: oklch(42% 0.08 45);
   --color-stone: oklch(45% 0.03 240);
   --color-rune: oklch(78% 0.14 85);
   --color-ink: oklch(18% 0.01 45);
@@ -164,7 +165,6 @@
   --animate-mode-switch: mode-switch-in 0.15s var(--ease-medieval) forwards;
   --animate-content-fade: content-fade-in 0.12s var(--ease-medieval) forwards;
   --animate-form-slide: form-slide-in 0.18s var(--ease-medieval) forwards;
-  --animate-skeleton: skeleton-shimmer 1.5s ease-in-out infinite;
   --animate-glow-rune: glowRune 2s ease-in-out infinite alternate;
   --animate-glow-pulse: glowPulse 2.4s ease-in-out infinite;
   --animate-bounce-gentle: bounceGentle 2.8s ease-in-out infinite;
@@ -306,26 +306,6 @@
    UTILITY CLASSES
    ============================================================================ */
 
-@utility glass-backdrop {
-  backdrop-filter: blur(12px) saturate(1.2);
-}
-
-@utility transition-smooth {
-  transition: all 0.3s var(--ease-medieval);
-}
-
-/* Focus utilities */
-@utility focus-ring {
-  outline: 2px solid var(--color-ring);
-  outline-offset: 2px;
-}
-
-@utility focus-ring-inset {
-  outline: 2px solid var(--color-ring);
-  outline-offset: -2px;
-}
-
-/* Animation utilities */
 /* Layout wrappers */
 @utility codex-page {
   max-width: 80rem;
@@ -392,35 +372,6 @@
   animation: var(--animate-loot-result);
 }
 
-@utility skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--color-muted) 0%,
-    var(--color-secondary) 50%,
-    var(--color-muted) 100%
-  );
-  background-size: 200% 100%;
-  animation: var(--animate-skeleton);
-}
-
-/* Shadow utilities */
-@utility medieval-shadow {
-  box-shadow: var(--shadow-medieval);
-}
-
-@utility medieval-shadow-lg {
-  box-shadow: var(--shadow-glass);
-}
-
-/* Border utilities */
-@utility rune-border {
-  border: 2px solid var(--color-rune-60);
-}
-
-@utility rune-gradient {
-  background: linear-gradient(135deg, var(--color-rune) 0%, oklch(78% 0.14 85 / 0.9) 100%);
-}
-
 /* Layout components - using CSS custom properties for constants */
 @utility codex-header {
   position: relative;
@@ -465,30 +416,6 @@
 }
 
 
-@utility codex-border {
-  position: relative;
-  border: 2px solid var(--color-rune-60);
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--color-card-95) 0%, var(--color-card-90) 100%);
-  box-shadow: 0 4px 16px var(--color-ink-10), inset 0 1px 0 var(--color-parchment-80);
-}
-
-@utility illuminated-initial {
-  font-family: var(--font-display);
-  font-size: 3.75rem;
-  line-height: 1;
-  float: left;
-  margin-right: 0.75rem;
-  margin-top: 0.25rem;
-  padding: 0.5rem;
-  border-radius: var(--radius-xs);
-  background: linear-gradient(135deg, var(--color-rune-15, oklch(78% 0.14 85 / 0.15)), var(--color-leather-10));
-  color: var(--color-leather);
-  text-shadow: 1px 1px 2px var(--color-ink-30), 0 0 8px var(--color-rune-40);
-  border: 2px solid var(--color-rune-40);
-  box-shadow: 0 2px 8px var(--color-ink-20), inset 0 1px 0 var(--color-parchment-60);
-}
-
 @utility stat-block {
   position: relative;
   overflow: hidden;
@@ -521,49 +448,6 @@
   box-shadow: 0 1px 2px var(--color-ink-10);
 }
 
-/* Button utilities */
-@utility btn-medieval {
-  position: relative;
-  font-family: var(--font-serif);
-  font-weight: 600;
-  letter-spacing: 0.025em;
-  transition: all 0.3s var(--ease-medieval);
-  border-radius: var(--radius-sm);
-  border: 2px solid var(--color-leather-60);
-  color: var(--color-ink);
-  background: linear-gradient(135deg, var(--color-rune) 0%, oklch(78% 0.14 85 / 0.9) 100%);
-  box-shadow: 0 2px 4px var(--color-ink-20), inset 0 1px 0 var(--color-parchment-40, oklch(94% 0.02 75 / 0.4));
-}
-
-@utility btn-codex {
-  position: relative;
-  font-family: var(--font-serif);
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  transition: all 0.25s var(--ease-medieval);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--color-border);
-  color: var(--color-ink);
-  background: var(--color-card-90);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 1px 3px var(--color-ink-10);
-}
-
-@utility btn-codex-primary {
-  position: relative;
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  transition: all 0.25s var(--ease-medieval);
-  border-radius: var(--radius-md);
-  padding: 0.625rem 1.25rem;
-  border: 2px solid var(--color-leather);
-  color: var(--color-parchment);
-  background: linear-gradient(135deg, var(--color-leather) 0%, oklch(38% 0.08 45 / 0.85) 100%);
-  box-shadow: 0 2px 8px oklch(18% 0.01 45 / 0.25), inset 0 1px 0 var(--color-parchment-20, oklch(94% 0.02 75 / 0.2));
-}
-
 @utility input-codex {
   font-family: var(--font-serif);
   border-radius: var(--radius-md);
@@ -572,18 +456,6 @@
   backdrop-filter: blur(8px);
   transition: all 0.25s var(--ease-medieval);
   box-shadow: inset 0 1px 3px var(--color-ink-05);
-}
-
-@utility sidebar-item {
-  position: relative;
-  transition: all 0.3s var(--ease-medieval);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  padding: 1rem;
-  margin-bottom: 0.5rem;
-  background-color: var(--color-card-80);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 8px var(--color-ink-05);
 }
 
 @utility search-medieval {
@@ -597,127 +469,10 @@
   box-shadow: inset 0 2px 4px var(--color-ink-05), 0 1px 2px var(--color-ink-10);
 }
 
-@utility prose-medieval {
-  font-size: 1rem;
-  line-height: 1.625;
-  max-width: none;
-  font-feature-settings: "liga" 1, "kern" 1, "onum" 1;
-}
-
-
 /* ============================================================================
    COMPONENT STYLES
    ============================================================================ */
 
-
-/* Codex border glow */
-.codex-border::before {
-  content: '';
-  position: absolute;
-  inset: -0.125rem;
-  border-radius: var(--radius-md);
-  pointer-events: none;
-  background: linear-gradient(45deg,
-    var(--color-rune-30, oklch(78% 0.14 85 / 0.3)),
-    var(--color-leather-30, oklch(38% 0.08 45 / 0.3)),
-    var(--color-rune-30, oklch(78% 0.14 85 / 0.3))
-  );
-  z-index: -1;
-  animation: var(--animate-border-glow);
-}
-
-/* Button states with nesting */
-.btn-medieval {
-  &:hover {
-    color: var(--color-parchment);
-    background: linear-gradient(135deg, var(--color-leather) 0%, oklch(38% 0.08 45 / 0.9) 100%);
-    transform: translateY(-0.125rem);
-    box-shadow: 0 4px 12px var(--color-ink-30), inset 0 1px 0 var(--color-parchment-60);
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px var(--color-ink-20);
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--color-rune), 0 0 0 4px var(--color-rune-20);
-  }
-}
-
-@utility btn-save {
-  font-family: var(--font-serif);
-  font-weight: 600;
-  letter-spacing: 0.025em;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-wine);
-  border: 1px solid var(--color-brass);
-  color: var(--color-primary-foreground);
-  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
-}
-
-.btn-save {
-  &:hover:not(:disabled) {
-    background-color: oklch(36% 0.14 20);
-    border-color: oklch(76% 0.12 70);
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.97);
-    background-color: oklch(28% 0.14 20);
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--color-wine), 0 0 0 4px var(--color-brass-20, oklch(72% 0.12 70 / 0.25));
-  }
-}
-
-/* Sidebar item states */
-.sidebar-item {
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 0.25rem;
-    background-color: transparent;
-    border-radius: 0 9999px 9999px 0;
-    transition: all 0.3s var(--ease-medieval);
-  }
-
-  &:hover {
-    background-color: var(--color-rune-10);
-    border-color: var(--color-rune-40);
-    transform: translateX(0.25rem);
-
-    &::before {
-      background: linear-gradient(180deg,
-        transparent 0%,
-        var(--color-rune) 30%,
-        var(--color-leather) 70%,
-        transparent 100%
-      );
-    }
-  }
-
-  &.active {
-    background-color: var(--color-leather-15);
-    border-color: var(--color-leather-60);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 4px 16px var(--color-leather-20), inset 0 1px 0 var(--color-parchment-60);
-
-    &::before {
-      background: linear-gradient(180deg,
-        var(--color-leather) 0%,
-        var(--color-rune) 50%,
-        var(--color-leather) 100%
-      );
-    }
-  }
-}
 
 /* Input states */
 .input-codex {
@@ -759,168 +514,6 @@
 .context-abilities { color: var(--color-ink); --context-color: var(--color-ink); }
 
 /* Prose typography with nesting */
-.prose-medieval {
-  p {
-    margin-bottom: 1rem;
-    text-align: justify;
-    hyphens: auto;
-
-    &:first-of-type {
-      margin-top: 0;
-
-      &::first-letter {
-        font-family: var(--font-display);
-        font-size: 3.75rem;
-        line-height: 1;
-        float: left;
-        margin-right: 0.75rem;
-        margin-top: 0.25rem;
-        padding: 0.5rem;
-        border-radius: var(--radius-xs);
-        background: linear-gradient(135deg, var(--color-rune-15, oklch(78% 0.14 85 / 0.15)), var(--color-leather-10));
-        color: var(--color-leather);
-        text-shadow: 1px 1px 2px var(--color-ink-30), 0 0 8px var(--color-rune-40);
-        border: 2px solid var(--color-rune-40);
-        box-shadow: 0 2px 8px var(--color-ink-20), inset 0 1px 0 var(--color-parchment-60);
-      }
-    }
-  }
-
-  strong {
-    font-weight: 600;
-    color: var(--color-leather);
-    text-shadow: 0 1px 2px var(--color-ink-10);
-  }
-
-  em {
-    font-style: italic;
-    font-weight: 500;
-    color: var(--color-stone);
-  }
-
-  :is(h1, h2, h3) {
-    font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: 0.025em;
-    color: var(--color-leather);
-    text-shadow: 1px 1px 2px var(--color-ink-20);
-  }
-
-  h1 {
-    font-size: 2.25rem;
-    margin-bottom: 1.5rem;
-    margin-top: 2rem;
-    border-bottom: 2px solid var(--color-rune);
-    padding-bottom: 0.75rem;
-    background: linear-gradient(90deg, var(--color-leather), var(--color-rune));
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    margin-top: 1.5rem;
-    border-bottom: 1px solid var(--color-rune-60);
-    padding-bottom: 0.5rem;
-    position: relative;
-
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 25%;
-      height: 0.125rem;
-      background: linear-gradient(90deg, var(--color-rune), var(--color-leather));
-      border-radius: 9999px;
-    }
-  }
-
-  h3 {
-    font-size: 1.25rem;
-    margin-bottom: 0.75rem;
-    margin-top: 1rem;
-
-    &::before {
-      content: '\00A7\0020';
-      margin-right: 0.5rem;
-      color: var(--color-rune);
-    }
-  }
-
-  blockquote {
-    border-left: 4px solid var(--color-rune);
-    padding: 1rem;
-    padding-left: 1.5rem;
-    margin-block: 1.5rem;
-    font-style: italic;
-    color: var(--color-stone);
-    position: relative;
-    border-radius: 0 var(--radius-md) var(--radius-md) 0;
-    background: linear-gradient(90deg, var(--color-rune-05, oklch(78% 0.14 85 / 0.05)) 0%, transparent 100%);
-    box-shadow: inset 2px 0 4px var(--color-rune-10);
-
-    &::before {
-      content: '\201C';
-      position: absolute;
-      top: -0.5rem;
-      left: -0.25rem;
-      font-size: 2.25rem;
-      color: var(--color-rune-40);
-      font-family: var(--font-display);
-    }
-  }
-
-  :is(ul, ol) {
-    margin-block: 1rem;
-    padding-left: 1.5rem;
-  }
-
-  li {
-    margin-bottom: 0.5rem;
-    position: relative;
-  }
-
-  ul li::before {
-    content: '\2766';
-    position: absolute;
-    left: -1.25rem;
-    color: var(--color-rune);
-    font-size: 0.875rem;
-    top: 0.125rem;
-  }
-
-  /* Table styling */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-block: 1.5rem;
-    border: 2px solid var(--color-rune-60);
-    border-radius: var(--radius-md);
-    background-color: var(--color-card);
-  }
-
-  th {
-    font-family: var(--font-display);
-    font-weight: 700;
-    color: var(--color-leather);
-    padding: 1rem;
-    border-bottom: 2px solid var(--color-rune-60);
-    background: linear-gradient(135deg, var(--color-rune-10), var(--color-leather-05, oklch(38% 0.08 45 / 0.05)));
-    text-shadow: 1px 1px 2px var(--color-ink-10);
-  }
-
-  td {
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--color-stone-30);
-  }
-
-  tr:nth-child(even) {
-    background: linear-gradient(90deg, var(--color-secondary-30) 0%, var(--color-secondary-10) 100%);
-  }
-}
 
 /* Wiki link styles */
 .wiki-link {
@@ -1083,58 +676,14 @@
     max-width: var(--spacing-sidebar-max-width);
   }
 
-  .sidebar-item {
-    padding: 0.75rem;
-    font-size: 0.875rem;
-  }
-
-  .prose-medieval {
-    font-size: 0.875rem;
-    line-height: 1.5;
-  }
-
-  .illuminated-initial {
-    font-size: 2.25rem;
-    margin-right: 0.5rem;
-    padding: 0.25rem;
-  }
-
   .stat-block {
     padding: 1rem;
   }
 }
 
 @media (min-width: 48rem) and (max-width: 63.9375rem) {
-  .prose-medieval {
-    font-size: 1rem;
-  }
-
   .glass-sidebar {
     max-width: var(--spacing-sidebar-max-width-md);
-  }
-}
-
-@media (min-width: 64rem) {
-  .prose-medieval {
-    font-size: 1.125rem;
-  }
-
-  .sidebar-item:hover {
-    transform: translateX(0.5rem);
-  }
-
-  .btn-medieval:hover {
-    transform: translateY(-0.25rem) scale(1.05);
-  }
-}
-
-@media (resolution >= 2dppx) {
-  .illuminated-initial {
-    text-shadow: 1px 1px 2px var(--color-ink-40, oklch(18% 0.01 45 / 0.4)), 0 0 8px var(--color-rune-60);
-  }
-
-  .prose-medieval h1 {
-    text-shadow: 2px 2px 4px var(--color-ink-30);
   }
 }
 
@@ -1157,22 +706,6 @@
     box-shadow: none;
   }
 
-  .prose-medieval {
-    color: black;
-
-    :is(h1, h2, h3) {
-      color: black;
-      background: none;
-      text-shadow: none;
-    }
-  }
-
-  .btn-medieval {
-    background-color: #e5e7eb;
-    color: black;
-    border-color: #9ca3af;
-    box-shadow: none;
-  }
 }
 
 /* ============================================================================
@@ -1188,23 +721,12 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-
-  .btn-medieval:hover,
-  .sidebar-item:hover {
-    transform: none !important;
-  }
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: more) {
   :root {
     --color-border: oklch(50% 0.02 240);
-  }
-
-  .btn-medieval,
-  .btn-codex,
-  .btn-codex-primary {
-    border-width: 3px;
   }
 
   .wiki-link--found {

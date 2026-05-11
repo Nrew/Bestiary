@@ -51,7 +51,8 @@ export function FormActions<T extends FieldValues>({
         form={formId}
         disabled={!isDirty}
         loading={isSubmitting}
-        className="btn-save gap-2 w-full justify-center"
+        variant="save"
+        className="gap-2 w-full justify-center"
       >
         {!isSubmitting && <Save className="w-4 h-4" />}
         {isSubmitting ? "Saving…" : "Save Entry"}

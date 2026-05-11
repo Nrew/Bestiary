@@ -107,12 +107,9 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button
-              variant={destructive ? "destructive" : "default"}
+              variant={destructive ? "destructive" : "medieval"}
               onClick={handleConfirm}
-              className={cn(
-                destructive ? "" : "btn-medieval",
-                confirmClassName
-              )}
+              className={confirmClassName}
             >
               {confirmIcon}
               {confirmLabel}

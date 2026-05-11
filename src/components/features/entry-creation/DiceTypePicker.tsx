@@ -551,7 +551,8 @@ export const DiceTypePicker: React.FC<DiceTypePickerProps> = ({
               ref={confirmBtnRef}
               onClick={() => void handleConfirm()}
               loading={isSubmitting}
-              className="btn-codex-primary justify-center"
+              variant="codex-primary"
+              className="justify-center"
             >
               Create {cfg.label} Draft
             </Button>
