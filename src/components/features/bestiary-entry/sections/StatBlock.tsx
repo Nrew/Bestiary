@@ -203,6 +203,14 @@ export const StatBlockSection: React.FC<{ data: Entity }> = ({ data }) => {
     );
   }, [data.senses]);
 
+  const displayCustomEntries = React.useMemo(
+    () =>
+      Object.entries((data.statBlock?.custom) ?? {}).filter(
+        ([key]) => !STRUCTURED_STAT_KEYS.has(key.toLowerCase())
+      ),
+    [data.statBlock?.custom],
+  );
+
   if (!stats) return null;
 
   const customStats = stats.custom || {};
@@ -229,14 +237,6 @@ export const StatBlockSection: React.FC<{ data: Entity }> = ({ data }) => {
     isPresent(stats.hp) ||
     Boolean(speedLine) ||
     isPresent(initiativeBonus);
-  const displayCustomEntries = React.useMemo(
-    () =>
-      Object.entries(customStats).filter(
-        ([key]) => !STRUCTURED_STAT_KEYS.has(key.toLowerCase())
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stats.custom]
-  );
   const hasCombatProfile =
     (savingThrows && Object.keys(savingThrows).length > 0) ||
     (skills && Object.keys(skills).length > 0) ||

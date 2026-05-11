@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { useFormContext, Controller, FieldValues, Path } from "react-hook-form";
+import {
+  useFormContext,
+  Controller,
+  type ControllerRenderProps,
+  type FieldValues,
+  type Path,
+} from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -118,6 +124,79 @@ interface FormTagInputProps<T extends FieldValues> {
   placeholder?: string;
 }
 
+interface FormTagInputInnerProps<T extends FieldValues> {
+  field: ControllerRenderProps<T, Path<T>>;
+  name: Path<T>;
+  label: string;
+  description?: string;
+  placeholder?: string;
+  error?: { message?: string };
+}
+
+function FormTagInputInner<T extends FieldValues>({
+  field,
+  name,
+  label,
+  description,
+  placeholder,
+  error,
+}: FormTagInputInnerProps<T>) {
+  const tags: string[] = field.value || [];
+  const [inputValue, setInputValue] = useState("");
+
+  const addTag = (newTagValue: string) => {
+    const newTag = newTagValue.trim();
+    if (newTag && !tags.includes(newTag)) {
+      field.onChange([...tags, newTag]);
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    field.onChange(tags.filter((tag) => tag !== tagToRemove));
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={String(name)}>{label}</Label>
+      <div className="flex flex-wrap gap-2 rounded-md border border-input p-2 min-h-10">
+        {tags.map((tag) => (
+          <Badge key={tag} variant="secondary">
+            {tag}
+            <button
+              type="button"
+              onClick={() => removeTag(tag)}
+              className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
+              aria-label={`Remove ${tag}`}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        ))}
+        <input
+          ref={field.ref}
+          id={String(name)}
+          name={String(name)}
+          placeholder={tags.length === 0 ? placeholder || "Add tags..." : ""}
+          className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") {
+              e.preventDefault();
+              addTag(inputValue);
+              setInputValue("");
+            } else if (e.key === "Backspace" && inputValue === "" && tags.length > 0) {
+              removeTag(tags[tags.length - 1]);
+            }
+          }}
+        />
+      </div>
+      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+      {error && <p className="text-sm font-medium text-destructive">{error.message}</p>}
+    </div>
+  );
+}
+
 export function FormTagInput<T extends FieldValues>({
   name,
   label,
@@ -129,68 +208,16 @@ export function FormTagInput<T extends FieldValues>({
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState: { error } }) => {
-        const tags: string[] = field.value || [];
-        const [inputValue, setInputValue] = useState('');
-
-        const addTag = (newTagValue: string) => {
-          const newTag = newTagValue.trim();
-          if (newTag && !tags.includes(newTag)) {
-            field.onChange([...tags, newTag]);
-          }
-        };
-
-        const removeTag = (tagToRemove: string) => {
-          field.onChange(tags.filter((tag) => tag !== tagToRemove));
-        };
-
-        return (
-          <div className="space-y-2">
-            <Label htmlFor={name}>{label}</Label>
-            <div className="flex flex-wrap gap-2 rounded-md border border-input p-2 min-h-10">
-              {tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => removeTag(tag)}
-                    className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
-                    aria-label={`Remove ${tag}`}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-              <input
-                ref={field.ref}
-                id={name}
-                name={name}
-                placeholder={tags.length === 0 ? placeholder || 'Add tags...' : ''}
-                className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    addTag(inputValue);
-                    setInputValue('');
-                  } else if (e.key === 'Backspace' && inputValue === '' && tags.length > 0) {
-                    removeTag(tags[tags.length - 1]);
-                  }
-                }}
-              />
-            </div>
-            {description && (
-              <p className="text-sm text-muted-foreground">{description}</p>
-            )}
-            {error && (
-              <p className="text-sm font-medium text-destructive">
-                {error.message}
-              </p>
-            )}
-          </div>
-        );
-      }}
+      render={({ field, fieldState: { error } }) => (
+        <FormTagInputInner<T>
+          field={field}
+          name={name}
+          label={label}
+          description={description}
+          placeholder={placeholder}
+          error={error}
+        />
+      )}
     />
   );
 }

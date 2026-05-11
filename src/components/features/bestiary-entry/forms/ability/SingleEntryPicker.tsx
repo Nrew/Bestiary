@@ -50,7 +50,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
       return () => {
         cancelled = true;
       };
-    }, [context, entriesMap, value]);
+    }, [context, entriesMap, value, fetchedName]);
 
     React.useEffect(() => {
       if (!isOpen) return;

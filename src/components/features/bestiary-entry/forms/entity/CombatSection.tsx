@@ -68,7 +68,10 @@ export const SavingThrowsSection: React.FC = () => {
   const statBlock = React.useDeferredValue(rawStatBlock);
   const proficiency = React.useDeferredValue(rawProficiency) ?? 2;
   const watchedSavingThrows = React.useDeferredValue(rawSavingThrows);
-  const savingThrows = watchedSavingThrows ?? {};
+  const savingThrows = React.useMemo(
+    () => watchedSavingThrows ?? {},
+    [watchedSavingThrows],
+  );
 
   React.useEffect(() => {
     const synced = syncSelectedBonuses(savingThrows, (key) =>
@@ -141,7 +144,7 @@ export const SkillsSection: React.FC = () => {
   const statBlock = React.useDeferredValue(rawStatBlock);
   const proficiency = React.useDeferredValue(rawProficiency) ?? 2;
   const watchedSkills = React.useDeferredValue(rawSkills);
-  const skills = watchedSkills ?? {};
+  const skills = React.useMemo(() => watchedSkills ?? {}, [watchedSkills]);
 
   React.useEffect(() => {
     const synced = syncSelectedBonuses(skills, (key) => {
