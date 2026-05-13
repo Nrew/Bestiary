@@ -1,23 +1,32 @@
-import React, { useMemo } from "react";
-import { isAbility } from "@/lib/type-guards";
-import { useAbilitiesMap } from "@/store/appStore";
+import { AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AbilityText } from "./Abilities";
-import type { Ability, Entity } from "@/types";
+import type { EntityAbilities } from "@/hooks/useEntityAbilities";
 
-export const LairActionsPanel: React.FC<{ data: Entity }> = ({ data }) => {
-  const abilities = useAbilitiesMap();
-  const abilityIds = useMemo(() => data.abilityIds ?? [], [data.abilityIds]);
+export function LairActionsPanel({ abilities }: { abilities: EntityAbilities }) {
+  const { lairActions, loading, error } = abilities;
 
-  const lairActions = useMemo(
-    () =>
-      abilityIds
-        .map((id) => abilities.get(id))
-        .filter(
-          (ability): ability is Ability =>
-            isAbility(ability) && ability.type === "lair"
-        ),
-    [abilityIds, abilities]
-  );
+  if (error) {
+    return (
+      <Alert variant="destructive" className="stone-plate">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          Lair actions could not be loaded: {error.message}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (loading && lairActions.length === 0) {
+    return (
+      <div className="stone-plate space-y-3">
+        <Skeleton className="mx-auto h-6 w-40" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    );
+  }
 
   if (lairActions.length === 0) {
     return null;
@@ -35,4 +44,4 @@ export const LairActionsPanel: React.FC<{ data: Entity }> = ({ data }) => {
       </div>
     </div>
   );
-};
+}

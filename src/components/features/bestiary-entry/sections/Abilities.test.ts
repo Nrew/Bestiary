@@ -25,4 +25,21 @@ describe("buildAbilityHtml", () => {
     const result = buildAbilityHtml("Bite", "Deals piercing damage.");
     expect(result).toBe("<p><strong><em>Bite.</em></strong> Deals piercing damage.</p>");
   });
+
+  it("escapes ampersands and angle brackets in the name", () => {
+    // `&` must be escaped before `<` / `>`, otherwise a literal `&lt;` in
+    // the input becomes `&amp;lt;` (correct) instead of `&lt;` (wrong, would
+    // render as text). The escape order in `escapeHtml` is load-bearing.
+    const result = buildAbilityHtml("Cleaver & Smash <Ultra>", "<p>Strike.</p>");
+    expect(result).toContain("Cleaver &amp; Smash &lt;Ultra&gt;");
+    expect(result).not.toContain("<Ultra>");
+  });
+
+  it("does not escape quotes in the name (text-only escape)", () => {
+    // `escapeHtml` is for text content, not attribute values. Quotes in the
+    // visible name should pass through; only attribute-bound rendering would
+    // require `escapeHtmlAttribute`.
+    const result = buildAbilityHtml(`He said "go"`, "<p>Test.</p>");
+    expect(result).toContain(`He said "go"`);
+  });
 });

@@ -16,7 +16,7 @@ function parseIconRef(icon: string | null | undefined): [IconCategory, string] {
   return FALLBACK_STATUS_ICON;
 }
 
-const StatusCard: React.FC<{ status: Status }> = ({ status }) => {
+function StatusCard({ status }: { status: Status }) {
   const [category, name] = parseIconRef(status.icon);
 
   const { cardStyle, iconStyle } = useMemo(() => {
@@ -47,27 +47,29 @@ const StatusCard: React.FC<{ status: Status }> = ({ status }) => {
       </CardContent>
     </Card>
   );
-};
+}
 
-const MissingStatusCard: React.FC<{ id: string }> = ({ id }) => (
-  <Card className={COMPONENT_STYLES.stoneCard}>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2 text-lg font-display">
-        <Icon category="status" name="charmed" size="sm" />
-        Missing condition
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="font-serif">
-      <p className="text-sm text-muted-foreground">
-        This entry references a condition that is not currently available: {id}
-      </p>
-    </CardContent>
-  </Card>
-);
+function MissingStatusCard({ id }: { id: string }) {
+  return (
+    <Card className={COMPONENT_STYLES.stoneCard}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg font-display">
+          <Icon category="status" name="charmed" size="sm" />
+          Missing condition
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="font-serif">
+        <p className="text-sm text-muted-foreground">
+          This entry references a condition that is not currently available: {id}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
-export const ConditionsSection: React.FC<{ data: Entity | Status }> = ({
+export function ConditionsSection({
   data,
-}) => {
+}: { data: Entity | Status }) {
   const statuses = useStatusesMap();
 
   const statusList = React.useMemo((): Array<Status | { missingId: string }> => {
@@ -95,4 +97,4 @@ export const ConditionsSection: React.FC<{ data: Entity | Status }> = ({
       </div>
     </ViewSection>
   );
-};
+}

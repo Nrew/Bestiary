@@ -1,10 +1,9 @@
-import React from "react";
 import { ViewSection } from "../components/ViewSection";
 import { RichTextViewer } from "@/components/shared/RichTextViewer";
 import { hasRichTextContent } from "@/lib/empty";
 import type { BestiaryEntry } from "@/types";
 
-export const NotesSection: React.FC<{ data: BestiaryEntry }> = ({ data }) => {
+export function NotesSection({ data }: { data: BestiaryEntry }) {
   const notes = "notes" in data ? data.notes : undefined;
 
   if (!hasRichTextContent(notes)) return null;
@@ -30,4 +29,4 @@ export const NotesSection: React.FC<{ data: BestiaryEntry }> = ({ data }) => {
       </div>
     </ViewSection>
   );
-};
+}

@@ -4,6 +4,9 @@ import type { Entity } from "@/types";
 
 vi.mock("@/store/appStore", () => ({
   useStatusesMap: () => new Map(),
+  // useAppStore is invoked as a selector hook: useAppStore((s) => s.x).
+  // Return undefined-ish behaviour so the hook resolves without touching a store.
+  useAppStore: <T,>(_selector: (state: unknown) => T): T | undefined => undefined,
 }));
 
 vi.mock("@/components/shared/EntityLink", () => ({

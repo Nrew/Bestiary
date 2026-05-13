@@ -83,13 +83,14 @@ const buildRollAnimation = (
   };
 };
 
-const LootRollButton: React.FC<{
+function LootRollButton({ isRolling, hasResults, animation, onRoll }: {
   isRolling: boolean;
   hasResults: boolean;
   animation?: RollAnimation | null;
   onRoll: () => void;
-}> = ({ isRolling, hasResults, animation, onRoll }) => (
-  <button
+}) {
+  return (
+    <button
     type="button"
     onClick={onRoll}
     disabled={isRolling}
@@ -116,7 +117,8 @@ const LootRollButton: React.FC<{
     </span>
     {isRolling ? "Rolling..." : hasResults ? "Roll Again" : "Roll Loot"}
   </button>
-);
+  );
+}
 
 const LootRow = React.memo<{
   loot: LootDrop;
@@ -211,21 +213,23 @@ LootRow.displayName = "LootRow";
 
 type LootRowWithKey = LootDrop & { _rowKey: string };
 
-export const LootSection: React.FC<{ data: Entity }> = ({ data }) => {
+type LootPhase =
+  | { kind: "idle" }
+  | { kind: "rolling"; pending: RollResult[]; animation: RollAnimation }
+  | { kind: "resolved"; results: RollResult[]; animation: RollAnimation };
+
+export function LootSection({ data }: { data: Entity }) {
   const inventory = useMemo(() => data.inventory ?? [], [data.inventory]);
   const rows = useMemo<LootRowWithKey[]>(
     () => inventory.map((item, i) => ({ ...item, _rowKey: `${item.itemId}-${i}` })),
     [inventory]
   );
   const ensureItemsLoaded = useAppStore((s) => s.ensureItemsLoaded);
-  const [results, setResults] = useState<RollResult[] | null>(null);
-  const [isRolling, setIsRolling] = useState(false);
-  const [rollAnimation, setRollAnimation] = useState<RollAnimation | null>(null);
+  const [phase, setPhase] = useState<LootPhase>({ kind: "idle" });
   const rollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const animationKeyRef = useRef(0);
-  const pendingResultsRef = useRef<RollResult[] | null>(null);
 
-  const clearRollTimers = useCallback(() => {
+  const clearRollTimer = useCallback(() => {
     if (rollTimerRef.current) {
       clearTimeout(rollTimerRef.current);
       rollTimerRef.current = null;
@@ -240,38 +244,32 @@ export const LootSection: React.FC<{ data: Entity }> = ({ data }) => {
   }, [inventory, ensureItemsLoaded]);
 
   useEffect(() => {
-    clearRollTimers();
-    setResults(null);
-    setIsRolling(false);
-    setRollAnimation(null);
-    pendingResultsRef.current = null;
-  }, [clearRollTimers, data.id, inventory]);
+    clearRollTimer();
+    setPhase({ kind: "idle" });
+  }, [clearRollTimer, data.id]);
 
-  useEffect(() => {
-    return clearRollTimers;
-  }, [clearRollTimers]);
+  useEffect(() => clearRollTimer, [clearRollTimer]);
 
   const roll = useCallback(() => {
-    if (isRolling) return;
+    if (phase.kind === "rolling") return;
     const nextResults = rollLootTable(inventory);
     const nextAnimation = buildRollAnimation(nextResults, inventory, animationKeyRef.current + 1);
     animationKeyRef.current = nextAnimation.key;
-    pendingResultsRef.current = nextResults;
 
-    clearRollTimers();
-    setIsRolling(true);
-    setResults(null);
-    setRollAnimation(nextAnimation);
+    clearRollTimer();
+    setPhase({ kind: "rolling", pending: nextResults, animation: nextAnimation });
     rollTimerRef.current = setTimeout(() => {
-      clearRollTimers();
-      setResults(pendingResultsRef.current);
-      pendingResultsRef.current = null;
-      setIsRolling(false);
+      clearRollTimer();
+      setPhase({ kind: "resolved", results: nextResults, animation: nextAnimation });
     }, nextAnimation.durationMs);
-  }, [clearRollTimers, inventory, isRolling]);
+  }, [clearRollTimer, inventory, phase.kind]);
 
   if (inventory.length === 0) return null;
 
+  const isRolling = phase.kind === "rolling";
+  const results = phase.kind === "resolved" ? phase.results : null;
+  const rollAnimation =
+    phase.kind === "idle" ? null : phase.animation;
   const droppedCount = results
     ? results.filter(r => r.dropped).length
     : null;
@@ -309,4 +307,4 @@ export const LootSection: React.FC<{ data: Entity }> = ({ data }) => {
       </div>
     </section>
   );
-};
+}

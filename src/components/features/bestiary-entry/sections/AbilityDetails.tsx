@@ -1,4 +1,3 @@
-import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { RichTextViewer } from "@/components/shared/RichTextViewer";
 import { useAppStore } from "@/store/appStore";
@@ -17,11 +16,11 @@ import { useReferencedEntryName } from "@/hooks/useReferencedEntryName";
 
 type EffectLinkContext = Extract<ViewContext, "entities" | "statuses">;
 
-const EntryLink: React.FC<{
+function EntryLink({ id, type, onNavigate }: {
   id: string;
   type: EffectLinkContext;
   onNavigate: (id: string, type: EffectLinkContext) => void;
-}> = ({ id, type, onNavigate }) => {
+}) {
   const { status, name } = useReferencedEntryName(type, id);
   const { showTooltip, hideTooltip } = useWikiLink();
   const isFound = status === "found";
@@ -42,17 +41,17 @@ const EntryLink: React.FC<{
       {isFound ? name : "…"}
     </button>
   );
-};
+}
 
 interface EffectDisplayProps {
   effect: AbilityEffect;
   onNavigate: (id: string, type: EffectLinkContext) => void;
 }
 
-const EffectDisplay: React.FC<EffectDisplayProps> = ({
+function EffectDisplay({
   effect,
   onNavigate,
-}) => {
+}: EffectDisplayProps) {
   switch (effect.type) {
     case "damage":
       return (
@@ -175,9 +174,9 @@ const EffectDisplay: React.FC<EffectDisplayProps> = ({
     default:
       return <span className="text-muted-foreground">Unknown effect</span>;
   }
-};
+}
 
-export const AbilityDetailsSection: React.FC<{ data: Ability }> = ({ data }) => {
+export function AbilityDetailsSection({ data }: { data: Ability }) {
   const hasTarget = data.target !== null;
   const hasComponents = data.components !== null;
 
@@ -269,9 +268,9 @@ export const AbilityDetailsSection: React.FC<{ data: Ability }> = ({ data }) => 
       )}
     </div>
   );
-};
+}
 
-export const AbilityEffectsSection: React.FC<{ data: Ability }> = ({ data }) => {
+export function AbilityEffectsSection({ data }: { data: Ability }) {
   const navigateToEntry = useAppStore((s) => s.navigateToEntry);
 
   if (!data.effects || data.effects.length === 0) {
@@ -297,11 +296,11 @@ export const AbilityEffectsSection: React.FC<{ data: Ability }> = ({ data }) => 
       </div>
     </div>
   );
-};
+}
 
-export const AbilityDescriptionSection: React.FC<{ data: Ability }> = ({
+export function AbilityDescriptionSection({
   data,
-}) => {
+}: { data: Ability }) {
   if (!hasRichTextContent(data.description)) return null;
 
   return (
@@ -309,4 +308,4 @@ export const AbilityDescriptionSection: React.FC<{ data: Ability }> = ({
       <RichTextViewer html={data.description} />
     </div>
   );
-};
+}

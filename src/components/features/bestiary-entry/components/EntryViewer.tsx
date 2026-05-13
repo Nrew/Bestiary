@@ -23,19 +23,26 @@ import { EntryHeader } from "./EntryHeader";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { Edit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { slideUpVariants, staggerContainerVariants, contentVariants } from "@/lib/animations";
+import {
+  contentVariants,
+  slideUpVariants,
+  staggerContainerVariants,
+} from "@/lib/animations";
 import { ENTITY_SIZE_LABELS, THREAT_LEVEL_LABELS } from "@/lib/dnd/constants";
 import { hasItems, hasMeaningfulString } from "@/lib/empty";
 import { isAbility, isEntity, isItem, isStatus } from "@/lib/type-guards";
+import { useEntityAbilities } from "@/hooks/useEntityAbilities";
 import type { BestiaryEntry, Entity, Item, Status, Ability, ViewContext } from "@/types";
 
-const Section: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <motion.div variants={contentVariants}>
-    <ErrorBoundary level="component">{children}</ErrorBoundary>
-  </motion.div>
-);
+function Section({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div variants={contentVariants}>
+      <ErrorBoundary level="component">{children}</ErrorBoundary>
+    </motion.div>
+  );
+}
 
-const KeyInfoSection: React.FC<{ data: Entity }> = ({ data }) => {
+function KeyInfoSection({ data }: { data: Entity }) {
   const hasAnyKeyInfo =
     hasMeaningfulString(data.size) ||
     hasMeaningfulString(data.threatLevel) ||
@@ -91,67 +98,76 @@ const KeyInfoSection: React.FC<{ data: Entity }> = ({ data }) => {
     </div>
   </div>
   );
-};
+}
 
-const EntityViewer: React.FC<{ data: Entity }> = ({ data }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12">
-    <div className="lg:col-span-2 space-y-12">
-      <Section><OverviewSection data={data} /></Section>
-      <Section><AbilitiesSection data={data} /></Section>
-      <Section><LairActionsPanel data={data} /></Section>
-      <Section><ConditionsSection data={data} /></Section>
-      <Section><GallerySection data={data} /></Section>
-      <Section><NotesSection data={data} /></Section>
+function EntityViewer({ data }: { data: Entity }) {
+  const abilities = useEntityAbilities(data);
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12">
+      <div className="lg:col-span-2 space-y-12">
+        <Section><OverviewSection data={data} /></Section>
+        <Section><AbilitiesSection data={data} abilities={abilities} /></Section>
+        <Section><LairActionsPanel abilities={abilities} /></Section>
+        <Section><ConditionsSection data={data} /></Section>
+        <Section><GallerySection data={data} /></Section>
+        <Section><NotesSection data={data} /></Section>
+      </div>
+      <div className="lg:col-span-1 space-y-8 mt-12 lg:mt-0">
+        <Section><PortraitSection data={data} /></Section>
+        <Section><StatBlockSection data={data} /></Section>
+        <Section><KeyInfoSection data={data} /></Section>
+        <Section><LootSection data={data} /></Section>
+      </div>
     </div>
-    <div className="lg:col-span-1 space-y-8 mt-12 lg:mt-0">
-      <Section><PortraitSection data={data} /></Section>
-      <Section><StatBlockSection data={data} /></Section>
-      <Section><KeyInfoSection data={data} /></Section>
-      <Section><LootSection data={data} /></Section>
-    </div>
-  </div>
-);
+  );
+}
 
-const ItemViewer: React.FC<{ data: Item }> = ({ data }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12">
-    <div className="lg:col-span-2 space-y-12">
-      <Section><ItemDescriptionSection data={data} /></Section>
+function ItemViewer({ data }: { data: Item }) {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12">
+      <div className="lg:col-span-2 space-y-12">
+        <Section><ItemDescriptionSection data={data} /></Section>
+      </div>
+      <div className="lg:col-span-1 space-y-8 mt-12 lg:mt-0">
+        <Section><ItemDetailsSection data={data} /></Section>
+      </div>
     </div>
-    <div className="lg:col-span-1 space-y-8 mt-12 lg:mt-0">
-      <Section><ItemDetailsSection data={data} /></Section>
-    </div>
-  </div>
-);
+  );
+}
 
-const StatusViewer: React.FC<{ data: Status }> = ({ data }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12">
-    <div className="lg:col-span-2 space-y-12">
-      <Section><StatusSummarySection data={data} /></Section>
-      <Section><StatusDescriptionSection data={data} /></Section>
+function StatusViewer({ data }: { data: Status }) {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12">
+      <div className="lg:col-span-2 space-y-12">
+        <Section><StatusSummarySection data={data} /></Section>
+        <Section><StatusDescriptionSection data={data} /></Section>
+      </div>
+      <div className="lg:col-span-1 space-y-8 mt-12 lg:mt-0">
+        <Section><StatusDetailsSection data={data} /></Section>
+      </div>
     </div>
-    <div className="lg:col-span-1 space-y-8 mt-12 lg:mt-0">
-      <Section><StatusDetailsSection data={data} /></Section>
-    </div>
-  </div>
-);
+  );
+}
 
-const AbilityViewer: React.FC<{ data: Ability }> = ({ data }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12">
-    <div className="lg:col-span-2 space-y-12">
-      <Section><AbilityDescriptionSection data={data} /></Section>
-      <Section><AbilityEffectsSection data={data} /></Section>
+function AbilityViewer({ data }: { data: Ability }) {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12">
+      <div className="lg:col-span-2 space-y-12">
+        <Section><AbilityDescriptionSection data={data} /></Section>
+        <Section><AbilityEffectsSection data={data} /></Section>
+      </div>
+      <div className="lg:col-span-1 space-y-8 mt-12 lg:mt-0">
+        <Section><AbilityDetailsSection data={data} /></Section>
+      </div>
     </div>
-    <div className="lg:col-span-1 space-y-8 mt-12 lg:mt-0">
-      <Section><AbilityDetailsSection data={data} /></Section>
-    </div>
-  </div>
-);
+  );
+}
 
-export const EntryViewer: React.FC<{
+export const EntryViewer = React.memo(({ entry, entryType, onEdit }: {
   entry: BestiaryEntry;
   entryType: ViewContext;
   onEdit: () => void;
-}> = React.memo(({ entry, entryType, onEdit }) => {
+}) => {
   const renderByEntryShape = () => {
     if (isEntity(entry)) return <EntityViewer data={entry} />;
     if (isItem(entry)) return <ItemViewer data={entry} />;

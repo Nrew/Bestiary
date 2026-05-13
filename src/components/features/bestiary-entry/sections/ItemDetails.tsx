@@ -1,4 +1,3 @@
-import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { RichTextViewer } from "@/components/shared/RichTextViewer";
 import { Icon } from "@/components/shared/Icon";
@@ -12,7 +11,7 @@ import { formatStatValue, formatValue } from "@/lib/dnd/format-utils";
 import { formatLabel } from "@/lib/utils";
 import type { Item } from "@/types";
 
-export const ItemDetailsSection: React.FC<{ data: Item }> = ({ data }) => {
+export function ItemDetailsSection({ data }: { data: Item }) {
   const hasProperties = Object.keys(data.properties ?? {}).length > 0;
   const hasStatModifiers = Object.keys(data.statModifiers ?? {}).length > 0;
   const hasEquipSlots = data.equipSlots && data.equipSlots.length > 0;
@@ -135,9 +134,9 @@ export const ItemDetailsSection: React.FC<{ data: Item }> = ({ data }) => {
       )}
     </div>
   );
-};
+}
 
-export const ItemDescriptionSection: React.FC<{ data: Item }> = ({ data }) => {
+export function ItemDescriptionSection({ data }: { data: Item }) {
   if (!hasRichTextContent(data.description)) return null;
 
   return (
@@ -145,4 +144,4 @@ export const ItemDescriptionSection: React.FC<{ data: Item }> = ({ data }) => {
       <RichTextViewer html={data.description} />
     </div>
   );
-};
+}

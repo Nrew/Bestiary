@@ -5,7 +5,7 @@ import { ManagedImage } from "@/components/shared/ManagedImage";
 import { imageRefKey } from "@/lib/images";
 import type { Entity, Item } from "@/types";
 
-export const PortraitSection: React.FC<{ data: Entity | Item }> = ({ data }) => {
+export function PortraitSection({ data }: { data: Entity | Item }) {
   const images = "images" in data ? data.images || [] : [];
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
 
@@ -21,7 +21,7 @@ export const PortraitSection: React.FC<{ data: Entity | Item }> = ({ data }) => 
       */}
       <button
         type="button"
-        className="relative block w-full rounded-lg overflow-hidden border border-border/30 shadow-md bg-muted cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="relative block w-full rounded-lg overflow-hidden border border-border/30 shadow-md bg-muted cursor-pointer group focus-ring"
         onClick={() => setLightboxOpen(true)}
         title="Portrait (first image in the gallery)"
         aria-label={`Open portrait of ${data.name} in image viewer`}
@@ -34,11 +34,12 @@ export const PortraitSection: React.FC<{ data: Entity | Item }> = ({ data }) => 
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         </div>
-        <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-ink/60 text-white text-[10px] font-display tracking-wider uppercase backdrop-blur-sm pointer-events-none">
+        <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-ink/60 text-white text-xxs codex-section-heading tracking-wider backdrop-blur-sm pointer-events-none">
           Portrait
         </div>
-        {/* Subtle vignette overlay */}
-        <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_30px_rgba(0,0,0,0.15)]" />
+        {/* Vignette overlay: kept as arbitrary inset shadow because no
+            existing token shape matches "inset glow that hugs an image edge". */}
+        <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_30px_var(--color-ink-15)]" />
         <div className="absolute inset-0 flex items-center justify-center bg-ink/0 group-hover:bg-ink/20 group-focus-visible:bg-ink/20 transition-colors">
           <span className="text-white text-sm font-medium opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
             Open image
@@ -55,9 +56,9 @@ export const PortraitSection: React.FC<{ data: Entity | Item }> = ({ data }) => 
       )}
     </>
   );
-};
+}
 
-export const GallerySection: React.FC<{ data: Entity | Item }> = ({ data }) => {
+export function GallerySection({ data }: { data: Entity | Item }) {
   const images = "images" in data ? data.images || [] : [];
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
 
@@ -74,7 +75,7 @@ export const GallerySection: React.FC<{ data: Entity | Item }> = ({ data }) => {
             <button
               type="button"
               key={imageRefKey(imageRef, index)}
-              className="aspect-square rounded-lg overflow-hidden border border-border/30 shadow-sm bg-muted group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="aspect-square rounded-lg overflow-hidden border border-border/30 shadow-sm bg-muted group cursor-pointer focus-ring"
               onClick={() => setLightboxIndex(Math.min(index, images.length - 1))}
               aria-label={`Open ${data.name} illustration ${index + 1} in image viewer`}
             >
@@ -100,4 +101,4 @@ export const GallerySection: React.FC<{ data: Entity | Item }> = ({ data }) => {
       })()}
     </>
   );
-};
+}

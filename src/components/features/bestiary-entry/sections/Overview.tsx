@@ -1,11 +1,10 @@
-import React from "react";
 import { RichTextViewer } from "@/components/shared/RichTextViewer";
 import { hasRichTextContent } from "@/lib/empty";
 import type { BestiaryEntry } from "@/types";
 
-export const OverviewSection: React.FC<{ data: BestiaryEntry }> = ({
+export function OverviewSection({
   data,
-}) => {
+}: { data: BestiaryEntry }) {
   if (!hasRichTextContent(data.description)) return null;
 
   return (
@@ -13,4 +12,4 @@ export const OverviewSection: React.FC<{ data: BestiaryEntry }> = ({
       <RichTextViewer html={data.description} />
     </div>
   );
-};
+}
