@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark variant — ThemeProvider toggles .dark on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================================================
    FONT DECLARATIONS
    ============================================================================ */
@@ -55,6 +58,10 @@
   --font-display: "Cinzel", "Palatino Linotype", serif;
   --font-mono: "Consolas", "Liberation Mono", monospace;
 
+  /* Micro text sizes for stat-block annotations and helper text. */
+  --text-xxs: 0.625rem; /* 10px */
+  --text-2xs: 0.6875rem; /* 11px */
+
   /* Layout Constants */
   --spacing-header-height: 5rem;
   --spacing-header-height-mobile: 4rem;
@@ -73,20 +80,27 @@
   --color-ink-muted: oklch(40% 0.01 45);
   --color-copper: oklch(48% 0.12 45);
   --color-brass: oklch(72% 0.12 70);
+  --color-brass-hover: oklch(76% 0.12 70);
   --color-jade: oklch(42% 0.10 150);
   --color-wine: oklch(32% 0.14 20);
+  --color-wine-hover: oklch(36% 0.14 20);
+  --color-wine-active: oklch(28% 0.14 20);
 
   /* Opacity variants for common use cases */
   --color-rune-60: oklch(78% 0.14 85 / 0.6);
   --color-rune-40: oklch(78% 0.14 85 / 0.4);
+  --color-rune-30: oklch(78% 0.14 85 / 0.3);
   --color-rune-20: oklch(78% 0.14 85 / 0.2);
   --color-rune-10: oklch(78% 0.14 85 / 0.1);
+  --color-rune-05: oklch(78% 0.14 85 / 0.05);
   --color-leather-60: oklch(38% 0.08 45 / 0.6);
+  --color-leather-50: oklch(38% 0.08 45 / 0.5);
   --color-leather-40: oklch(38% 0.08 45 / 0.4);
   --color-leather-20: oklch(38% 0.08 45 / 0.2);
   --color-leather-15: oklch(38% 0.08 45 / 0.15);
   --color-leather-10: oklch(38% 0.08 45 / 0.1);
   --color-ink-30: oklch(18% 0.01 45 / 0.3);
+  --color-ink-25: oklch(18% 0.01 45 / 0.25);
   --color-ink-20: oklch(18% 0.01 45 / 0.2);
   --color-ink-15: oklch(18% 0.01 45 / 0.15);
   --color-ink-10: oklch(18% 0.01 45 / 0.1);
@@ -135,6 +149,9 @@
   --color-popover-foreground: var(--color-ink);
   --color-parchment-80: oklch(94% 0.02 75 / 0.8);
   --color-parchment-60: oklch(94% 0.02 75 / 0.6);
+  --color-parchment-40: oklch(94% 0.02 75 / 0.4);
+  --color-parchment-20: oklch(94% 0.02 75 / 0.2);
+  --color-brass-25: oklch(72% 0.12 70 / 0.25);
 
   /* Border radius */
   --radius-xs: 0.25rem;
@@ -152,23 +169,26 @@
 
   /* Glass effect shadows (reusable) */
   --shadow-glass: 0 8px 32px var(--color-ink-10), inset 0 1px 0 var(--color-parchment-80), inset 0 -1px 0 var(--color-stone-30);
-  --shadow-medieval: 0 4px 16px var(--color-ink-10), inset 0 1px 0 var(--color-parchment-60);
+
+  /* Button shadow tokens (cva variants in button.tsx) */
+  --shadow-button-codex: 0 1px 3px var(--color-ink-10);
+  --shadow-button-codex-primary: 0 2px 8px var(--color-ink-25), inset 0 1px 0 var(--color-parchment-20);
+  --shadow-button-medieval: 0 2px 4px var(--color-ink-20), inset 0 1px 0 var(--color-parchment-40);
+  --shadow-button-medieval-hover: 0 4px 12px var(--color-ink-30), inset 0 1px 0 var(--color-parchment-60);
+  --shadow-button-medieval-focus: 0 0 0 2px var(--color-rune), 0 0 0 4px var(--color-rune-20);
+  --shadow-button-save-focus: 0 0 0 2px var(--color-wine), 0 0 0 4px var(--color-brass-25);
 
   /* Animation timing */
   --ease-medieval: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  --ease-scroll: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Keyframe animations */
   --animate-fade-in: fadeIn 0.15s var(--ease-medieval) forwards;
   --animate-slide-up: slideUp 0.2s var(--ease-medieval) forwards;
   --animate-scale-in: scaleIn 0.15s var(--ease-medieval) forwards;
-  --animate-mode-switch: mode-switch-in 0.15s var(--ease-medieval) forwards;
   --animate-content-fade: content-fade-in 0.12s var(--ease-medieval) forwards;
-  --animate-form-slide: form-slide-in 0.18s var(--ease-medieval) forwards;
-  --animate-glow-rune: glowRune 2s ease-in-out infinite alternate;
+  --animate-skeleton: skeleton-shimmer 1.5s ease-in-out infinite;
   --animate-glow-pulse: glowPulse 2.4s ease-in-out infinite;
   --animate-bounce-gentle: bounceGentle 2.8s ease-in-out infinite;
-  --animate-border-glow: border-glow 3s ease-in-out infinite alternate;
   --animate-pulse-warn: pulse-warning 2s ease-in-out infinite;
   --animate-loot-result: loot-result 0.24s var(--ease-medieval) both;
   --animate-loot-die-roll: loot-die-roll 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -298,7 +318,7 @@
 
   /* Selection styling */
   ::selection {
-    background: var(--color-rune-30, oklch(78% 0.14 85 / 0.3));
+    background: var(--color-rune-30);
     color: var(--color-ink);
   }
 }
@@ -336,6 +356,15 @@
   animation: var(--animate-content-fade);
 }
 
+/* Opacity-only — for elements whose `transform` is owned by positioning. */
+@utility animate-fade-only {
+  animation: opacity-fade-in 0.15s var(--ease-medieval) forwards;
+}
+
+@utility animate-sidebar-section {
+  animation: sidebar-section-in 0.25s var(--ease-medieval) forwards;
+}
+
 @utility animate-slide-up {
   animation: var(--animate-slide-up);
 }
@@ -370,6 +399,65 @@
 
 @utility animate-loot-result {
   animation: var(--animate-loot-result);
+}
+
+@utility animate-skeleton {
+  animation: var(--animate-skeleton);
+}
+
+@utility focus-ring {
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--color-background),
+      0 0 0 4px var(--color-ring);
+  }
+}
+
+@utility radix-popover-anim {
+  transform-origin: var(--radix-popover-content-transform-origin, var(--radix-select-content-transform-origin, var(--radix-dropdown-menu-content-transform-origin, var(--radix-tooltip-content-transform-origin, center))));
+  &[data-state="open"] {
+    animation: radix-popover-in 0.15s var(--ease-medieval) forwards;
+  }
+  &[data-state="closed"] {
+    animation: radix-popover-out 0.12s var(--ease-medieval) forwards;
+  }
+}
+
+/* Opacity-only fade for full-viewport overlays (dialog backdrops). Scaling a
+   fixed-inset element makes it appear to grow from the center, which reads as
+   a "fill-in" artifact on backdrop-blur. */
+@utility radix-overlay-anim {
+  &[data-state="open"] {
+    animation: opacity-fade-in 0.15s var(--ease-medieval) forwards;
+  }
+  &[data-state="closed"] {
+    animation: radix-overlay-out 0.12s var(--ease-medieval) forwards;
+  }
+}
+
+@keyframes radix-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@utility codex-section-heading {
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-leather);
+}
+
+@utility radix-toast-anim {
+  &[data-state="open"] {
+    animation: radix-toast-in 0.2s var(--ease-medieval) forwards;
+  }
+  &[data-state="closed"] {
+    animation: radix-toast-out 0.15s var(--ease-medieval) forwards;
+  }
+  &[data-swipe="end"] {
+    animation: radix-toast-out 0.12s ease-out forwards;
+  }
 }
 
 /* Layout components - using CSS custom properties for constants */
@@ -411,7 +499,7 @@
   backdrop-filter: blur(12px) saturate(1.2);
   border: 1px solid var(--color-border-30);
   border-right: 3px solid var(--color-rune-60);
-  box-shadow: 2px 0 24px var(--color-ink-15), inset -1px 0 0 var(--color-rune-30, oklch(78% 0.14 85 / 0.3));
+  box-shadow: 2px 0 24px var(--color-ink-15), inset -1px 0 0 var(--color-rune-30);
   contain: layout style paint;
 }
 
@@ -526,9 +614,9 @@
   font-weight: 600;
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm);
-  border-bottom: 2px dotted var(--color-leather-50, oklch(38% 0.08 45 / 0.5));
+  border-bottom: 2px dotted var(--color-leather-50);
   color: var(--color-leather);
-  background: linear-gradient(135deg, var(--color-leather-10) 0%, var(--color-rune-05, oklch(78% 0.14 85 / 0.05)) 100%);
+  background: linear-gradient(135deg, var(--color-leather-10) 0%, var(--color-rune-05) 100%);
   text-shadow: 0 1px 2px var(--color-ink-10);
   box-shadow: 0 2px 4px var(--color-ink-05);
 
@@ -598,34 +686,9 @@
   to { opacity: 1; transform: scale(1); }
 }
 
-@keyframes glowRune {
-  from { text-shadow: 0 0 5px var(--color-rune-30, oklch(78% 0.14 85 / 0.3)); }
-  to { text-shadow: 0 0 15px var(--color-rune-60); }
-}
-
-@keyframes accordion-down {
-  from { height: 0; }
-  to { height: var(--radix-accordion-content-height); }
-}
-
-@keyframes accordion-up {
-  from { height: var(--radix-accordion-content-height); }
-  to { height: 0; }
-}
-
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(15px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fade-in-down {
-  from { opacity: 0; transform: translateY(-15px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes border-glow {
-  from { opacity: 0.5; }
-  to { opacity: 0.8; }
 }
 
 @keyframes pulse-warning {
@@ -638,22 +701,45 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes skeleton-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+@keyframes opacity-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@keyframes mode-switch-in {
-  from { opacity: 0; transform: scale(0.99) translateY(2px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+@keyframes sidebar-section-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes form-slide-in {
-  from { opacity: 0; transform: translateX(8px); }
+@keyframes radix-popover-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes radix-popover-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes radix-toast-in {
+  from { opacity: 0; transform: translateX(100%); }
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* Opacity+scale pulse for glow div elements (replaces text-shadow-only glowRune for divs) */
+@keyframes radix-toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 @keyframes glowPulse {
   0%, 100% { opacity: 0.45; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.08); }
