@@ -5,7 +5,6 @@ import { ERROR_MESSAGES } from "./constants";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Trash2 } from "lucide-react";
 
-// Thin wrapper over ConfirmDialog pre-configured for entry deletion.
 export const DeleteConfirmationDialog = React.memo(() => {
   const { deleteState, setDeleteState, currentContext } = useSidebarContext();
   const setError = useAppStore((s) => s.setError);

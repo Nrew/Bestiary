@@ -70,6 +70,7 @@ export const SidebarList = React.memo(() => {
           return (
             <div
               key={virtualItem.key}
+              role="listitem"
               style={{
                 position: "absolute",
                 top: 0,

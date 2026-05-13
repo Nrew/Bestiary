@@ -6,8 +6,8 @@ interface SidebarItemSkeletonProps {
   className?: string;
 }
 
-export const SidebarItemSkeleton: React.FC<SidebarItemSkeletonProps> =
-  React.memo(({ count = 1, className }) => {
+export const SidebarItemSkeleton =
+  React.memo(({ count = 1, className }: SidebarItemSkeletonProps) => {
     if (count <= 0) return null;
 
     return (

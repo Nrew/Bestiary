@@ -1,6 +1,6 @@
-import React, { forwardRef } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { EASE_OUT, DURATION, fadeVariants, sidebarPanelVariants } from "@/lib/animations";
+import { DURATION, EASE_OUT, fadeVariants, sidebarPanelVariants } from "@/lib/animations";
 import { cn } from "@/lib/utils";
 import { SidebarProvider, useSidebarContext } from "./SidebarContext";
 import { SidebarHeader } from "./SidebarHeader";
@@ -15,50 +15,53 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  ref?: React.Ref<SidebarSearchRef>;
 }
 
 export type { SidebarSearchRef };
 
-const AnimatedSection: React.FC<{
+function AnimatedSection({ delay, className, children }: {
   delay: number;
   className?: string;
   children: React.ReactNode;
-}> = ({ delay, className, children }) => (
-  <motion.div
-    initial={{ opacity: 0, y: -6 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: DURATION.base, ease: EASE_OUT, delay: delay / 1000 }}
-    className={className}
-  >
-    {children}
-  </motion.div>
-);
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: DURATION.base, ease: EASE_OUT, delay: delay / 1000 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
-const SidebarContent = forwardRef<SidebarSearchRef>((_, ref) => (
-  <>
-    <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.HEADER}>
-      <SidebarHeader />
-    </AnimatedSection>
-    <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.NAV}>
-      <SidebarNav />
-    </AnimatedSection>
-    <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.SEARCH}>
-      <SidebarSearch ref={ref} />
-    </AnimatedSection>
-    <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.LIST} className="flex-1 overflow-auto">
-      <ErrorBoundary level="component">
-        <SidebarList />
-      </ErrorBoundary>
-    </AnimatedSection>
-    <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.FOOTER}>
-      <SidebarFooter />
-    </AnimatedSection>
-  </>
-));
+function SidebarContent({ ref }: { ref?: React.Ref<SidebarSearchRef> }) {
+  return (
+    <>
+      <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.HEADER}>
+        <SidebarHeader />
+      </AnimatedSection>
+      <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.NAV}>
+        <SidebarNav />
+      </AnimatedSection>
+      <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.SEARCH}>
+        <SidebarSearch ref={ref} />
+      </AnimatedSection>
+      <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.LIST} className="flex-1 overflow-auto">
+        <ErrorBoundary level="component">
+          <SidebarList />
+        </ErrorBoundary>
+      </AnimatedSection>
+      <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.FOOTER}>
+        <SidebarFooter />
+      </AnimatedSection>
+    </>
+  );
+}
 
-SidebarContent.displayName = "SidebarContent";
-
-const SidebarImpl = forwardRef<SidebarSearchRef>((_, ref) => {
+function SidebarImpl({ ref }: { ref?: React.Ref<SidebarSearchRef> }) {
   const { isOpen, onClose } = useSidebarContext();
   const panelRef = React.useRef<HTMLElement>(null);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
@@ -167,14 +170,12 @@ const SidebarImpl = forwardRef<SidebarSearchRef>((_, ref) => {
       <DeleteConfirmationDialog />
     </>
   );
-});
+}
 
-SidebarImpl.displayName = "SidebarImpl";
-
-export const Sidebar = forwardRef<SidebarSearchRef, SidebarProps>(({ isOpen, onClose }, ref) => (
-  <SidebarProvider isOpen={isOpen} onClose={onClose}>
-    <SidebarImpl ref={ref} />
-  </SidebarProvider>
-));
-
-Sidebar.displayName = 'Sidebar';
+export function Sidebar({ isOpen, onClose, ref }: SidebarProps) {
+  return (
+    <SidebarProvider isOpen={isOpen} onClose={onClose}>
+      <SidebarImpl ref={ref} />
+    </SidebarProvider>
+  );
+}

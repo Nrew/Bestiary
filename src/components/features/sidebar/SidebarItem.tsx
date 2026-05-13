@@ -1,9 +1,7 @@
 import React, { useCallback } from "react";
-import { motion } from "framer-motion";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { burnVariants } from "@/lib/animations";
 import {
   MoreVertical,
   Trash2,
@@ -115,6 +113,12 @@ const SidebarItemActions = React.memo<{
             isSelected && "opacity-100"
           )}
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
           aria-label="Item actions"
         >
           <MoreVertical className="h-4 w-4" />
@@ -180,85 +184,86 @@ export const SidebarItem = React.memo<SidebarItemProps>(({
   }, [onDeleteRequest, item.id, item.name]);
 
   return (
-    <li className="list-none">
-      <motion.div
-        variants={burnVariants}
-        initial="hidden"
-        animate="visible"
+    // Plain div + CSS animate-content-fade-in: a per-row motion.div with a
+    // filter-based enter variant rebuilt GPU shaders on every virtualizer
+    // recycle during scroll. Pure CSS opacity/translate is far cheaper.
+    <div
+      className={cn(
+        "animate-content-fade-in",
+        sidebarItemVariants({ variant, isSelected, className })
+      )}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      aria-label={`${displayName} - ${contextConfig.label.slice(0, -1)}`}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          handleClick();
+        }
+      }}
+    >
+      {isSelected && (
+        <div
+          className={cn(
+            "absolute left-0 top-0 bottom-0 w-1",
+            styling.gradientClass
+          )}
+          aria-hidden="true"
+        />
+      )}
+
+      <div
         className={cn(
-          sidebarItemVariants({ variant, isSelected, className })
+          "relative shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+          isSelected ? styling.bg : "bg-secondary/50 group-hover:bg-brass/10"
         )}
-        onClick={handleClick}
-        role="button"
-        tabIndex={0}
-        aria-label={`${displayName} - ${contextConfig.label.slice(0, -1)}`}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleClick();
-          }
-        }}
       >
+        <IconComponent
+          className={cn(
+            "w-5 h-5 transition-colors",
+            isSelected
+              ? styling.color
+              : "text-muted-foreground group-hover:text-brass"
+          )}
+          aria-hidden="true"
+        />
         {isSelected && (
           <div
             className={cn(
-              "absolute left-0 top-0 bottom-0 w-1",
-              styling.gradientClass
+              "absolute inset-0 rounded-lg blur-sm -z-10",
+              styling.bg
             )}
             aria-hidden="true"
           />
         )}
+      </div>
 
-        <div
+      <div className="flex-1 min-w-0">
+        <h4
           className={cn(
-            "relative shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all",
-            isSelected ? styling.bg : "bg-secondary/50 group-hover:bg-brass/10"
+            "font-serif font-semibold text-base truncate",
+            isSelected ? "text-foreground" : "text-foreground/90"
           )}
+          title={item.name}
         >
-          <IconComponent
-            className={cn(
-              "w-5 h-5 transition-colors",
-              isSelected
-                ? styling.color
-                : "text-muted-foreground group-hover:text-brass"
-            )}
-            aria-hidden="true"
+          <SearchHighlight
+            text={displayName}
+            indices={matchIndices}
+            highlightClassName="bg-rune/30 text-leather font-bold rounded-sm px-0.5"
           />
-          {isSelected && (
-            <div
-              className={cn(
-                "absolute inset-0 rounded-lg blur-sm -z-10",
-                styling.bg
-              )}
-              aria-hidden="true"
-            />
-          )}
-        </div>
+        </h4>
+      </div>
 
-        <div className="flex-1 min-w-0">
-          <h4
-            className={cn(
-              "font-serif font-semibold text-base truncate",
-              isSelected ? "text-foreground" : "text-foreground/90"
-            )}
-            title={item.name}
-          >
-            <SearchHighlight
-              text={displayName}
-              indices={matchIndices}
-              highlightClassName="bg-rune/30 text-leather font-bold rounded-sm px-0.5"
-            />
-          </h4>
-        </div>
-
-        <SidebarItemActions
-          onView={handleView}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          isSelected={isSelected}
-        />
-      </motion.div>
-    </li>
+      <SidebarItemActions
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        isSelected={isSelected}
+      />
+    </div>
   );
 });
 
