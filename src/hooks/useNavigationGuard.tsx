@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, startTransition } from "react";
+import React, { createContext, useCallback, use, startTransition } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useAppStore, useHasUnsavedChanges } from "@/store/appStore";
@@ -13,7 +13,7 @@ interface NavigationGuardValue {
 
 const NavigationGuardContext = createContext<NavigationGuardValue | null>(null);
 
-export const NavigationGuardProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
   const hasUnsavedChanges = useHasUnsavedChanges();
   const currentContext = useAppStore((s) => s.currentContext);
   const selectedId = useAppStore((s) => s.selectedId);
@@ -104,7 +104,7 @@ export const NavigationGuardProvider: React.FC<React.PropsWithChildren> = ({ chi
   );
 
   return (
-    <NavigationGuardContext.Provider value={value}>
+    <NavigationGuardContext value={value}>
       {children}
       <ConfirmDialog
         open={confirmState.open}
@@ -116,12 +116,12 @@ export const NavigationGuardProvider: React.FC<React.PropsWithChildren> = ({ chi
         onConfirm={handleConfirm}
         onCancel={handleCancel}
       />
-    </NavigationGuardContext.Provider>
+    </NavigationGuardContext>
   );
-};
+}
 
 export function useNavigationGuard(): NavigationGuardValue {
-  const context = useContext(NavigationGuardContext);
+  const context = use(NavigationGuardContext);
   if (!context) {
     throw new Error("useNavigationGuard must be used within NavigationGuardProvider");
   }
