@@ -1,10 +1,7 @@
 /**
  * Rotational symmetry of the regular tetrahedron: the alternating group A4
  * (order 12), realized as unit quaternions acting on body vectors v ↦ R v.
- *
- * Elements correspond to even permutations of the four vertices; each column
- * of the Cayley table is the quaternion product in Hamilton order (same as
- * {@link quatMul}).
+ * Elements correspond to even permutations of the four vertices.
  */
 import type { Mat3RowMajor, Quat, Vec3 } from "@/lib/dice/quaternion";
 import {
@@ -17,10 +14,7 @@ import {
   quatNorm,
 } from "@/lib/dice/quaternion";
 
-// Canonical regular-tetrahedron vertices inside the unit cube (even-parity
-// sign products). The A4 group action is invariant under uniform scale, so
-// this local copy yields the same rotations as the picker's scaled mesh and
-// breaks the import cycle with `tetrahedron.ts`.
+// Local copy (scale-invariant) to break the import cycle with `tetrahedron.ts`.
 const TET_VERTICES: readonly Vec3[] = [
   [1, 1, 1],
   [1, -1, -1],
@@ -147,7 +141,10 @@ function add3(a: Mat3RowMajor, b: Mat3RowMajor): Mat3RowMajor {
   return a.map((x, i) => x + b[i]) as unknown as Mat3RowMajor;
 }
 
-/** Newton polar factor: orthogonal R ≈ H with det(R) = +1. */
+/**
+ * Newton polar factor: orthogonal R ≈ H with det(R) = +1. Throws if iteration
+ * converges to a reflection (det=-1) so a TET_VERTICES misorder fails at init.
+ */
 function polarOrthogonalProcrustes(H: Mat3RowMajor): Mat3RowMajor {
   const n = Math.sqrt(frobNorm2(H));
   let X: Mat3RowMajor = n > 1e-18 ? scale3(H, 1 / n) : ([1, 0, 0, 0, 1, 0, 0, 0, 1] as unknown as Mat3RowMajor);
@@ -155,8 +152,9 @@ function polarOrthogonalProcrustes(H: Mat3RowMajor): Mat3RowMajor {
     const invXT = inv3(transpose3(X));
     X = scale3(add3(X, invXT), 0.5);
   }
-  if (det3(X) < 0) {
-    X = [X[0], X[1], -X[2], X[3], X[4], -X[5], X[6], X[7], -X[8]] as unknown as Mat3RowMajor;
+  const d = det3(X);
+  if (Math.abs(d - 1) > 1e-6) {
+    throw new Error(`A4 polar factor produced non-rotation (det=${d}); TET_VERTICES likely misordered`);
   }
   return X;
 }
@@ -176,14 +174,25 @@ export const A4_ROTATION_QUATS: readonly Quat[] = EVEN_PERMS.map((p) =>
 );
 
 /** Index of the identity element in `A4_ROTATION_QUATS`. */
-export const A4_IDENTITY_INDEX = A4_ROTATION_QUATS.findIndex(
-  (q) => quatAngle(q, IDENTITY_Q) < EPS_MATCH,
-);
+export const A4_IDENTITY_INDEX = (() => {
+  const idx = A4_ROTATION_QUATS.findIndex(
+    (q) => quatAngle(q, IDENTITY_Q) < EPS_MATCH,
+  );
+  if (idx < 0) throw new Error("A4 identity element not found in rotation table");
+  return idx;
+})();
 
 /** Even permutation σ_g with vertex k ↦ σ_g(k) for the element at index g. */
 export const A4_VERTEX_PERMUTATIONS: readonly (readonly number[])[] = EVEN_PERMS;
 
-function nearestA4Index(q: Quat): number {
+/**
+ * Index of the A4 element closest to an arbitrary quaternion `q` (under the
+ * geodesic angle metric on SO(3), after sign canonicalization). Used by the
+ * Cayley-table constructor to project quat products back into A4 indices, and
+ * by physics code that wants to reason about "which group element am I near"
+ * during a drag.
+ */
+export function nearestA4Index(q: Quat): number {
   const qc = canonicalQuat(quatNorm(q));
   let best = 0;
   let bestAng = Infinity;
@@ -213,9 +222,6 @@ export const A4_CAYLEY: readonly (readonly number[])[] = (() => {
 
 /** Group inverse: `A4_CAYLEY[i][A4_INVERSE[i]] === A4_IDENTITY_INDEX`. */
 export const A4_INVERSE: readonly number[] = (() => {
-  if (A4_IDENTITY_INDEX < 0) {
-    throw new Error("a4Symmetry: identity quaternion not found in A4_ROTATION_QUATS");
-  }
   const e = A4_IDENTITY_INDEX;
   return Array.from({ length: A4_ORDER }, (_, i) => {
     for (let j = 0; j < A4_ORDER; j++) {

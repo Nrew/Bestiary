@@ -9,8 +9,6 @@ import {
 import {
   A4_ORDER,
   A4_VERTEX_PERMUTATIONS,
-  a4Compose,
-  a4Inverse,
   a4Quat,
 } from "@/lib/dice/a4Symmetry";
 
@@ -141,15 +139,6 @@ const REFERENCE_SNAP: Quat = snapQuatForFace(FACE_NORMALS[0], FACE_UPS[0]);
 
 export const SNAP_QUATERNIONS: readonly Quat[] = FACE_TO_A4_INDEX.map((g) =>
   quatNorm(quatMul(REFERENCE_SNAP, a4Quat(g))),
-);
-
-/**
- * Body-frame rotation g_{i→j} such that snap_j = snap_i · g_{i→j}.
- * Because snap_k = q_0 · a4Quat(g_k), the relative rotation collapses to a
- * pure A4 lookup: g_{i→j} = g_i⁻¹ · g_j (composed via the Cayley table).
- */
-export const RELATIVE_SNAP_QUATS: readonly (readonly Quat[])[] = FACE_TO_A4_INDEX.map((gi) =>
-  FACE_TO_A4_INDEX.map((gj) => a4Quat(a4Compose(a4Inverse(gi), gj))),
 );
 
 export function dominantContextIndex(q: Quat): number {

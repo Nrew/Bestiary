@@ -5,6 +5,7 @@ import {
   mat3MulVec3,
   mat3ToUnitQuat,
   quatAngle,
+  quatInverse,
   quatMul,
   quatNorm,
   quatToCSSMatrix,
@@ -51,6 +52,20 @@ describe("quatMul", () => {
     const q = quatNorm([0.11, 0.22, 0.33, 0.9]);
     expect(quatMul(IDENTITY_Q, q)).toEqual(q);
     expect(quatMul(q, IDENTITY_Q)).toEqual(q);
+  });
+});
+
+describe("quatInverse", () => {
+  it("yields identity when composed with the original", () => {
+    const q = quatNorm([0.15, -0.28, 0.42, 0.85]);
+    const composed = quatMul(q, quatInverse(q));
+    expect(quatAngle(composed, IDENTITY_Q)).toBeLessThan(1e-9);
+  });
+
+  it("is its own inverse on unit quaternions", () => {
+    const q = quatNorm([0.2, 0.1, 0.4, 0.88]);
+    const twice = quatInverse(quatInverse(q));
+    expect(quatAngle(q, twice)).toBeLessThan(1e-9);
   });
 });
 

@@ -7,7 +7,6 @@ import {
   A4_ORDER,
   A4_ROTATION_QUATS,
   a4Compose,
-  a4Inverse,
   a4PermutationActsCorrectly,
 } from "@/lib/dice/a4Symmetry";
 
@@ -32,7 +31,7 @@ describe("A4 symmetry", () => {
     const e = A4_IDENTITY_INDEX;
     for (let i = 0; i < A4_ORDER; i++) {
       expect(A4_CAYLEY[i][A4_INVERSE[i]]).toBe(e);
-      expect(A4_CAYLEY[a4Inverse(i)][i]).toBe(e);
+      expect(A4_CAYLEY[A4_INVERSE[i]][i]).toBe(e);
     }
   });
 

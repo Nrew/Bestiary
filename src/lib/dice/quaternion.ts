@@ -26,14 +26,15 @@ export function quatMul(a: Quat, b: Quat): Quat {
   ];
 }
 
-export function quatConj(q: Quat): Quat {
-  return [-q[0], -q[1], -q[2], q[3]];
-}
-
 export function quatNorm(q: Quat): Quat {
   const m = Math.hypot(q[0], q[1], q[2], q[3]);
   if (m < 1e-12) return IDENTITY_Q;
   return [q[0] / m, q[1] / m, q[2] / m, q[3] / m];
+}
+
+/** Inverse of a unit quaternion (its conjugate). */
+export function quatInverse(q: Quat): Quat {
+  return [-q[0], -q[1], -q[2], q[3]];
 }
 
 export function quatFromAxisAngle(axis: Vec3, angleRad: number): Quat {
@@ -124,18 +125,13 @@ export function mat3MulVec3(m: Mat3RowMajor, v: Vec3): Vec3 {
 
 /**
  * Unit quaternion for a proper rotation matrix (row-major, det(M) ≈ +1).
- * Shepperd’s method; stable branch on trace / diagonal dominance.
+ * Shepperd's method; stable branch on trace / diagonal dominance.
+ * Inverse of {@link mat3FromUnitQuat}.
  */
 export function mat3ToUnitQuat(m: Mat3RowMajor): Quat {
-  const r00 = m[0],
-    r01 = m[1],
-    r02 = m[2];
-  const r10 = m[3],
-    r11 = m[4],
-    r12 = m[5];
-  const r20 = m[6],
-    r21 = m[7],
-    r22 = m[8];
+  const r00 = m[0], r01 = m[1], r02 = m[2];
+  const r10 = m[3], r11 = m[4], r12 = m[5];
+  const r20 = m[6], r21 = m[7], r22 = m[8];
   const tr = r00 + r11 + r22;
   let qx: number, qy: number, qz: number, qw: number;
   if (tr > 0) {
