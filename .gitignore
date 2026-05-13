@@ -57,3 +57,9 @@ Thumbs.db
 tmp/
 temp/
 context.txt
+
+# Personal scratch / TODO files
+TASKS.md
+
+# Chrome performance traces (local profiling artifacts)
+Trace-*.json.gz
