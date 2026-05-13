@@ -57,7 +57,6 @@ interface AppState {
 }
 
 interface AppActions {
-  // UI State
   setCurrentContext: (context: ViewContext) => void;
   setSearchQuery: (query: string) => void;
   setSelectedId: (id: string | null, edit?: boolean) => void;
@@ -77,13 +76,12 @@ interface AppActions {
   fetchPage: (context: ViewContext, isNew?: boolean) => Promise<void>;
   navigateToEntry: (context: ViewContext, id: string) => Promise<void>;
 
-  // Convenience typed accessors (for components that need specific types)
   getEntry: <T extends BestiaryEntry>(context: ViewContext, id: string) => T | undefined;
   getEntriesMap: (context: ViewContext) => EntryMap;
 
-  // Cross-context helpers (for loading referenced entries like items in loot tables)
   ensureItemsLoaded: (itemIds: string[]) => Promise<void>;
   ensureAbilitiesLoaded: (abilityIds: string[]) => Promise<void>;
+  ensureStatusesLoaded: (statusIds: string[]) => Promise<void>;
 }
 
 const createInitialData = (): Record<ViewContext, ContextData> => ({
@@ -240,7 +238,6 @@ export const useAppStore = create<AppState & AppActions>()(
     saveEntry: async (context, entry) => {
       const config = getContextConfig(context);
 
-      // Prevent concurrent saves of the same entry
       if (get().savingEntries.has(entry.id)) {
         throw new Error(`Entry ${entry.id} is already being saved`);
       }
@@ -281,7 +278,6 @@ export const useAppStore = create<AppState & AppActions>()(
           if (isDraft) {
             state.draftEntries.delete(entry.id);
           }
-          // Skip for stat-only saves; only new entries or name changes need the wiki map rebuilt
           if (shouldIncrementCount || nameChanged) {
             state.nameVersion += 1;
           }
@@ -450,6 +446,9 @@ export const useAppStore = create<AppState & AppActions>()(
     ensureAbilitiesLoaded: (abilityIds: string[]) =>
       ensureEntriesLoaded("abilities", abilityIds),
 
+    ensureStatusesLoaded: (statusIds: string[]) =>
+      ensureEntriesLoaded("statuses", statusIds),
+
     navigateToEntry: async (context, id) => {
       const finishNavigation = () => {
         get().setCurrentContext(context);
@@ -548,18 +547,9 @@ export const useStatusCount = () => useAppStore((s) => s.data.statuses.count);
 export const useAbilityCount = () => useAppStore((s) => s.data.abilities.count);
 
 /**
- * Memoized name lookup for wiki links.
- *
- * Subscribes ONLY to `nameVersion` so unrelated store mutations (saves that
- * don't change a name, isLoading flips, fetchVersion bumps, …) do not rebuild
- * the map and cascade rerenders into every consumer (RichTextViewer in 5
- * view sections + every form's RichTextEditor). Name-affecting events
- * (initial preload, new entry, save with renamed, delete, draft create/
- * discard, mergeEntries) increment `nameVersion`, which is sufficient.
- *
- * `data` is read imperatively inside the memo via `useAppStore.getState()`
- * so we capture the current snapshot at recompute time without subscribing
- * to its reference churn.
+ * Subscribes only to `nameVersion`; the snapshot is read imperatively so
+ * unrelated store mutations don't rebuild the map. `data` reads via
+ * `useAppStore.getState()` to avoid subscribing to its reference churn.
  */
 export const useMemoizedNameLookup = (): NameLookupMap => {
   const nameVersion = useAppStore((s) => s.nameVersion);
@@ -572,6 +562,6 @@ export const useMemoizedNameLookup = (): NameLookupMap => {
       statuses: statuses.entries,
       abilities: abilities.entries,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative read, gated by nameVersion
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `nameVersion` is the fingerprint; data is read imperatively at recompute time.
   }, [nameVersion]);
 };

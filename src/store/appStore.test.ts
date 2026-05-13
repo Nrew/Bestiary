@@ -282,6 +282,62 @@ describe("appStore saveEntry", () => {
     expect(useAppStore.getState().nameVersion).toBe(1);
   });
 
+  it("clears savingEntries after the 30s timeout when the API never resolves", async () => {
+    vi.useFakeTimers();
+    try {
+      const item = requireStoredItem("550e8400-e29b-41d4-a716-446655440000");
+
+      // API call that never resolves: simulates a hung Tauri IPC.
+      apiMocks.saveItem.mockReturnValueOnce(new Promise(() => {}));
+
+      const savePromise = useAppStore.getState().saveEntry("items", item);
+      // Swallow the eventual rejection so vitest doesn't flag it as unhandled.
+      const tracked = savePromise.catch(() => "rejected" as const);
+
+      // Guard is set synchronously when saveEntry begins.
+      expect(useAppStore.getState().savingEntries.has(item.id)).toBe(true);
+
+      // Advance past the 30s race timeout; the timeout branch rejects the
+      // racing promise, which the saveEntry catch handler then translates
+      // into a thrown error + savingEntries cleanup.
+      await vi.advanceTimersByTimeAsync(30_001);
+
+      const outcome = await tracked;
+      expect(outcome).toBe("rejected");
+      expect(useAppStore.getState().savingEntries.has(item.id)).toBe(false);
+      expect(useAppStore.getState().error).toMatch(/timed out/i);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("rejects a concurrent save of the same entry while the first is in flight", async () => {
+    const item = requireStoredItem("550e8400-e29b-41d4-a716-446655440000");
+
+    // First save: never resolves until we release it. The store should add
+    // entry.id to savingEntries synchronously when we call saveEntry, so the
+    // second call rejects without ever invoking the API a second time.
+    let release: ((value: Item) => void) | undefined;
+    const pending = new Promise<Item>((resolve) => {
+      release = resolve;
+    });
+    apiMocks.saveItem.mockReturnValueOnce(pending);
+
+    const first = useAppStore.getState().saveEntry("items", item);
+    await expect(
+      useAppStore.getState().saveEntry("items", item),
+    ).rejects.toThrow(/already being saved/i);
+
+    expect(apiMocks.saveItem).toHaveBeenCalledTimes(1);
+
+    // Drain the first save so the store releases its lock and any pending
+    // timers (the 30s race) are cleaned up before the test ends.
+    release?.(item);
+    await first;
+
+    expect(useAppStore.getState().savingEntries.has(item.id)).toBe(false);
+  });
+
   it("deduplicates repeated ids when ensuring referenced items are loaded", async () => {
     const loadedItem = createItem("Loaded Item");
     apiMocks.itemApi.getDetails.mockClear();
