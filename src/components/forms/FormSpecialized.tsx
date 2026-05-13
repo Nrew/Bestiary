@@ -75,7 +75,7 @@ export function FormStatValueInput<T extends FieldValues>({
 
             {isEnabled && (
               <div className="flex items-center gap-2 ml-6">
-                <Select onValueChange={handleTypeChange} value={currentType}>
+                <Select name={`${name}-type`} onValueChange={handleTypeChange} value={currentType}>
                   <label htmlFor={`${name}-type`} className="sr-only">{label} type</label>
                   <SelectTrigger id={`${name}-type`} className="w-40">
                     <SelectValue />

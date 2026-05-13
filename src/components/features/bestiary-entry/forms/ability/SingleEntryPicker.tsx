@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X } from "lucide-react";
 import { useStatusesMap, useEntitiesMap } from "@/store/appStore";
 import { getContextConfig } from "@/lib/context-config";
+import { cn } from "@/lib/utils";
+import { listboxOptionVariants } from "@/components/ui/listbox-option";
 import type { BestiaryEntry } from "@/types";
 
 interface SingleEntryPickerProps {
@@ -14,8 +16,8 @@ interface SingleEntryPickerProps {
   context: "statuses" | "entities";
 }
 
-export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
-  ({ label, value, onChange, context }) => {
+export const SingleEntryPicker = React.memo(
+  ({ label, value, onChange, context }: SingleEntryPickerProps) => {
     const [isOpen, setIsOpen] = React.useState(false);
     const [search, setSearch] = React.useState("");
     const [remoteEntries, setRemoteEntries] = React.useState<BestiaryEntry[]>([]);
@@ -24,6 +26,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
     const [activeIndex, setActiveIndex] = React.useState(0);
     const listRef = React.useRef<HTMLDivElement>(null);
     const listboxId = React.useId();
+    const fetchedNameRef = React.useRef<string | null>(null);
 
     const statusesMap = useStatusesMap();
     const entitiesMap = useEntitiesMap();
@@ -35,22 +38,27 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
 
     React.useEffect(() => {
       setFetchedName(null);
+      fetchedNameRef.current = null;
     }, [value]);
 
     React.useEffect(() => {
-      if (!value || entriesMap.has(value) || fetchedName !== null) return;
+      if (!value || entriesMap.has(value) || fetchedNameRef.current !== null) return;
       let cancelled = false;
       getContextConfig(context).api.getDetails(value)
         .then((entry) => {
-          if (!cancelled) setFetchedName(entry.name);
+          if (cancelled) return;
+          fetchedNameRef.current = entry.name;
+          setFetchedName(entry.name);
         })
         .catch(() => {
-          if (!cancelled) setFetchedName("");
+          if (cancelled) return;
+          fetchedNameRef.current = "";
+          setFetchedName("");
         });
       return () => {
         cancelled = true;
       };
-    }, [context, entriesMap, value, fetchedName]);
+    }, [context, entriesMap, value]);
 
     React.useEffect(() => {
       if (!isOpen) return;
@@ -153,6 +161,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
               role="dialog"
               aria-label={`Search ${context}`}
             >
+              <Label htmlFor={`${listboxId}-search`} className="sr-only">Search {context}</Label>
               <Input
                 id={`${listboxId}-search`}
                 name={`${listboxId}-search`}
@@ -164,7 +173,6 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
                 autoFocus
                 aria-controls={listboxId}
                 aria-autocomplete="list"
-                aria-label={`Search ${context}`}
               />
               {isSearching ? (
                 <p className="text-sm text-muted-foreground p-2" role="status">
@@ -191,9 +199,10 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
                         setIsOpen(false);
                         setSearch("");
                       }}
-                      className={`w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent ${
-                        index === activeIndex ? "bg-accent" : ""
-                      }`}
+                      className={cn(
+                        listboxOptionVariants({ active: index === activeIndex }),
+                        "w-full text-left px-2 py-1.5 rounded",
+                      )}
                     >
                       {entry.name}
                     </button>

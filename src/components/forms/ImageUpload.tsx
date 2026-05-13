@@ -1,6 +1,5 @@
 import React from "react";
 import { useFormContext, Controller, FieldValues, Path } from "react-hook-form";
-import { Label } from "@/components/ui/label";
 import { X, Upload, Image as ImageIcon, ZoomIn } from "lucide-react";
 import { uploadImage } from "@/lib/api";
 import { ALLOWED_IMAGE_EXTENSIONS, IMAGE } from "@/lib/dnd/constants";
@@ -144,7 +143,18 @@ export function ImageUpload<T extends FieldValues>({
   const [dragOver, setDragOver] = React.useState(false);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputId = React.useId();
+  const groupLabelId = `${fileInputId}-label`;
   const acceptedTypes = ALLOWED_IMAGE_EXTENSIONS.map((ext) => `.${ext}`).join(",");
+
+  // Tauri's invoke takes no AbortSignal; flip this on unmount and check between awaits.
+  const cancelledRef = React.useRef(false);
+  React.useEffect(() => {
+    cancelledRef.current = false;
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, []);
 
   return (
     <Controller
@@ -184,11 +194,13 @@ export function ImageUpload<T extends FieldValues>({
 
           try {
             for (const file of fileArray) {
+              if (cancelledRef.current) return;
               if (images.length + newPaths.length >= maxImages) break;
               try {
                 const path = await uploadFile(file);
                 newPaths.push(path);
               } catch (err) {
+                if (cancelledRef.current) return;
                 if (err instanceof UnsupportedExtensionError) {
                   toast.warning(
                     `"${err.fileName}" has an unsupported format. Supported: jpg, jpeg, png, gif, webp.`
@@ -200,7 +212,8 @@ export function ImageUpload<T extends FieldValues>({
               }
             }
 
-            // Commit any successfully-uploaded paths even if some files failed
+            if (cancelledRef.current) return;
+
             if (newPaths.length > 0) {
               field.onChange([...images, ...newPaths]);
             }
@@ -211,7 +224,7 @@ export function ImageUpload<T extends FieldValues>({
               );
             }
           } finally {
-            setIsUploading(false);
+            if (!cancelledRef.current) setIsUploading(false);
           }
         };
 
@@ -257,9 +270,11 @@ export function ImageUpload<T extends FieldValues>({
         };
 
         return (
-          <div className="space-y-3" onPaste={handlePaste}>
+          <div className="space-y-3" onPaste={handlePaste} role="group" aria-labelledby={groupLabelId}>
             <div>
-              <Label>{label}</Label>
+              <span id={groupLabelId} className="text-sm font-medium leading-none">
+                {label}
+              </span>
               {description && (
                 <p className="text-sm text-muted-foreground mt-1">{description}</p>
               )}
@@ -275,7 +290,7 @@ export function ImageUpload<T extends FieldValues>({
                   return (
                   <div
                     key={imageRefKey(imageRef, index)}
-                    className="relative aspect-square rounded-lg overflow-hidden border border-border bg-muted group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="relative aspect-square rounded-lg overflow-hidden border border-border bg-muted group cursor-pointer focus-ring"
                     onClick={() => isValid && setLightboxIndex(index)}
                     onKeyDown={(e) => {
                       if (isValid && (e.key === "Enter" || e.key === " ")) {
@@ -316,11 +331,11 @@ export function ImageUpload<T extends FieldValues>({
             )}
 
             {images.length < maxImages && (
-              <div
+              <label
+                htmlFor={fileInputId}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
-                onClick={() => fileInputRef.current?.click()}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -333,7 +348,7 @@ export function ImageUpload<T extends FieldValues>({
                 className={`
                   flex flex-col items-center justify-center gap-2 p-6
                   border-2 border-dashed rounded-lg cursor-pointer transition-colors
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                  focus-ring
                   ${dragOver ? "border-accent bg-accent/10" : "border-border hover:border-muted-foreground hover:bg-muted/50"}
                   ${isUploading ? "opacity-50 pointer-events-none" : ""}
                 `}
@@ -364,15 +379,18 @@ export function ImageUpload<T extends FieldValues>({
                 )}
                 <input
                   ref={fileInputRef}
+                  id={fileInputId}
+                  name={`${String(name)}-file-input`}
                   type="file"
                   accept={acceptedTypes}
                   multiple
+                  tabIndex={-1}
                   onChange={(e) => {
                     void handleFiles(e.target.files);
                   }}
-                  className="hidden"
+                  className="sr-only"
                 />
-              </div>
+              </label>
             )}
 
             <p className="text-xs text-muted-foreground">

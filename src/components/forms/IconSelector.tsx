@@ -55,7 +55,6 @@ export function IconSelector({
       ? allIcons.filter((icon) => icon.id.toLowerCase().includes(searchLower))
       : allIcons;
 
-    // Group icons by their capitalized category name for display.
     return filtered.reduce((acc, icon) => {
       if (!acc[icon.category]) {
         acc[icon.category] = [];

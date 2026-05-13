@@ -1,4 +1,3 @@
-import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +6,7 @@ import { useGameEnums } from "@/store/appStore";
 import { DAMAGE_TYPE_LABELS } from "@/lib/dnd/constants";
 import type { Ability, DamageType } from "@/types";
 
-export const DamageSubEditor: React.FC<{ index: number }> = ({ index }) => {
+export function DamageSubEditor({ index }: { index: number }) {
   const { register, watch, setValue } = useFormContext<Ability>();
   const gameEnums = useGameEnums();
   const formulaId = `effect-${index}-damage-formula`;
@@ -26,6 +25,7 @@ export const DamageSubEditor: React.FC<{ index: number }> = ({ index }) => {
       <div className="space-y-2">
         <Label htmlFor={damageTypeId}>Damage Type</Label>
         <Select
+          name={`effects.${index}.damageType`}
           value={damageType}
           onValueChange={(v: DamageType) => setValue(`effects.${index}.damageType`, v, { shouldDirty: true })}
         >
@@ -39,4 +39,4 @@ export const DamageSubEditor: React.FC<{ index: number }> = ({ index }) => {
       </div>
     </>
   );
-};
+}

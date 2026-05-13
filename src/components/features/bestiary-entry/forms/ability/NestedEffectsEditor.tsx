@@ -28,7 +28,7 @@ const NESTED_EFFECT_DEFAULTS: Record<string, AbilityEffect> = {
  * modifyStat/move/custom children; an AoE inside an AoE is intentionally
  * not allowed (the type picker omits it).
  */
-export const NestedEffectsEditor: React.FC<NestedEffectsEditorProps> = ({ parentIndex }) => {
+export function NestedEffectsEditor({ parentIndex }: NestedEffectsEditorProps) {
   const { watch, setValue } = useFormContext<Ability>();
   const gameEnums = useGameEnums();
   const nestedEffects: AbilityEffect[] = watch(`effects.${parentIndex}.effects`) || [];
@@ -80,6 +80,7 @@ export const NestedEffectsEditor: React.FC<NestedEffectsEditorProps> = ({ parent
           <div className="space-y-2">
             <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-type`} className="text-xs">Type</Label>
             <Select
+              name={`effects.${parentIndex}.effects.${subIndex}.type`}
               value={sub.type}
               onValueChange={(type: AbilityEffect["type"]) => {
                 if (type === "areaOfEffect") return; // prevent infinite nesting
@@ -112,6 +113,7 @@ export const NestedEffectsEditor: React.FC<NestedEffectsEditorProps> = ({ parent
               <div className="space-y-1">
                 <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-damage-type`} className="text-xs">Damage Type</Label>
                 <Select
+                  name={`effects.${parentIndex}.effects.${subIndex}.damageType`}
                   value={sub.damageType}
                   onValueChange={(t: DamageType) => updateNestedEffect(subIndex, { ...sub, damageType: t })}>
                   <SelectTrigger id={`nested-effect-${parentIndex}-${subIndex}-damage-type`} className="h-8 text-xs"><SelectValue /></SelectTrigger>
@@ -183,4 +185,4 @@ export const NestedEffectsEditor: React.FC<NestedEffectsEditorProps> = ({ parent
       </Button>
     </div>
   );
-};
+}

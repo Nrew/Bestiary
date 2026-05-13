@@ -1,10 +1,9 @@
-import React from "react";
 import { FormSection } from "@/components/forms/FormSection";
 import { StringArrayField } from "@/components/forms/StringArrayField";
 import { COMMON_LANGUAGES, COMMON_HABITATS } from "@/lib/dnd/constants";
 import type { Entity } from "@/types";
 
-export const SensesSection: React.FC = () => {
+export function SensesSection() {
   return (
     <FormSection title="Senses" iconCategory="attribute" iconName="vision">
       <div className="col-span-full">
@@ -18,9 +17,9 @@ export const SensesSection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}
 
-export const LanguagesSection: React.FC = () => {
+export function LanguagesSection() {
   return (
     <FormSection title="Languages" iconCategory="ui" iconName="bubble">
       <div className="col-span-full">
@@ -34,9 +33,9 @@ export const LanguagesSection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}
 
-export const HabitatsSection: React.FC = () => {
+export function HabitatsSection() {
   return (
     <FormSection title="Habitats" iconCategory="location" iconName="dungeon">
       <div className="col-span-full">
@@ -50,4 +49,4 @@ export const HabitatsSection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}

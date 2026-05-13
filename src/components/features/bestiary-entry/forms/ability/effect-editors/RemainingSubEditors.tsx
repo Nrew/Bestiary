@@ -1,4 +1,3 @@
-import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,7 @@ import { NestedEffectsEditor } from "../NestedEffectsEditor";
 import { KeyValueEditor } from "../KeyValueEditor";
 import type { Ability, AoeShape } from "@/types";
 
-export const SummonSubEditor: React.FC<{ index: number }> = ({ index }) => {
+export function SummonSubEditor({ index }: { index: number }) {
   const { register, watch, setValue } = useFormContext<Ability>();
   const effect = watch(`effects.${index}`);
   if (effect.type !== "summon") return null;
@@ -31,9 +30,9 @@ export const SummonSubEditor: React.FC<{ index: number }> = ({ index }) => {
       </div>
     </>
   );
-};
+}
 
-export const TransformSubEditor: React.FC<{ index: number }> = ({ index }) => {
+export function TransformSubEditor({ index }: { index: number }) {
   const { register, watch, setValue } = useFormContext<Ability>();
   const effect = watch(`effects.${index}`);
   if (effect.type !== "transform") return null;
@@ -64,9 +63,9 @@ export const TransformSubEditor: React.FC<{ index: number }> = ({ index }) => {
       </div>
     </>
   );
-};
+}
 
-export const MoveSubEditor: React.FC<{ index: number }> = ({ index }) => {
+export function MoveSubEditor({ index }: { index: number }) {
   const { register, watch, setValue } = useFormContext<Ability>();
   const effect = watch(`effects.${index}`);
   if (effect.type !== "move") return null;
@@ -93,9 +92,9 @@ export const MoveSubEditor: React.FC<{ index: number }> = ({ index }) => {
       </div>
     </div>
   );
-};
+}
 
-export const AoeSubEditor: React.FC<{ index: number }> = ({ index }) => {
+export function AoeSubEditor({ index }: { index: number }) {
   const { watch, setValue } = useFormContext<Ability>();
   const gameEnums = useGameEnums();
   const effect = watch(`effects.${index}`);
@@ -136,9 +135,9 @@ export const AoeSubEditor: React.FC<{ index: number }> = ({ index }) => {
       <NestedEffectsEditor parentIndex={index} />
     </>
   );
-};
+}
 
-export const CustomSubEditor: React.FC<{ index: number }> = ({ index }) => {
+export function CustomSubEditor({ index }: { index: number }) {
   const { register, watch, setValue } = useFormContext<Ability>();
   const effect = watch(`effects.${index}`);
   if (effect.type !== "custom") return null;
@@ -157,4 +156,4 @@ export const CustomSubEditor: React.FC<{ index: number }> = ({ index }) => {
       />
     </>
   );
-};
+}

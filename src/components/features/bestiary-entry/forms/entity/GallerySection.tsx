@@ -1,9 +1,8 @@
-import React from "react";
 import { FormSection } from "@/components/forms/FormSection";
 import { ImageUpload } from "@/components/forms/ImageUpload";
 import type { Entity } from "@/types";
 
-export const GallerySection: React.FC = () => {
+export function GallerySection() {
   return (
     <FormSection title="Gallery" iconCategory="class" iconName="bard">
       <div className="col-span-full">
@@ -16,4 +15,4 @@ export const GallerySection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}

@@ -1,4 +1,3 @@
-import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +8,7 @@ import { ABILITY_SCORE_LABELS } from "@/lib/dnd/constants";
 import { SingleEntryPicker } from "../SingleEntryPicker";
 import type { Ability, Attribute } from "@/types";
 
-export const ApplyStatusSubEditor: React.FC<{ index: number }> = ({ index }) => {
+export function ApplyStatusSubEditor({ index }: { index: number }) {
   const { register, watch, setValue } = useFormContext<Ability>();
   const gameEnums = useGameEnums();
   const effect = watch(`effects.${index}`);
@@ -81,4 +80,4 @@ export const ApplyStatusSubEditor: React.FC<{ index: number }> = ({ index }) => 
       </div>
     </>
   );
-};
+}

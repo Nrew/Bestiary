@@ -17,6 +17,8 @@ import { entityApi } from "@/lib/api";
 import { getContextConfig } from "@/lib/context-config";
 import { TIMING } from "@/lib/dnd/constants";
 import { formatValue } from "@/lib/dnd/format-utils";
+import { cn } from "@/lib/utils";
+import { listboxOptionVariants } from "@/components/ui/listbox-option";
 import { useReferencedEntryName } from "@/hooks/useReferencedEntryName";
 import type { BestiaryEntry, ViewContext } from "@/types";
 import { StatValue } from "@/types/generated";
@@ -49,6 +51,9 @@ export function FormKeyValueEditor<T extends FieldValues>({
   const [newKey, setNewKey] = React.useState("");
   const [newValue, setNewValue] = React.useState("");
   const uid = React.useId();
+  const groupLabelId = `${uid}-label`;
+  const keyInputId = `${uid}-key`;
+  const valueInputId = `${uid}-val`;
 
   return (
     <Controller
@@ -77,8 +82,10 @@ export function FormKeyValueEditor<T extends FieldValues>({
         };
 
         return (
-          <div className="space-y-3">
-            <Label>{label}</Label>
+          <div className="space-y-3" role="group" aria-labelledby={groupLabelId}>
+            <span id={groupLabelId} className="text-sm font-medium leading-none">
+              {label}
+            </span>
             <div className="space-y-2">
               {entries.map(([key, value]) => (
                 <div key={key} className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
@@ -96,25 +103,29 @@ export function FormKeyValueEditor<T extends FieldValues>({
               ))}
             </div>
             <div className="flex gap-2">
+              <Label htmlFor={keyInputId} className="sr-only">
+                {label} property name
+              </Label>
               <Input
-                id={`${uid}-key`}
-                name={`${uid}-key`}
+                id={keyInputId}
+                name="newPropertyKey"
                 placeholder={keyPlaceholder}
                 value={newKey}
                 onChange={(e) => setNewKey(e.target.value)}
                 className="flex-1"
-                aria-label={`${label} property name`}
                 maxLength={64}
               />
+              <Label htmlFor={valueInputId} className="sr-only">
+                {label} property value
+              </Label>
               <Input
-                id={`${uid}-val`}
-                name={`${uid}-val`}
+                id={valueInputId}
+                name="newPropertyValue"
                 placeholder={valuePlaceholder}
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addProperty())}
                 className="flex-1"
-                aria-label={`${label} property value`}
               />
               <button
                 type="button"
@@ -153,6 +164,7 @@ export function FormStatModifiersEditor<T extends FieldValues>({
   const { control } = useFormContext<T>();
   const [newStat, setNewStat] = React.useState("");
   const uid = React.useId();
+  const groupLabelId = `${uid}-label`;
 
   return (
     <Controller
@@ -181,17 +193,21 @@ export function FormStatModifiersEditor<T extends FieldValues>({
         };
 
         return (
-          <div className="space-y-3">
-            <Label>{label}</Label>
+          <div className="space-y-3" role="group" aria-labelledby={groupLabelId}>
+            <span id={groupLabelId} className="text-sm font-medium leading-none">
+              {label}
+            </span>
             <div className="space-y-2">
               {entries.map(([stat, mod]) => (
                 <div key={stat} className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
-                  <span className="font-medium text-sm min-w-25 capitalize">{stat}</span>
+                  <span id={`${name}-${stat}-label`} className="font-medium text-sm min-w-25 capitalize">{stat}</span>
+                  <Label htmlFor={`${name}-${stat}-type`} className="sr-only">{stat} modifier type</Label>
                   <Select
+                    name={`${name}.${stat}.type`}
                     value={mod.type}
                     onValueChange={(type: StatValue["type"]) => updateModifier(stat, { type })}
                   >
-                    <SelectTrigger id={`${name}-${stat}-type`} className="w-25" aria-label={`${stat} modifier type`}>
+                    <SelectTrigger id={`${name}-${stat}-type`} className="w-25">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -200,6 +216,7 @@ export function FormStatModifiersEditor<T extends FieldValues>({
                       <SelectItem value="percentMult">×%</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Label htmlFor={`${name}-${stat}-value`} className="sr-only">{stat} modifier value</Label>
                   <Input
                     id={`${name}-${stat}-value`}
                     name={`${name}-${stat}-value`}
@@ -208,16 +225,17 @@ export function FormStatModifiersEditor<T extends FieldValues>({
                     value={mod.value}
                     onChange={(e) => { const v = parseFloat(e.target.value); updateModifier(stat, { value: Number.isFinite(v) ? v : 0 }); }}
                     className="w-[80px]"
-                    aria-label={`${stat} modifier value`}
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => removeModifier(stat)}
-                    className="p-1 hover:bg-destructive/20 rounded"
+                    className="h-7 w-7 hover:bg-destructive/20"
                     aria-label={`Remove ${stat} modifier`}
                   >
                     <X className="h-3 w-3" />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
@@ -226,16 +244,21 @@ export function FormStatModifiersEditor<T extends FieldValues>({
                 .filter((s) => !modifiers[s])
                 .slice(0, 6)
                 .map((stat) => (
-                  <button
+                  <Button
                     key={stat}
                     type="button"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => addModifier(stat)}
-                    className="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 capitalize"
+                    className="h-7 px-2 text-xs capitalize"
                   >
                     + {stat}
-                  </button>
+                  </Button>
                 ))}
               <div className="flex gap-1">
+                <Label htmlFor={`${uid}-custom-stat`} className="sr-only">
+                  Custom stat name
+                </Label>
                 <Input
                   id={`${uid}-custom-stat`}
                   name={`${uid}-custom-stat`}
@@ -244,7 +267,6 @@ export function FormStatModifiersEditor<T extends FieldValues>({
                   onChange={(e) => setNewStat(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addModifier(newStat))}
                   className="w-30 h-7 text-xs"
-                  aria-label="Custom stat name"
                 />
               </div>
             </div>
@@ -263,6 +285,7 @@ interface FormEntryPickerProps<T extends FieldValues> {
   label: string;
   description?: string;
   context: ViewContext;
+  className?: string;
 }
 
 const SelectedEntryBadge = React.memo<{
@@ -304,6 +327,7 @@ export function FormEntryPicker<T extends FieldValues>({
   label,
   description,
   context,
+  className,
 }: FormEntryPickerProps<T>) {
   const { control } = useFormContext<T>();
   const [search, setSearch] = React.useState("");
@@ -352,7 +376,6 @@ export function FormEntryPicker<T extends FieldValues>({
     setActiveIndex(0);
   }, [remoteEntries.length, search]);
 
-  // Close dropdown on outside click
   React.useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -387,8 +410,10 @@ export function FormEntryPicker<T extends FieldValues>({
         };
 
         return (
-          <div className="space-y-2">
-            <Label>{label}</Label>
+          <div className={cn("space-y-2", className)} role="group" aria-labelledby={`${name}-label`}>
+            <span id={`${name}-label`} className="text-sm font-medium leading-none">
+              {label}
+            </span>
 
             {selectedIds.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -404,6 +429,9 @@ export function FormEntryPicker<T extends FieldValues>({
             )}
 
             <div ref={containerRef} className="relative w-64">
+              <Label htmlFor={`${name}-search`} className="sr-only">
+                Search for {context}
+              </Label>
               <Input
                 id={`${name}-search`}
                 name={`${name}-search`}
@@ -445,7 +473,6 @@ export function FormEntryPicker<T extends FieldValues>({
                 }
                 aria-haspopup="listbox"
                 aria-autocomplete="list"
-                aria-label={`Search for ${context}`}
               />
 
               {open && (
@@ -480,9 +507,10 @@ export function FormEntryPicker<T extends FieldValues>({
                             handleSelect(entry.id);
                           }
                         }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent cursor-pointer ${
-                          index === activeIndex ? "bg-accent" : ""
-                        }`}
+                        className={cn(
+                          listboxOptionVariants({ active: index === activeIndex }),
+                          "w-full text-left px-3 py-2",
+                        )}
                       >
                         {entry.name}
                       </div>
@@ -505,10 +533,10 @@ export function FormEntryPicker<T extends FieldValues>({
 const UUID_REGEX_PICKER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Searchable picker that resolves a UUID to an entity name and lets the user change it. */
-export const EntityStatPicker: React.FC<{
+export function EntityStatPicker({ value, onChange }: {
   value: string;
   onChange: (id: string) => void;
-}> = ({ value, onChange }) => {
+}) {
   const entitiesMap = useEntitiesMap();
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -584,6 +612,7 @@ export const EntityStatPicker: React.FC<{
       {open && (
         <div className="absolute z-50 mt-1 w-64 rounded-md border bg-popover shadow-md">
           <div className="p-2 border-b">
+            <Label htmlFor={searchInputId} className="sr-only">Search entities</Label>
             <Input
               id={searchInputId}
               name={searchInputId}
@@ -592,7 +621,6 @@ export const EntityStatPicker: React.FC<{
               onChange={(e) => setSearch(e.target.value)}
               className="h-8"
               autoFocus
-              aria-label="Search entities"
             />
           </div>
           <div className="max-h-48 overflow-auto p-1">
@@ -615,7 +643,7 @@ export const EntityStatPicker: React.FC<{
       )}
     </div>
   );
-};
+}
 
 
 interface CustomPropertiesFieldsProps {
@@ -628,11 +656,11 @@ interface CustomPropertiesFieldsProps {
 }
 
 /** Renders a text input or EntityStatPicker per field depending on key type and value shape. */
-export const CustomPropertiesFields: React.FC<CustomPropertiesFieldsProps> = ({
+export function CustomPropertiesFields({
   fieldPath,
   suggestions = {},
   entityStatKeys = new Set(),
-}) => {
+}: CustomPropertiesFieldsProps) {
   const { setValue, control } = useFormContext<FieldValues>();
   // Scoped useWatch prevents re-renders from unrelated field changes (save button flicker).
   const watchedCustomObj: unknown = useWatch({ control, name: fieldPath });
@@ -680,11 +708,11 @@ export const CustomPropertiesFields: React.FC<CustomPropertiesFieldsProps> = ({
             const strVal = String(value);
             const useEntityPicker = entityStatKeys.has(key) || UUID_REGEX_PICKER.test(strVal);
             return (
-              <div key={key} className="flex gap-2 items-center">
-                <div className="flex-1">
+              <div key={key} className="flex gap-2 items-end">
+                <div className="flex-1 space-y-2">
                   <Label
                     htmlFor={`${fieldPath}-${key}-value`}
-                    className="text-xs text-muted-foreground mb-1 block"
+                    className="text-xs text-muted-foreground"
                   >
                     {getLabel(key)}
                   </Label>
@@ -711,7 +739,7 @@ export const CustomPropertiesFields: React.FC<CustomPropertiesFieldsProps> = ({
                   variant="ghost"
                   size="icon"
                   onClick={() => handleRemove(key)}
-                  className="shrink-0 mt-5"
+                  className="shrink-0"
                   aria-label={`Remove ${getLabel(key)}`}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -733,6 +761,7 @@ export const CustomPropertiesFields: React.FC<CustomPropertiesFieldsProps> = ({
           </Label>
           {Object.keys(suggestions).length > 0 ? (
             <Select
+              name={`${fieldPath}.newKey`}
               value={newKey}
               onValueChange={(k) => { setNewKey(k); setNewValue(""); setNewEntityId(""); }}
             >
@@ -786,4 +815,4 @@ export const CustomPropertiesFields: React.FC<CustomPropertiesFieldsProps> = ({
       </div>
     </div>
   );
-};
+}

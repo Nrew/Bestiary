@@ -1,5 +1,4 @@
-import React from "react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { FormSection } from "@/components/forms/FormSection";
 import { CustomPropertiesFields } from "@/components/forms/FormCollections";
 import { Input } from "@/components/ui/input";
@@ -24,186 +23,18 @@ const CUSTOM_STAT_SUGGESTIONS: Record<string, string> = {
   summonSource: "Summon Source",
 };
 
-const CustomStatBlockFields: React.FC = () => (
-  <CustomPropertiesFields
-    fieldPath="statBlock.custom"
-    suggestions={CUSTOM_STAT_SUGGESTIONS}
-    entityStatKeys={ENTITY_STAT_KEYS}
-  />
-);
-
-const LEGACY_CUSTOM_FIELD_MAP = {
-  hitDice: "hitDice",
-  armorType: "armorNote",
-  armorNote: "armorNote",
-  burrowSpeed: "burrowSpeed",
-  climbSpeed: "climbSpeed",
-  swimSpeed: "swimSpeed",
-  flySpeed: "flySpeed",
-  hoverSpeed: "hoverSpeed",
-  initiative: "initiativeBonus",
-  initiativeBonus: "initiativeBonus",
-} as const;
-
-type LegacyCustomField = (typeof LEGACY_CUSTOM_FIELD_MAP)[keyof typeof LEGACY_CUSTOM_FIELD_MAP];
-type LegacyCustomUpdates = Partial<Pick<Entity["statBlock"], LegacyCustomField>>;
-
-const LEGACY_CUSTOM_FIELD_BY_KEY: Record<string, LegacyCustomField> = Object.fromEntries(
-  Object.entries(LEGACY_CUSTOM_FIELD_MAP).map(([legacyKey, field]) => [
-    legacyKey.toLowerCase(),
-    field,
-  ])
-);
-
-function isCustomStats(value: unknown): value is Record<string, string | number> {
+function CustomStatBlockFields() {
   return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    Object.values(value).every(
-      (entry) => typeof entry === "string" || typeof entry === "number"
-    )
+    <CustomPropertiesFields
+      fieldPath="statBlock.custom"
+      suggestions={CUSTOM_STAT_SUGGESTIONS}
+      entityStatKeys={ENTITY_STAT_KEYS}
+    />
   );
 }
 
-function parseNumericCustom(value: string | number): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim() !== "") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function hasStructuredValue(value: unknown): value is string | number {
-  return (
-    (typeof value === "string" && value !== "") ||
-    (typeof value === "number" && Number.isFinite(value))
-  );
-}
-
-function parseLegacyCustomField(
-  field: LegacyCustomField,
-  value: string | number
-): string | number | null {
-  if (field === "hitDice" || field === "armorNote") {
-    const text = String(value).trim();
-    return text === "" ? null : text;
-  }
-
-  return parseNumericCustom(value);
-}
-
-function setLegacyUpdate(
-  updates: LegacyCustomUpdates,
-  field: LegacyCustomField,
-  value: string | number
-): void {
-  switch (field) {
-    case "hitDice":
-      if (typeof value === "string") updates.hitDice = value;
-      break;
-    case "armorNote":
-      if (typeof value === "string") updates.armorNote = value;
-      break;
-    case "burrowSpeed":
-      if (typeof value === "number") updates.burrowSpeed = value;
-      break;
-    case "climbSpeed":
-      if (typeof value === "number") updates.climbSpeed = value;
-      break;
-    case "swimSpeed":
-      if (typeof value === "number") updates.swimSpeed = value;
-      break;
-    case "flySpeed":
-      if (typeof value === "number") updates.flySpeed = value;
-      break;
-    case "hoverSpeed":
-      if (typeof value === "number") updates.hoverSpeed = value;
-      break;
-    case "initiativeBonus":
-      if (typeof value === "number") updates.initiativeBonus = value;
-      break;
-  }
-}
-
-export function migrateLegacyCustomStats(statBlock: Entity["statBlock"]): {
-  custom: Record<string, string | number>;
-  updates: LegacyCustomUpdates;
-  changed: boolean;
-} {
-  const custom = statBlock.custom;
-  if (!isCustomStats(custom)) {
-    return { custom: {}, updates: {}, changed: false };
-  }
-
-  const nextCustom = { ...custom };
-  const updates: LegacyCustomUpdates = {};
-  let changed = false;
-
-  Object.entries(custom).forEach(([key, value]) => {
-    const field = LEGACY_CUSTOM_FIELD_BY_KEY[key.toLowerCase()];
-    if (!field) return;
-
-    const currentValue = statBlock[field];
-    if (hasStructuredValue(currentValue)) {
-      delete nextCustom[key];
-      changed = true;
-      return;
-    }
-
-    const parsedValue = parseLegacyCustomField(field, value);
-    if (!hasStructuredValue(parsedValue)) return;
-
-    setLegacyUpdate(updates, field, parsedValue);
-    delete nextCustom[key];
-    changed = true;
-  });
-
-  return { custom: nextCustom, updates, changed };
-}
-
-export const StatBlockSection: React.FC = () => {
-  const { control, register, setValue } = useFormContext<Entity>();
-  const statBlock = useWatch({ control, name: "statBlock" });
-
-  React.useEffect(() => {
-    if (!statBlock) return;
-
-    const migration = migrateLegacyCustomStats(statBlock);
-    if (!migration.changed) return;
-
-    Object.entries(migration.updates).forEach(([field, value]) => {
-      switch (field) {
-        case "hitDice":
-          setValue("statBlock.hitDice", value as string, { shouldDirty: false });
-          break;
-        case "armorNote":
-          setValue("statBlock.armorNote", value as string, { shouldDirty: false });
-          break;
-        case "burrowSpeed":
-          setValue("statBlock.burrowSpeed", value as number, { shouldDirty: false });
-          break;
-        case "climbSpeed":
-          setValue("statBlock.climbSpeed", value as number, { shouldDirty: false });
-          break;
-        case "swimSpeed":
-          setValue("statBlock.swimSpeed", value as number, { shouldDirty: false });
-          break;
-        case "flySpeed":
-          setValue("statBlock.flySpeed", value as number, { shouldDirty: false });
-          break;
-        case "hoverSpeed":
-          setValue("statBlock.hoverSpeed", value as number, { shouldDirty: false });
-          break;
-        case "initiativeBonus":
-          setValue("statBlock.initiativeBonus", value as number, { shouldDirty: false });
-          break;
-      }
-    });
-
-    setValue("statBlock.custom", migration.custom, { shouldDirty: false });
-  }, [setValue, statBlock]);
+export function StatBlockSection() {
+  const { register } = useFormContext<Entity>();
 
   return (
     <FormSection title="Stat Block" iconCategory="ability" iconName="strength">
@@ -344,4 +175,4 @@ export const StatBlockSection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}

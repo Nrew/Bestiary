@@ -1,5 +1,4 @@
-import React from "react";
-import { useFormContext, useFieldArray } from "react-hook-form";
+import { Controller, useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { FormSection } from "@/components/forms/FormSection";
 import { FormInput } from "@/components/forms/FormPrimitives";
 import { Input } from "@/components/ui/input";
@@ -8,16 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
+import { DeferredMount } from "@/components/shared/DeferredMount";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useGameEnums } from "@/store/appStore";
 import { ABILITY_TYPE_LABELS, AOE_SHAPE_LABELS } from "@/lib/dnd/constants";
 import { AbilityEffectEditor } from "./ability";
 import type { Ability, AbilityType, AoeShape } from "@/types";
 
-export const AbilityForm: React.FC = () => {
+const RICH_TEXT_FALLBACK = (
+  <Skeleton variant="shimmer" className="min-h-49.5 w-full rounded-md" aria-hidden />
+);
+
+export function AbilityForm() {
   const {
     register,
     control,
-    watch,
     setValue,
   } = useFormContext<Ability>();
   const gameEnums = useGameEnums();
@@ -27,7 +31,10 @@ export const AbilityForm: React.FC = () => {
     name: "effects",
   });
 
-  const target = watch("target");
+  const type = useWatch({ control, name: "type" });
+  const target = useWatch({ control, name: "target" });
+  const requiresConcentration = useWatch({ control, name: "requiresConcentration" });
+  const components = useWatch({ control, name: "components" });
   const targetType = target?.type || null;
 
   return (
@@ -39,7 +46,7 @@ export const AbilityForm: React.FC = () => {
         <div className="space-y-2">
           <Label htmlFor="ability-type">Type</Label>
           <Select
-            value={watch("type") || "passive"}
+            value={type || "passive"}
             onValueChange={(value: AbilityType) =>
               setValue("type", value, { shouldDirty: true })
             }
@@ -78,7 +85,7 @@ export const AbilityForm: React.FC = () => {
         <div className="col-span-full flex items-center space-x-2">
           <Checkbox
             id="requiresConcentration"
-            checked={watch("requiresConcentration") || false}
+            checked={requiresConcentration || false}
             onCheckedChange={(checked) =>
               setValue("requiresConcentration", !!checked, { shouldDirty: true })
             }
@@ -195,7 +202,7 @@ export const AbilityForm: React.FC = () => {
           <div className="flex items-center space-x-2">
             <Checkbox
               id="hasComponents"
-              checked={!!watch("components")}
+              checked={!!components}
               onCheckedChange={(checked) => {
                 if (checked) {
                   setValue("components", { verbal: false, somatic: false, material: null }, { shouldDirty: true });
@@ -209,12 +216,12 @@ export const AbilityForm: React.FC = () => {
             </Label>
           </div>
 
-          {!!watch("components") && (
+          {!!components && (
             <div className="ml-6 space-y-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="verbal"
-                  checked={watch("components.verbal") || false}
+                  checked={components.verbal || false}
                   onCheckedChange={(checked) =>
                     setValue("components.verbal", !!checked, { shouldDirty: true })
                   }
@@ -227,7 +234,7 @@ export const AbilityForm: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="somatic"
-                  checked={watch("components.somatic") || false}
+                  checked={components.somatic || false}
                   onCheckedChange={(checked) =>
                     setValue("components.somatic", !!checked, { shouldDirty: true })
                   }
@@ -283,16 +290,25 @@ export const AbilityForm: React.FC = () => {
       </FormSection>
 
       <FormSection title="Description" iconCategory="ui" iconName="book">
-        <div className="col-span-full">
-          <RichTextEditor
-            ariaLabel="Ability description"
-            content={watch("description") || ""}
-            onChange={(html) =>
-              setValue("description", html, { shouldDirty: true })
-            }
-          />
-        </div>
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <DeferredMount
+              ref={field.ref}
+              className="col-span-full"
+              fallback={RICH_TEXT_FALLBACK}
+            >
+              <RichTextEditor
+                ariaLabel="Ability description"
+                content={field.value || ""}
+                onChange={(html) => field.onChange(html)}
+                onBlur={field.onBlur}
+              />
+            </DeferredMount>
+          )}
+        />
       </FormSection>
     </div>
   );
-};
+}

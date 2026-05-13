@@ -1,4 +1,4 @@
-import { useFormContext, Path, FieldValues, PathValue } from "react-hook-form";
+import { useFormContext, useWatch, Path, FieldValues, PathValue } from "react-hook-form";
 import { useState, useCallback, useEffect, useRef, useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,10 +35,10 @@ export function StringArrayField<T extends FieldValues>({
   description,
   addButtonLabel = "Add Item",
 }: StringArrayFieldProps<T>) {
-  const { watch, setValue } = useFormContext<T>();
+  const { control, setValue } = useFormContext<T>();
   const groupLabelId = useId();
 
-  const formValues = watch(name);
+  const formValues = useWatch({ control, name }) as unknown;
 
   const [items, setItems] = useState<ArrayItem[]>(() =>
     toStringArray(formValues).map((value) => ({ id: generateUuid(), value }))
@@ -64,7 +64,7 @@ export function StringArrayField<T extends FieldValues>({
     }
   }, [formValues]);
 
-  // Only updates local state — no RHF write on every keystroke.
+  // Only updates local state: no RHF write on every keystroke.
   const handleChange = useCallback((index: number, value: string) => {
     setItems((prev) => {
       const next = [...prev];
@@ -98,6 +98,21 @@ export function StringArrayField<T extends FieldValues>({
     setValue(name, next.map((i) => i.value) as PathValue<T, Path<T>>, { shouldDirty: true });
   }, [name, setValue]);
 
+  const handlePaste = useCallback((index: number, e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData("text");
+    if (!/[\n,]/.test(text)) return;
+    e.preventDefault();
+    const parts = text.split(/[\n,]+/).map((p) => p.trim()).filter(Boolean);
+    if (parts.length === 0) return;
+    const current = itemsRef.current;
+    const head = current.slice(0, index);
+    const tail = current.slice(index + 1);
+    const replacements = parts.map((value) => ({ id: generateUuid(), value }));
+    const next = [...head, ...replacements, ...tail];
+    setItems(next);
+    setValue(name, next.map((i) => i.value) as PathValue<T, Path<T>>, { shouldDirty: true });
+  }, [name, setValue]);
+
   return (
     <div className="space-y-4" role="group" aria-labelledby={groupLabelId}>
       <div className="flex items-center justify-between">
@@ -113,14 +128,17 @@ export function StringArrayField<T extends FieldValues>({
 
       {items.map((item, index) => (
         <div key={item.id} className="flex gap-2 items-center">
+          <Label htmlFor={item.id} className="sr-only">
+            {label} item {index + 1}
+          </Label>
           <Input
             id={item.id}
             value={item.value}
             onChange={(e) => handleChange(index, e.target.value)}
             onBlur={handleBlur}
+            onPaste={(e) => handlePaste(index, e)}
             placeholder={placeholder}
             className="flex-1"
-            aria-label={`${label} item ${index + 1}`}
           />
           <Button
             type="button"

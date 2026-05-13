@@ -1,4 +1,3 @@
-import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +6,7 @@ import { useGameEnums } from "@/store/appStore";
 import { ABILITY_SCORE_LABELS } from "@/lib/dnd/constants";
 import type { Ability, Attribute } from "@/types";
 
-export const ModifyStatSubEditor: React.FC<{ index: number }> = ({ index }) => {
+export function ModifyStatSubEditor({ index }: { index: number }) {
   const { watch, setValue } = useFormContext<Ability>();
   const gameEnums = useGameEnums();
   const effect = watch(`effects.${index}`);
@@ -23,6 +22,7 @@ export const ModifyStatSubEditor: React.FC<{ index: number }> = ({ index }) => {
       <div className="space-y-2">
         <Label htmlFor={attrId}>Attribute</Label>
         <Select
+          name={`effects.${index}.attribute`}
           value={effect.attribute}
           onValueChange={(v: Attribute) => setValue(`effects.${index}.attribute`, v, { shouldDirty: true })}
         >
@@ -38,6 +38,7 @@ export const ModifyStatSubEditor: React.FC<{ index: number }> = ({ index }) => {
         <div className="space-y-2">
           <Label htmlFor={modTypeId}>Modifier Type</Label>
           <Select
+            name={`effects.${index}.value.type`}
             value={effect.value.type}
             onValueChange={(type: "flat" | "percentAdd" | "percentMult") =>
               setValue(`effects.${index}.value`, { ...effect.value, type }, { shouldDirty: true })
@@ -55,6 +56,7 @@ export const ModifyStatSubEditor: React.FC<{ index: number }> = ({ index }) => {
           <Label htmlFor={valueId}>Value</Label>
           <Input
             id={valueId}
+            name={`effects.${index}.value.value`}
             type="number"
             value={effect.value.value}
             onChange={(e) =>
@@ -67,6 +69,7 @@ export const ModifyStatSubEditor: React.FC<{ index: number }> = ({ index }) => {
         <Label htmlFor={durationId}>Duration (rounds)</Label>
         <Input
           id={durationId}
+          name={`effects.${index}.durationRounds`}
           type="number"
           value={effect.durationRounds}
           min={1}
@@ -77,4 +80,4 @@ export const ModifyStatSubEditor: React.FC<{ index: number }> = ({ index }) => {
       </div>
     </>
   );
-};
+}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useDeferredValue } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { FormSection } from "@/components/forms/FormSection";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,11 @@ import { CR_OPTIONS } from "@/lib/dnd/constants";
 import { formatChallengeRating, calculateProficiencyBonus, getMonsterXP } from "@/lib/dnd";
 import type { Entity } from "@/types";
 
-export const ChallengeSection: React.FC = () => {
+export function ChallengeSection() {
+  const itemsReady = useDeferredValue(true, false);
   const { register, control, getValues, setValue } = useFormContext<Entity>();
   const challengeRating = useWatch({ control, name: "challengeRating" });
+  const entryId = useWatch({ control, name: "id" });
 
   const syncChallengeDerivedFields = React.useCallback((
     nextChallengeRating: number | null,
@@ -35,6 +37,37 @@ export const ChallengeSection: React.FC = () => {
     syncChallengeDerivedFields(nextChallengeRating, { shouldDirty: true });
   }, [setValue, syncChallengeDerivedFields]);
 
+  // Fill missing XP/PB from CR on entry load; never marks dirty.
+  React.useEffect(() => {
+    const cr = getValues("challengeRating");
+    if (cr === null || cr === undefined) return;
+    const expectedXp = getMonsterXP(cr);
+    const expectedPb = calculateProficiencyBonus(cr);
+    if (getValues("experiencePoints") == null) {
+      setValue("experiencePoints", expectedXp, { shouldDirty: false });
+    }
+    if (getValues("proficiencyBonus") == null) {
+      setValue("proficiencyBonus", expectedPb, { shouldDirty: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entryId]);
+
+  const crOptions = React.useMemo(
+    () =>
+      CR_OPTIONS.map((cr) => ({
+        value: cr.toString(),
+        label: `CR ${formatChallengeRating(cr)}`,
+      })),
+    [],
+  );
+
+  // Derive the trigger label from `challengeRating` directly so SelectValue
+  // renders correctly on first paint without depending on SelectItem mounting.
+  const currentCrLabel =
+    challengeRating !== null && challengeRating !== undefined
+      ? `CR ${formatChallengeRating(challengeRating)}`
+      : undefined;
+
   return (
     <FormSection title="Challenge & Experience" iconCategory="dice" iconName="d20">
       <div className="space-y-2">
@@ -44,12 +77,14 @@ export const ChallengeSection: React.FC = () => {
           onValueChange={handleChallengeRatingChange}
         >
           <SelectTrigger id="challengeRating">
-            <SelectValue placeholder="Select CR..." />
+            <SelectValue placeholder="Select CR...">
+              {currentCrLabel}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {CR_OPTIONS.map((cr) => (
-              <SelectItem key={cr} value={cr.toString()}>
-                CR {formatChallengeRating(cr)}
+            {itemsReady && crOptions.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -74,10 +109,10 @@ export const ChallengeSection: React.FC = () => {
           id="proficiencyBonus"
           type="number"
           {...register("proficiencyBonus", { valueAsNumber: true })}
-          readOnly
-          className="bg-muted/40 cursor-not-allowed"
         />
-        <p className="text-xs text-muted-foreground">Derived from CR</p>
+        <p className="text-xs text-muted-foreground">
+          Auto-derived from CR; override here for non-standard creatures.
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -91,4 +126,4 @@ export const ChallengeSection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}

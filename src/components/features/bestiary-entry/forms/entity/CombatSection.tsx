@@ -18,209 +18,168 @@ import {
   type SkillKey,
 } from "@/lib/dnd/constants";
 import { calculateAbilityModifier } from "@/lib/dnd/calculations";
+import { formatBonus } from "@/lib/dnd/format-utils";
 import { cn } from "@/lib/utils";
 import type { Entity, DamageType, ResistanceLevel, Attribute } from "@/types";
 
 
-function getAbilityScore(statBlock: Entity["statBlock"], attr: Attribute): number {
-  return statBlock[attr] ?? 10;
+// Stored bonus values are stale until save (normalizeEntityCombatBonuses
+// recomputes them in handleSave). Display uses live values from the stat block.
+
+interface ProficiencyRowProps {
+  label: React.ReactNode;
+  mod: number;
+  bonus: number;
+  isProficient: boolean;
+  onToggle: () => void;
 }
 
-function formatBonus(n: number): string {
-  return n >= 0 ? `+${n}` : `${n}`;
-}
-
-function getProficientBonus(
-  statBlock: Entity["statBlock"],
-  attr: Attribute,
-  proficiency: number
-): number {
-  return calculateAbilityModifier(getAbilityScore(statBlock, attr)) + proficiency;
-}
-
-function recordsMatch(left: Record<string, number>, right: Record<string, number>): boolean {
-  const leftKeys = Object.keys(left);
-  const rightKeys = Object.keys(right);
+function ProficiencyRow({
+  label,
+  mod,
+  bonus,
+  isProficient,
+  onToggle,
+}: ProficiencyRowProps) {
   return (
-    leftKeys.length === rightKeys.length &&
-    leftKeys.every((key) => left[key] === right[key])
+    <div
+      role="checkbox"
+      aria-checked={isProficient}
+      tabIndex={0}
+      className="flex items-center justify-between gap-2 rounded-md px-2 py-2 cursor-pointer hover:bg-muted/40 transition-colors select-none"
+      onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.key === " ") {
+          e.preventDefault();
+          onToggle();
+        } else if (e.key === "Enter") {
+          onToggle();
+        }
+      }}
+    >
+      <div className="flex items-center gap-2 min-w-0 pointer-events-none">
+        <div
+          aria-hidden="true"
+          className={cn(
+            "shrink-0 rounded-sm border h-3 w-3 flex items-center justify-center transition-colors",
+            isProficient
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-transparent",
+          )}
+        >
+          {isProficient && <Check className="h-2.5 w-2.5" />}
+        </div>
+        {label}
+      </div>
+      <span
+        className={cn(
+          "text-xs tabular-nums font-mono shrink-0",
+          isProficient ? "text-primary font-semibold" : "text-muted-foreground",
+        )}
+      >
+        {formatBonus(isProficient ? bonus : mod)}
+      </span>
+    </div>
   );
 }
 
-function syncSelectedBonuses(
-  current: Record<string, number>,
-  getBonus: (key: string) => number | null
-): Record<string, number> {
-  const next: Record<string, number> = {};
-  Object.keys(current).forEach((key) => {
-    const bonus = getBonus(key);
-    next[key] = bonus ?? current[key];
-  });
-  return recordsMatch(current, next) ? current : next;
-}
-
-
-export const SavingThrowsSection: React.FC = () => {
-  const { control, setValue } = useFormContext<Entity>();
-  const rawStatBlock = useWatch({ control, name: "statBlock" });
+function SavingThrowRow({ attr }: { attr: Attribute }) {
+  const { control, setValue, getValues } = useFormContext<Entity>();
+  const rawScore = useWatch({ control, name: `statBlock.${attr}` as const });
   const rawProficiency = useWatch({ control, name: "proficiencyBonus" });
-  const rawSavingThrows = useWatch({ control, name: "savingThrows" });
-  const statBlock = React.useDeferredValue(rawStatBlock);
-  const proficiency = React.useDeferredValue(rawProficiency) ?? 2;
-  const watchedSavingThrows = React.useDeferredValue(rawSavingThrows);
-  const savingThrows = React.useMemo(
-    () => watchedSavingThrows ?? {},
-    [watchedSavingThrows],
-  );
+  const rawBonus = useWatch({ control, name: `savingThrows.${attr}` as const });
+  const proficiency = rawProficiency ?? 2;
+  const isProficient = rawBonus !== undefined && rawBonus !== null;
+  const mod = calculateAbilityModifier(rawScore ?? 10);
+  const bonus = mod + proficiency;
 
-  React.useEffect(() => {
-    const synced = syncSelectedBonuses(savingThrows, (key) =>
-      ABILITY_SCORE_NAMES.includes(key as Attribute)
-        ? getProficientBonus(statBlock, key as Attribute, proficiency)
-        : null
-    );
-    if (synced !== savingThrows) {
-      setValue("savingThrows", synced as Entity["savingThrows"], { shouldDirty: true });
-    }
-  }, [proficiency, savingThrows, setValue, statBlock]);
-
-  const toggle = (attr: Attribute) => {
-    const next: Record<string, number> = { ...(savingThrows ?? {}) };
-    if (attr in next) {
-      delete next[attr];
-    } else {
-      next[attr] = getProficientBonus(statBlock, attr, proficiency);
-    }
+  const handleToggle = () => {
+    const current = getValues("savingThrows") ?? {};
+    const next: Record<string, number> = { ...current };
+    if (attr in next) delete next[attr];
+    else next[attr] = bonus;
     setValue("savingThrows", next as Entity["savingThrows"], { shouldDirty: true });
   };
 
   return (
+    <ProficiencyRow
+      label={<span className="text-sm capitalize">{attr}</span>}
+      mod={mod}
+      bonus={bonus}
+      isProficient={isProficient}
+      onToggle={handleToggle}
+    />
+  );
+}
+
+export function SavingThrowsSection() {
+  return (
     <FormSection title="Saving Throws" iconCategory="d20test" iconName="saving-throw">
       <div className="col-span-full grid grid-cols-2 md:grid-cols-3 gap-0.5">
-        {ABILITY_SCORE_NAMES.map((attr) => {
-          const isProficient = attr in (savingThrows ?? {});
-          const mod = calculateAbilityModifier(getAbilityScore(statBlock, attr));
-          const bonus = getProficientBonus(statBlock, attr, proficiency);
-          return (
-            <div
-              key={attr}
-              role="checkbox"
-              aria-checked={isProficient}
-              tabIndex={0}
-              className="flex items-center justify-between gap-2 rounded-md px-2 py-2 cursor-pointer hover:bg-muted/40 transition-colors select-none"
-              onClick={() => toggle(attr)}
-              onKeyDown={(e) => { if (e.key === " ") { e.preventDefault(); toggle(attr); } else if (e.key === "Enter") toggle(attr); }}
-            >
-              <div className="flex items-center gap-2 pointer-events-none">
-                <div
-                  aria-hidden="true"
-                  className={cn(
-                    "shrink-0 rounded-sm border h-3 w-3 flex items-center justify-center transition-colors",
-                    isProficient
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-transparent"
-                  )}
-                >
-                  {isProficient && <Check className="h-2.5 w-2.5" />}
-                </div>
-                <span className="text-sm capitalize">{attr}</span>
-              </div>
-              <span className={cn("text-xs tabular-nums font-mono", isProficient ? "text-primary font-semibold" : "text-muted-foreground")}>
-                {formatBonus(isProficient ? bonus : mod)}
-              </span>
-            </div>
-          );
-        })}
+        {ABILITY_SCORE_NAMES.map((attr) => (
+          <SavingThrowRow key={attr} attr={attr} />
+        ))}
       </div>
     </FormSection>
   );
-};
+}
 
-export const SkillsSection: React.FC = () => {
-  const { control, setValue } = useFormContext<Entity>();
-  const rawStatBlock = useWatch({ control, name: "statBlock" });
+function SkillRow({ skill }: { skill: SkillKey }) {
+  const { control, setValue, getValues } = useFormContext<Entity>();
+  const ability = SKILL_ABILITIES[skill];
+  const rawScore = useWatch({ control, name: `statBlock.${ability}` as const });
   const rawProficiency = useWatch({ control, name: "proficiencyBonus" });
-  const rawSkills = useWatch({ control, name: "skills" });
-  const statBlock = React.useDeferredValue(rawStatBlock);
-  const proficiency = React.useDeferredValue(rawProficiency) ?? 2;
-  const watchedSkills = React.useDeferredValue(rawSkills);
-  const skills = React.useMemo(() => watchedSkills ?? {}, [watchedSkills]);
+  const rawBonus = useWatch({ control, name: `skills.${skill}` as const });
+  const proficiency = rawProficiency ?? 2;
+  const isProficient = rawBonus !== undefined && rawBonus !== null;
+  const abilityShort = ABILITY_SCORE_SHORT[ability];
+  const mod = calculateAbilityModifier(rawScore ?? 10);
+  const bonus = mod + proficiency;
 
-  React.useEffect(() => {
-    const synced = syncSelectedBonuses(skills, (key) => {
-      const ability = SKILL_ABILITIES[key as SkillKey];
-      return ability ? getProficientBonus(statBlock, ability, proficiency) : null;
-    });
-    if (synced !== skills) {
-      setValue("skills", synced, { shouldDirty: true });
-    }
-  }, [proficiency, setValue, skills, statBlock]);
-
-  const toggle = (skill: string) => {
-    const next: Record<string, number> = { ...(skills ?? {}) };
-    if (skill in next) {
-      delete next[skill];
-    } else {
-      const ability = SKILL_ABILITIES[skill as SkillKey];
-      next[skill] = ability
-        ? getProficientBonus(statBlock, ability, proficiency)
-        : proficiency;
-    }
+  const handleToggle = () => {
+    const current = getValues("skills") ?? {};
+    const next: Record<string, number> = { ...current };
+    if (skill in next) delete next[skill];
+    else next[skill] = bonus;
     setValue("skills", next, { shouldDirty: true });
   };
 
   return (
+    <ProficiencyRow
+      label={
+        <>
+          <span className="text-sm truncate">{SKILL_LABELS[skill]}</span>
+          <span className="text-xs text-muted-foreground shrink-0">({abilityShort})</span>
+        </>
+      }
+      mod={mod}
+      bonus={bonus}
+      isProficient={isProficient}
+      onToggle={handleToggle}
+    />
+  );
+}
+
+export function SkillsSection() {
+  return (
     <FormSection title="Skills" iconCategory="skill" iconName="athletics">
       <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-0.5">
-        {COMMON_SKILLS.map((skill) => {
-          const isProficient = skill in (skills ?? {});
-          const ability = SKILL_ABILITIES[skill];
-          const mod = ability ? calculateAbilityModifier(getAbilityScore(statBlock, ability)) : 0;
-          const bonus = ability ? getProficientBonus(statBlock, ability, proficiency) : proficiency;
-          const abilityShort = ability ? ABILITY_SCORE_SHORT[ability] : "";
-          return (
-            <div
-              key={skill}
-              role="checkbox"
-              aria-checked={isProficient}
-              tabIndex={0}
-              className="flex items-center justify-between gap-2 rounded-md px-2 py-2 cursor-pointer hover:bg-muted/40 transition-colors select-none"
-              onClick={() => toggle(skill)}
-              onKeyDown={(e) => { if (e.key === " ") { e.preventDefault(); toggle(skill); } else if (e.key === "Enter") toggle(skill); }}
-            >
-              <div className="flex items-center gap-2 min-w-0 pointer-events-none">
-                <div
-                  aria-hidden="true"
-                  className={cn(
-                    "shrink-0 rounded-sm border h-3 w-3 flex items-center justify-center transition-colors",
-                    isProficient
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-transparent"
-                  )}
-                >
-                  {isProficient && <Check className="h-2.5 w-2.5" />}
-                </div>
-                <span className="text-sm truncate">{SKILL_LABELS[skill]}</span>
-                <span className="text-xs text-muted-foreground shrink-0">({abilityShort})</span>
-              </div>
-              <span className={cn("text-xs tabular-nums font-mono shrink-0", isProficient ? "text-primary font-semibold" : "text-muted-foreground")}>
-                {formatBonus(isProficient ? bonus : mod)}
-              </span>
-            </div>
-          );
-        })}
+        {COMMON_SKILLS.map((skill) => (
+          <SkillRow key={skill} skill={skill} />
+        ))}
       </div>
     </FormSection>
   );
-};
+}
 
-export const DamageResistancesSection: React.FC = () => {
-  const { watch, setValue, control } = useFormContext<Entity>();
+export function DamageResistancesSection() {
+  const { setValue, control } = useFormContext<Entity>();
   const gameEnums = useGameEnums();
   const { fields: resistanceFields, append: appendResistance, remove: removeResistance } = useFieldArray({
     control,
     name: "damageResistances",
   });
+  const damageResistances = useWatch({ control, name: "damageResistances" });
 
   return (
     <FormSection title="Damage Resistances & Immunities" iconCategory="damage" iconName="resistance">
@@ -247,7 +206,8 @@ export const DamageResistancesSection: React.FC = () => {
                 Damage Type
               </Label>
               <Select
-                value={watch(`damageResistances.${index}.damageType`) || "bludgeoning"}
+                name={`damageResistances.${index}.damageType`}
+                value={damageResistances?.[index]?.damageType || "bludgeoning"}
                 onValueChange={(value: DamageType) =>
                   setValue(`damageResistances.${index}.damageType`, value, { shouldDirty: true })
                 }
@@ -276,7 +236,8 @@ export const DamageResistancesSection: React.FC = () => {
                 Level
               </Label>
               <Select
-                value={watch(`damageResistances.${index}.level`) || "resistant"}
+                name={`damageResistances.${index}.level`}
+                value={damageResistances?.[index]?.level || "resistant"}
                 onValueChange={(value: ResistanceLevel) =>
                   setValue(`damageResistances.${index}.level`, value, { shouldDirty: true })
                 }
@@ -311,9 +272,9 @@ export const DamageResistancesSection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}
 
-export const ConditionImmunitiesSection: React.FC = () => {
+export function ConditionImmunitiesSection() {
   return (
     <FormSection title="Condition Immunities" iconCategory="damage" iconName="immunity">
       <div className="col-span-full">
@@ -326,4 +287,4 @@ export const ConditionImmunitiesSection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}

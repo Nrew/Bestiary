@@ -1,24 +1,30 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { FormSection } from "@/components/forms/FormSection";
 import { FormInput, FormSelect, FormTagInput, FormKeyValueEditor, FormStatModifiersEditor } from "@/components/forms/FormPrimitives";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
+import { DeferredMount } from "@/components/shared/DeferredMount";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useGameEnums } from "@/store/appStore";
 import { ITEM_TYPE_LABELS, RARITY_LABELS } from "@/lib/dnd/constants";
 import type { Item } from "@/types";
 
-export const ItemForm: React.FC = React.memo(() => {
+const RICH_TEXT_FALLBACK = (
+  <Skeleton variant="shimmer" className="min-h-49.5 w-full rounded-md" aria-hidden />
+);
+
+export const ItemForm = React.memo(() => {
   const {
     register,
-    watch,
+    control,
     setValue,
   } = useFormContext<Item>();
   const gameEnums = useGameEnums();
 
-  const durability = watch("durability");
+  const durability = useWatch({ control, name: "durability" });
   const hasDurability = durability !== null && durability !== undefined;
 
   const itemTypeOptions = React.useMemo(
@@ -136,15 +142,24 @@ export const ItemForm: React.FC = React.memo(() => {
       </FormSection>
 
       <FormSection title="Description" iconCategory="ui" iconName="book">
-        <div className="col-span-full">
-          <RichTextEditor
-            ariaLabel="Item description"
-            content={watch("description") || ""}
-            onChange={(html) =>
-              setValue("description", html, { shouldDirty: true })
-            }
-          />
-        </div>
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <DeferredMount
+              ref={field.ref}
+              className="col-span-full"
+              fallback={RICH_TEXT_FALLBACK}
+            >
+              <RichTextEditor
+                ariaLabel="Item description"
+                content={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            </DeferredMount>
+          )}
+        />
       </FormSection>
     </div>
   );

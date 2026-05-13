@@ -1,4 +1,3 @@
-import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,7 @@ interface AbilityEffectEditorProps {
   remove: (index: number) => void;
 }
 
-export const AbilityEffectEditor: React.FC<AbilityEffectEditorProps> = ({ index, remove }) => {
+export function AbilityEffectEditor({ index, remove }: AbilityEffectEditorProps) {
   const { watch, setValue } = useFormContext<Ability>();
   const effect = watch(`effects.${index}`);
   const effectType = effect?.type ?? "custom";
@@ -96,4 +95,4 @@ export const AbilityEffectEditor: React.FC<AbilityEffectEditorProps> = ({ index,
       {effectType === "custom"       && <CustomSubEditor      index={index} />}
     </div>
   );
-};
+}
