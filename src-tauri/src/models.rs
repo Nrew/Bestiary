@@ -189,6 +189,96 @@ pub struct StatBlock {
     pub custom: HashMap<String, serde_json::Value>,
 }
 
+impl StatBlock {
+    /// Idempotent migration that lifts legacy stat-block fields out of `custom`
+    /// into their proper typed columns. Older entries stored hitDice / armorNote /
+    /// movement speeds / initiativeBonus under `custom`; new schema has them as
+    /// real fields. Runs on every entity hydrate so the frontend never sees the
+    /// legacy shape and never needs to migrate on mount.
+    pub fn normalize_legacy_custom_stats(&mut self) {
+        // Legacy keys that may exist only under `custom`; each maps to a typed field above.
+        let legacy_keys = [
+            "hitDice", "hit_dice",
+            "armorType", "armor_type", "armorNote", "armor_note",
+            "burrowSpeed", "burrow_speed",
+            "climbSpeed", "climb_speed",
+            "swimSpeed", "swim_speed",
+            "flySpeed", "fly_speed",
+            "hoverSpeed", "hover_speed",
+            "initiative", "initiativeBonus", "initiative_bonus",
+        ];
+
+        for key in legacy_keys {
+            if let Some(value) = self.custom.get(key).cloned() {
+                let consumed = match key {
+                    "hitDice" | "hit_dice" => assign_string(&mut self.hit_dice, &value),
+                    "armorType" | "armor_type" | "armorNote" | "armor_note" => {
+                        assign_string(&mut self.armor_note, &value)
+                    }
+                    "burrowSpeed" | "burrow_speed" => assign_f32(&mut self.burrow_speed, &value),
+                    "climbSpeed" | "climb_speed" => assign_f32(&mut self.climb_speed, &value),
+                    "swimSpeed" | "swim_speed" => assign_f32(&mut self.swim_speed, &value),
+                    "flySpeed" | "fly_speed" => assign_f32(&mut self.fly_speed, &value),
+                    "hoverSpeed" | "hover_speed" => assign_f32(&mut self.hover_speed, &value),
+                    "initiative" | "initiativeBonus" | "initiative_bonus" => {
+                        assign_i32(&mut self.initiative_bonus, &value)
+                    }
+                    _ => false,
+                };
+                if consumed {
+                    self.custom.remove(key);
+                }
+            }
+        }
+    }
+}
+
+fn assign_string(target: &mut Option<String>, value: &serde_json::Value) -> bool {
+    if target.is_some() {
+        return true;
+    }
+    let text = match value {
+        serde_json::Value::String(s) => s.trim().to_string(),
+        serde_json::Value::Number(n) => n.to_string(),
+        _ => return false,
+    };
+    if text.is_empty() {
+        return true;
+    }
+    *target = Some(text);
+    true
+}
+
+fn assign_f32(target: &mut Option<f32>, value: &serde_json::Value) -> bool {
+    if target.is_some() {
+        return true;
+    }
+    let parsed = match value {
+        serde_json::Value::Number(n) => n.as_f64().map(|v| v as f32),
+        serde_json::Value::String(s) => s.trim().parse::<f32>().ok(),
+        _ => None,
+    };
+    if let Some(v) = parsed.filter(|v| v.is_finite()) {
+        *target = Some(v);
+    }
+    true
+}
+
+fn assign_i32(target: &mut Option<i32>, value: &serde_json::Value) -> bool {
+    if target.is_some() {
+        return true;
+    }
+    let parsed = match value {
+        serde_json::Value::Number(n) => n.as_i64().and_then(|v| i32::try_from(v).ok()),
+        serde_json::Value::String(s) => s.trim().parse::<i32>().ok(),
+        _ => None,
+    };
+    if let Some(v) = parsed {
+        *target = Some(v);
+    }
+    true
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, TS)]
 #[ts(export_to = "../../src/types/generated.ts")]
 #[serde(rename_all = "camelCase")]
@@ -658,7 +748,14 @@ impl From<Entity> for EntityExport {
             languages: db.languages_json.0,
             habitats: db.habitats_json.0,
             description: db.description,
-            stat_block: db.stat_block_json.0,
+            stat_block: {
+                // Idempotent migration: older entries stored hitDice / armorNote /
+                // movement speeds / initiativeBonus in `custom`; lift them into
+                // proper typed fields so the frontend never sees legacy shape.
+                let mut sb = db.stat_block_json.0;
+                sb.normalize_legacy_custom_stats();
+                sb
+            },
             notes: db.notes,
             status_ids: db.status_ids,
             ability_ids: db.ability_ids,
@@ -781,6 +878,147 @@ impl Validatable for StatusExport {
         } else {
             Err(errors)
         }
+    }
+}
+
+#[cfg(test)]
+mod stat_block_normalize_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn empty_stat_block() -> StatBlock {
+        StatBlock::default()
+    }
+
+    #[test]
+    fn lifts_parseable_legacy_keys_into_typed_fields() {
+        let mut sb = empty_stat_block();
+        sb.custom.insert("climbSpeed".to_string(), json!("20"));
+        sb.custom.insert("hitDice".to_string(), json!("8d10 + 40"));
+        sb.custom.insert("SpellPower".to_string(), json!(15));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.climb_speed, Some(20.0));
+        assert_eq!(sb.hit_dice.as_deref(), Some("8d10 + 40"));
+        assert_eq!(sb.custom.get("SpellPower"), Some(&json!(15)));
+        assert!(sb.custom.get("climbSpeed").is_none());
+        assert!(sb.custom.get("hitDice").is_none());
+    }
+
+    #[test]
+    fn drops_unparseable_legacy_numeric_value_but_clears_key() {
+        let mut sb = empty_stat_block();
+        sb.custom
+            .insert("flySpeed".to_string(), json!("30 ft. hover"));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.fly_speed, None);
+        // Legacy key is removed even when value can't be parsed — leaving it in
+        // `custom` would still render as a phantom row in the UI.
+        assert!(sb.custom.get("flySpeed").is_none());
+    }
+
+    #[test]
+    fn drops_legacy_key_when_structured_field_already_populated() {
+        let mut sb = empty_stat_block();
+        sb.armor_note = Some("natural armor".to_string());
+        sb.custom
+            .insert("armorType".to_string(), json!("natural armor"));
+        sb.custom.insert("SpellPower".to_string(), json!(15));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.armor_note.as_deref(), Some("natural armor"));
+        assert!(sb.custom.get("armorType").is_none());
+        assert_eq!(sb.custom.get("SpellPower"), Some(&json!(15)));
+    }
+
+    #[test]
+    fn no_op_when_custom_is_empty() {
+        let mut sb = empty_stat_block();
+        let before = sb.clone();
+        sb.normalize_legacy_custom_stats();
+        assert_eq!(sb, before);
+    }
+
+    #[test]
+    fn accepts_snake_case_legacy_keys() {
+        let mut sb = empty_stat_block();
+        sb.custom.insert("climb_speed".to_string(), json!("15"));
+        sb.custom
+            .insert("initiative_bonus".to_string(), json!("2"));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.climb_speed, Some(15.0));
+        assert_eq!(sb.initiative_bonus, Some(2));
+    }
+
+    #[test]
+    fn handles_initiative_aliases() {
+        let mut sb = empty_stat_block();
+        sb.custom.insert("initiative".to_string(), json!(3));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.initiative_bonus, Some(3));
+        assert!(sb.custom.get("initiative").is_none());
+    }
+
+    /// JSON round-trip integration test: a legacy stat block (with movement
+    /// speeds stored under `custom`) deserializes, normalizes, and re-serializes
+    /// with the legacy keys lifted into typed fields and removed from `custom`.
+    ///
+    /// This is the path every entity hydrate goes through via
+    /// `From<Entity> for EntityExport`, so this test guards against a future
+    /// refactor breaking the wire-level contract that the frontend depends on.
+    #[test]
+    fn round_trips_legacy_payload_through_serde() {
+        let legacy_json = json!({
+            "hp": 84,
+            "armor": 15,
+            "speed": 30,
+            "strength": 18,
+            "dexterity": 12,
+            "constitution": 16,
+            "intelligence": 8,
+            "wisdom": 10,
+            "charisma": 9,
+            "custom": {
+                "climbSpeed": "20",
+                "hitDice": "8d10 + 40",
+                "armorType": "natural armor",
+                "initiativeBonus": "2",
+                "SpellPower": 15
+            }
+        });
+
+        let mut sb: StatBlock = serde_json::from_value(legacy_json).expect("legacy JSON parses");
+        sb.normalize_legacy_custom_stats();
+
+        // Typed fields populated from legacy custom keys
+        assert_eq!(sb.climb_speed, Some(20.0));
+        assert_eq!(sb.hit_dice.as_deref(), Some("8d10 + 40"));
+        assert_eq!(sb.armor_note.as_deref(), Some("natural armor"));
+        assert_eq!(sb.initiative_bonus, Some(2));
+
+        // Legacy keys removed from custom; user-defined keys preserved
+        assert!(sb.custom.get("climbSpeed").is_none());
+        assert!(sb.custom.get("hitDice").is_none());
+        assert!(sb.custom.get("armorType").is_none());
+        assert!(sb.custom.get("initiativeBonus").is_none());
+        assert_eq!(sb.custom.get("SpellPower"), Some(&json!(15)));
+
+        // Re-serialize and confirm the shape the frontend will see
+        let serialized = serde_json::to_value(&sb).expect("StatBlock re-serializes");
+        assert_eq!(serialized["climbSpeed"], json!(20.0));
+        assert_eq!(serialized["hitDice"], json!("8d10 + 40"));
+        assert_eq!(serialized["armorNote"], json!("natural armor"));
+        assert_eq!(serialized["initiativeBonus"], json!(2));
+        assert_eq!(serialized["custom"]["SpellPower"], json!(15));
+        assert!(serialized["custom"].get("climbSpeed").is_none());
     }
 }
 
