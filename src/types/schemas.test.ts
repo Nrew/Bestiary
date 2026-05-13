@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { abilitySchema, itemSchema, statusSchema } from "./schemas";
+import { abilitySchema, entitySchema, itemSchema, statusSchema } from "./schemas";
 
 const id = "00000000-0000-4000-8000-000000000001";
 const base = {
@@ -46,6 +46,56 @@ describe("schema JSON object coercion", () => {
       description: "custom",
       data: { dc: 15 },
     });
+  });
+
+  // Guard for Phase 1 of the form-mount refactor: FormInput is being changed
+  // from a Controller-wrapped input to a bare register() call. Both paths
+  // must pass the raw string (e.g. "" or "13") to RHF; coercion happens here
+  // in the schema. If a future change to FormInput introduces valueAsNumber
+  // or a setValueAs that pre-coerces to NaN, this contract breaks silently.
+  it("coerces empty/numeric strings on statBlock leaves to null/number", () => {
+    const parsed = entitySchema.parse({
+      ...base,
+      slug: "test-entity",
+      size: null,
+      threatLevel: null,
+      alignment: null,
+      challengeRating: null,
+      experiencePoints: null,
+      proficiencyBonus: null,
+      legendaryActionsPerRound: null,
+      statBlock: {
+        hp: "",
+        hitDice: null,
+        armor: "13",
+        armorNote: null,
+        speed: null,
+        burrowSpeed: null,
+        climbSpeed: null,
+        flySpeed: "",
+        swimSpeed: "30",
+        hoverSpeed: null,
+        initiativeBonus: "2",
+        strength: "18",
+        dexterity: "",
+        constitution: "10",
+        intelligence: "12",
+        wisdom: "",
+        charisma: "8",
+        custom: {},
+      },
+    });
+    expect(parsed.statBlock.hp).toBeNull();
+    expect(parsed.statBlock.armor).toBe(13);
+    expect(parsed.statBlock.initiativeBonus).toBe(2);
+    expect(parsed.statBlock.strength).toBe(18);
+    expect(parsed.statBlock.dexterity).toBeNull();
+    expect(parsed.statBlock.constitution).toBe(10);
+    expect(parsed.statBlock.intelligence).toBe(12);
+    expect(parsed.statBlock.wisdom).toBeNull();
+    expect(parsed.statBlock.charisma).toBe(8);
+    expect(parsed.statBlock.swimSpeed).toBe(30);
+    expect(parsed.statBlock.flySpeed).toBeNull();
   });
 
   it("rejects prototype-polluting custom status keys", () => {

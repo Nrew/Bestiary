@@ -151,24 +151,25 @@ const requiredUuid = (fieldName: string) =>
     .min(1, `${fieldName} is required`)
     .pipe(z.uuid({ message: `${fieldName} must be a valid selection` }));
 
+// `.default(null)` so payloads omitting a field parse instead of rejecting.
 const statBlockSchema = z.object({
-  hp: nullableNumber.pipe(z.number().int().positive().nullable()),
-  hitDice: nullableString,
-  armor: nullableNumber.pipe(z.number().int().nonnegative().nullable()),
-  armorNote: nullableString,
-  speed: nullableNumber.pipe(z.number().nonnegative().nullable()),
-  burrowSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()),
-  climbSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()),
-  flySpeed: nullableNumber.pipe(z.number().nonnegative().nullable()),
-  swimSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()),
-  hoverSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()),
-  initiativeBonus: nullableNumber.pipe(z.number().int().nullable()),
-  strength: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()),
-  dexterity: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()),
-  constitution: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()),
-  intelligence: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()),
-  wisdom: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()),
-  charisma: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()),
+  hp: nullableNumber.pipe(z.number().int().positive().nullable()).default(null),
+  hitDice: nullableString.default(null),
+  armor: nullableNumber.pipe(z.number().int().nonnegative().nullable()).default(null),
+  armorNote: nullableString.default(null),
+  speed: nullableNumber.pipe(z.number().nonnegative().nullable()).default(null),
+  burrowSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()).default(null),
+  climbSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()).default(null),
+  flySpeed: nullableNumber.pipe(z.number().nonnegative().nullable()).default(null),
+  swimSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()).default(null),
+  hoverSpeed: nullableNumber.pipe(z.number().nonnegative().nullable()).default(null),
+  initiativeBonus: nullableNumber.pipe(z.number().int().nullable()).default(null),
+  strength: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()).default(null),
+  dexterity: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()).default(null),
+  constitution: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()).default(null),
+  intelligence: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()).default(null),
+  wisdom: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()).default(null),
+  charisma: nullableNumber.pipe(z.number().int().min(1).max(30).nullable()).default(null),
   // Custom properties can be numbers (speeds) or strings (armor type, ability, etc.)
   custom: z.record(z.string(), z.union([z.number(), z.string()])).default({}),
 });
