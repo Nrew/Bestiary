@@ -10,11 +10,11 @@ interface ImageLightboxProps {
   onClose: () => void;
 }
 
-export const ImageLightbox: React.FC<ImageLightboxProps> = ({
+export function ImageLightbox({
   images,
   initialIndex,
   onClose,
-}) => {
+}: ImageLightboxProps) {
   const [currentIndex, setCurrentIndex] = React.useState(initialIndex);
   const [isImageLoaded, setIsImageLoaded] = React.useState(false);
   const imageRef = React.useRef<HTMLImageElement | null>(null);
@@ -178,4 +178,4 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
       </Dialog.Portal>
     </Dialog.Root>
   );
-};
+}

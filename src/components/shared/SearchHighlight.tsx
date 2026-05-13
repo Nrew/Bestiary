@@ -32,10 +32,8 @@ export const SearchHighlight = React.memo<SearchHighlightProps>(({
   className,
   highlightClassName = 'bg-rune/30 text-leather font-semibold rounded-sm px-0.5',
 }) => {
-  // Use provided indices or compute from query
   const indices = providedIndices ?? (query?.trim() ? findMatchIndices(text, query) : []);
 
-  // If no highlights, just return the text
   if (indices.length === 0) {
     return <span className={className}>{text}</span>;
   }

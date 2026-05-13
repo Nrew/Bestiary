@@ -10,8 +10,8 @@ const skeletonVariants = cva("bg-muted", {
       default: "animate-pulse bg-muted",
       shimmer:
         "relative overflow-hidden bg-muted " +
-        "before:absolute before:inset-0 before:-translate-x-full before:animate-[skeleton-shimmer_1.5s_ease-in-out_infinite] " +
-        "before:bg-gradient-to-r before:from-transparent before:via-muted/50 before:to-transparent",
+        "before:absolute before:inset-0 before:animate-skeleton " +
+        "before:bg-linear-to-r before:from-transparent before:via-muted/50 before:to-transparent",
     },
     rounded: {
       none: "rounded-none",
@@ -70,4 +70,4 @@ function SkeletonText({
   );
 }
 
-export { Skeleton, SkeletonText, skeletonVariants };
+export { Skeleton, SkeletonText };

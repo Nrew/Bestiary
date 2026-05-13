@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import { cva } from "class-variance-authority";
+import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -9,19 +9,9 @@ const AlertDialog = AlertDialogPrimitive.Root;
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 const AlertDialogPortal = AlertDialogPrimitive.Portal;
 
-const alertDialogOverlayVariants = cva([
-  "fixed",
-  "inset-0",
-  "z-50",
-  "bg-black/80",
-  "backdrop-blur-sm",
-  "data-[state=open]:animate-in",
-  "data-[state=closed]:animate-out",
-  "data-[state=closed]:fade-out-0",
-  "data-[state=open]:fade-in-0",
-  "motion-reduce:animate-none",
-  "motion-reduce:transition-none",
-]);
+const alertDialogOverlayVariants = cva(
+  "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm radix-overlay-anim motion-reduce:animate-none motion-reduce:transition-none",
+);
 
 function AlertDialogOverlay({
   className,
@@ -39,50 +29,40 @@ function AlertDialogOverlay({
   );
 }
 
-const alertDialogContentVariants = cva([
-  "fixed",
-  "left-1/2",
-  "top-1/2",
-  "z-50",
-  "grid",
-  "w-full",
-  "max-w-lg",
-  "-translate-x-1/2",
-  "-translate-y-1/2",
-  "gap-4",
-  "border",
-  "bg-background",
-  "p-6",
-  "shadow-lg",
-  "duration-200",
-  "sm:rounded-lg",
-  "data-[state=open]:animate-in",
-  "data-[state=open]:fade-in-0",
-  "data-[state=open]:zoom-in-95",
-  "data-[state=open]:slide-in-from-left-1/2",
-  "data-[state=open]:slide-in-from-top-[48%]",
-  "data-[state=closed]:animate-out",
-  "data-[state=closed]:fade-out-0",
-  "data-[state=closed]:zoom-out-95",
-  "data-[state=closed]:slide-out-to-left-1/2",
-  "data-[state=closed]:slide-out-to-top-[48%]",
-  "motion-reduce:animate-none",
-  "motion-reduce:transition-none",
-]);
+const alertDialogContentVariants = cva(
+  "fixed left-1/2 top-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6 shadow-lg sm:rounded-lg radix-popover-anim motion-reduce:animate-none motion-reduce:transition-none",
+  {
+    variants: {
+      size: {
+        sm: "max-w-sm",
+        default: "max-w-lg",
+        lg: "max-w-2xl",
+      },
+    },
+    defaultVariants: {
+      size: "default",
+    },
+  },
+);
+
+interface AlertDialogContentProps
+  extends React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>,
+    VariantProps<typeof alertDialogContentVariants> {
+  ref?: React.Ref<React.ComponentRef<typeof AlertDialogPrimitive.Content>>;
+}
 
 function AlertDialogContent({
   className,
+  size,
   ref,
   ...props
-}: React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content> & {
-  ref?: React.Ref<React.ComponentRef<typeof AlertDialogPrimitive.Content>>;
-}) {
+}: AlertDialogContentProps) {
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
         ref={ref}
-        className={cn(alertDialogContentVariants(), className)}
+        className={cn(alertDialogContentVariants({ size }), className)}
         {...props}
       />
     </AlertDialogPortal>
@@ -170,6 +150,7 @@ function AlertDialogAction({
 function AlertDialogCancel({
   className,
   ref,
+  asChild,
   ...props
 }: React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel> & {
   ref?: React.Ref<React.ComponentRef<typeof AlertDialogPrimitive.Cancel>>;
@@ -177,11 +158,12 @@ function AlertDialogCancel({
   return (
     <AlertDialogPrimitive.Cancel
       ref={ref}
-      className={cn(
-        buttonVariants({ variant: "outline" }),
-        "mt-2 sm:mt-0",
-        className
-      )}
+      asChild={asChild}
+      className={
+        asChild
+          ? className
+          : cn(buttonVariants({ variant: "outline" }), "mt-2 sm:mt-0", className)
+      }
       {...props}
     />
   );

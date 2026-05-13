@@ -60,12 +60,19 @@ function Checkbox({
   indeterminate,
   icon: Icon = Check,
   indeterminateIcon: IndeterminateIcon = Minus,
+  id,
+  name,
   ref,
   ...props
 }: CheckboxProps) {
+  // Radix renders a hidden form-integration <input>; default its name to id.
+  const resolvedName = name ?? id;
+
   return (
     <CheckboxPrimitive.Root
       ref={ref}
+      id={id}
+      name={resolvedName}
       className={cn(checkboxVariants({ variant, size }), className)}
       {...props}
       checked={indeterminate ? "indeterminate" : props.checked}

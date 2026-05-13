@@ -20,7 +20,7 @@ interface RichTextViewerProps {
  * The viewer only sanitizes HTML and rewrites `[[wiki-link]]` markers into
  * navigable spans; it never instantiates an editor.
  */
-export const RichTextViewer: React.FC<RichTextViewerProps> = ({ html, className }) => {
+export function RichTextViewer({ html, className }: RichTextViewerProps) {
   const nameLookup = useMemoizedNameLookup();
   const navigateToEntry = useAppStore((s) => s.navigateToEntry);
   const { showTooltip, hideTooltip } = useWikiLink();
@@ -141,4 +141,4 @@ export const RichTextViewer: React.FC<RichTextViewerProps> = ({ html, className 
       onKeyDown={handleKeyDown}
     />
   );
-};
+}

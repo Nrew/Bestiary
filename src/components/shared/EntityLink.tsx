@@ -17,7 +17,7 @@ type ResolveState = "idle" | "loading" | "found" | "missing";
  * hover preview tooltip via WikiLinkProvider.
  * Falls back to verbatim text if the entity cannot be found.
  */
-export const EntityLink: React.FC<{ value: string | number }> = ({ value }) => {
+export function EntityLink({ value }: { value: string | number }) {
   const strValue = String(value);
   const isUuid = UUID_REGEX.test(strValue);
   const entitiesMap = useEntitiesMap();
@@ -86,4 +86,4 @@ export const EntityLink: React.FC<{ value: string | number }> = ({ value }) => {
       {entityName}
     </span>
   );
-};
+}

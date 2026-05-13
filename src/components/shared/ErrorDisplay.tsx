@@ -1,4 +1,3 @@
-import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -6,7 +5,7 @@ import { AlertTriangle, X } from "lucide-react";
 import { useAppStore, useError } from "@/store/appStore";
 import { slideDownVariants } from "@/lib/animations";
 
-export const ErrorDisplay: React.FC = () => {
+export function ErrorDisplay() {
   const error = useError();
   const setError = useAppStore((s) => s.setError);
 
@@ -46,4 +45,4 @@ export const ErrorDisplay: React.FC = () => {
       )}
     </AnimatePresence>
   );
-};
+}

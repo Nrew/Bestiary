@@ -62,7 +62,7 @@ const CardContext = React.createContext<CardContextValue>({
   variant: "default",
 });
 
-const useCardContext = () => React.useContext(CardContext);
+const useCardContext = () => React.use(CardContext);
 
 
 export interface CardProps
@@ -79,9 +79,9 @@ function Card({
   ...props
 }: CardProps) {
   return (
-    <CardContext.Provider value={{ size, variant }}>
+    <CardContext value={{ size, variant }}>
       <div ref={ref} className={cn(cardVariants({ variant, size, className }))} {...props} />
-    </CardContext.Provider>
+    </CardContext>
   );
 }
 

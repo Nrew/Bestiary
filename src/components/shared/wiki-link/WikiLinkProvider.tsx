@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
+import React, { createContext, use, useState, useCallback, useRef, useEffect } from "react";
 import { useAppStore } from "@/store/appStore";
 import { useLazyEntry } from "@/hooks/useLazyEntry";
 import { WikiTooltipBody } from "./WikiTooltipBody";
@@ -16,7 +16,7 @@ interface WikiLinkContextType {
 const WikiLinkContext = createContext<WikiLinkContextType | null>(null);
 
 export const useWikiLink = () => {
-  const context = useContext(WikiLinkContext);
+  const context = use(WikiLinkContext);
   if (!context)
     throw new Error("useWikiLink must be used within a WikiLinkProvider");
   return context;
@@ -38,19 +38,19 @@ const initialTooltipState: TooltipState = {
   showAbove: true,
 };
 
-const TooltipContent: React.FC<{ id: string; type: ViewContext; fetchEntry: FetchEntry }> = ({ id, type, fetchEntry }) => {
+function TooltipContent({ id, type, fetchEntry }: { id: string; type: ViewContext; fetchEntry: FetchEntry }) {
   const { data, isLoading } = useLazyEntry(type, id, fetchEntry, true);
   return <WikiTooltipBody data={data} type={type} isLoading={isLoading} />;
-};
+}
 
 const TOOLTIP_DELAY  = 60;  // ms before showing tooltip
 const HIDE_DELAY     = 100; // ms before hiding tooltip (allows moving to tooltip)
 const TOOLTIP_HEIGHT = 120; // approximate height for viewport edge detection
 const TOOLTIP_ID     = "wiki-link-preview-tooltip";
 
-export const WikiLinkProvider: React.FC<{ children: React.ReactNode }> = ({
+export function WikiLinkProvider({
   children,
-}) => {
+}: { children: React.ReactNode }) {
   const [tooltip, setTooltip] = useState<TooltipState>(initialTooltipState);
   const [isVisible, setIsVisible] = useState(false);
   const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -140,7 +140,6 @@ export const WikiLinkProvider: React.FC<{ children: React.ReactNode }> = ({
     [clearTimeouts]
   );
 
-  // Track mouse leaving the trigger element
   useEffect(() => {
     const element = tooltip.element;
     if (!element) return;
@@ -155,7 +154,6 @@ export const WikiLinkProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [tooltip.element, hideTooltip]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       activeTriggerRef.current?.removeAttribute("aria-describedby");
@@ -185,14 +183,14 @@ export const WikiLinkProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   return (
-    <WikiLinkContext.Provider value={contextValue}>
+    <WikiLinkContext value={contextValue}>
       {children}
       {tooltipPosition && (
         <div
           id={TOOLTIP_ID}
           ref={tooltipRef}
           role="tooltip"
-          className="fixed z-50 w-72 rounded-lg border border-leather/20 bg-card/95 backdrop-blur-sm shadow-[0_8px_32px_oklch(18%_0.01_45/0.15),inset_0_1px_0_oklch(94%_0.02_75/0.6)] animate-in fade-in-0 zoom-in-95 overflow-hidden"
+          className="fixed z-50 w-72 rounded-lg border border-leather/20 bg-card/95 backdrop-blur-sm shadow-glass animate-fade-only overflow-hidden"
           style={{
             top:       tooltipPosition.top,
             left:      tooltipPosition.left,
@@ -206,6 +204,6 @@ export const WikiLinkProvider: React.FC<{ children: React.ReactNode }> = ({
           <TooltipContent key={`${tooltip.type}:${tooltip.id}`} id={tooltip.id} type={tooltip.type} fetchEntry={fetchEntry} />
         </div>
       )}
-    </WikiLinkContext.Provider>
+    </WikiLinkContext>
   );
-};
+}

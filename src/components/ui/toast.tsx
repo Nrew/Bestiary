@@ -19,7 +19,7 @@
  */
 
 import * as ToastPrimitive from '@radix-ui/react-toast';
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, use, useState, useCallback } from 'react';
 import { X, CheckCircle2, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SEMANTIC_COLORS, type SemanticColorType } from '@/lib/theme';
@@ -56,7 +56,7 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 export function useToast() {
-  const context = useContext(ToastContext);
+  const context = use(ToastContext);
   if (!context) {
     throw new Error('useToast must be used within ToastProvider');
   }
@@ -79,7 +79,7 @@ const ICONS: Record<ToastType, React.ElementType> = {
   info: Info,
 };
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const removeToast = useCallback((id: string) => {
@@ -116,7 +116,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   return (
-    <ToastContext.Provider value={contextValue}>
+    <ToastContext value={contextValue}>
       <ToastPrimitive.Provider swipeDirection="right" duration={5000}>
         {children}
         {toasts.map(toast => (
@@ -131,9 +131,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           label="Notifications ({hotkey})"
         />
       </ToastPrimitive.Provider>
-    </ToastContext.Provider>
+    </ToastContext>
   );
-};
+}
 
 
 interface ToastItemProps {
@@ -141,7 +141,7 @@ interface ToastItemProps {
   onRemove: (id: string) => void;
 }
 
-const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
+function ToastItem({ toast, onRemove }: ToastItemProps) {
   const Icon = ICONS[toast.type];
   const colorClasses = SEMANTIC_COLORS[toast.type];
   // Preserve previous defaults: duration=0 means persistent, otherwise 5s default.
@@ -159,11 +159,9 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
       }}
       className={cn(
         'flex items-start gap-3 p-4 rounded-lg border shadow-lg',
-        'data-[state=open]:animate-in data-[state=open]:slide-in-from-right-full',
-        'data-[state=closed]:animate-out data-[state=closed]:fade-out-80',
+        'radix-toast-anim',
         'data-[swipe=move]:translate-x-(--radix-toast-swipe-move-x)',
         'data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-transform',
-        'data-[swipe=end]:animate-out data-[swipe=end]:slide-out-to-right-full',
         'motion-reduce:animate-none motion-reduce:transition-none',
         colorClasses.full
       )}
@@ -207,7 +205,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
       </ToastPrimitive.Close>
     </ToastPrimitive.Root>
   );
-};
+}
 
 
 export const ToastViewport = ToastPrimitive.Viewport;

@@ -22,14 +22,14 @@ interface ManagedImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElemen
  * Memoized because gallery and portrait parents re-render frequently; without
  * it the URL resolution effect re-fires on every parent render.
  */
-const ManagedImageComponent: React.FC<ManagedImageProps> = ({
+function ManagedImageComponent({
   filename,
   fallback,
   alt = "",
   loading = "lazy",
   decoding = "async",
   ...rest
-}) => {
+}: ManagedImageProps) {
   const { url, failed } = useResolvedImage(filename);
   const imageRef = React.useRef<HTMLImageElement | null>(null);
   const [loadError, setLoadError] = React.useState(false);
@@ -73,6 +73,6 @@ const ManagedImageComponent: React.FC<ManagedImageProps> = ({
       {...rest}
     />
   );
-};
+}
 
 export const ManagedImage = React.memo(ManagedImageComponent);

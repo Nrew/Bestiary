@@ -29,6 +29,11 @@ const inputVariants = cva(
   }
 );
 
+/**
+ * `id` without `name` is valid for fully controlled inputs used only with
+ * `htmlFor` / focus management (see {@link StringArrayField}). Prefer an
+ * explicit `name` when the field participates in native submit or `register()`.
+ */
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement>,
     VariantProps<typeof inputVariants> {
@@ -40,6 +45,8 @@ function Input({
   variant,
   type,
   autoComplete = "off",
+  id,
+  name,
   ref,
   ...props
 }: InputProps) {
@@ -47,6 +54,8 @@ function Input({
     <input
       type={type}
       autoComplete={autoComplete}
+      id={id}
+      name={name}
       className={cn(
         inputVariants({ variant }),
         // Automatically reflect aria-invalid into the visual error state
