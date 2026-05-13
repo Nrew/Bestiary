@@ -280,10 +280,13 @@ export function calculateHitPoints(
   constitutionModifier: number
 ): HPCalculation {
   const avgPerDie = (hitDieSize + 1) / 2;
+  const hpPerDieAverage = Math.max(1, avgPerDie + constitutionModifier);
+  const hpPerDieMin = Math.max(1, 1 + constitutionModifier);
+  const hpPerDieMax = Math.max(1, hitDieSize + constitutionModifier);
   return {
-    average: Math.max(1, Math.floor(hitDiceCount * (avgPerDie + constitutionModifier))),
-    minimum: Math.max(1, hitDiceCount * (1 + constitutionModifier)),
-    maximum: Math.max(1, hitDiceCount * (hitDieSize + constitutionModifier)),
+    average: Math.max(1, Math.floor(hitDiceCount * hpPerDieAverage)),
+    minimum: Math.max(1, hitDiceCount * hpPerDieMin),
+    maximum: Math.max(1, hitDiceCount * hpPerDieMax),
     hitDice: `${hitDiceCount}d${hitDieSize}`,
   };
 }
@@ -308,7 +311,8 @@ export function estimateHitDiceCount(
   constitutionModifier: number
 ): number {
   const dieSize = getHitDieFromSize(size);
-  const hpPerDie = (dieSize + 1) / 2 + constitutionModifier;
+  const averageDieValue = (dieSize + 1) / 2;
+  const hpPerDie = Math.max(1, averageDieValue + constitutionModifier);
   return Math.max(1, Math.round(hp / hpPerDie));
 }
 
