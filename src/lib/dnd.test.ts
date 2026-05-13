@@ -142,7 +142,7 @@ describe("calculateConcentrationDC", () => {
   });
 
   it("returns 10 when half damage exactly equals the minimum", () => {
-    // floor(20 / 2) = 10 — ties with the minimum, so max(10, 10) = 10
+    // floor(20 / 2) = 10, ties with the minimum, so max(10, 10) = 10
     expect(calculateConcentrationDC(20)).toBe(10);
   });
 
@@ -464,7 +464,7 @@ describe("estimateMonsterCR", () => {
   });
 
   it("returns the same CR when defensive and offensive are equal", () => {
-    // Average of 5 and 5 is exactly 5 — no rounding needed.
+    // Average of 5 and 5 is exactly 5, no rounding needed.
     expect(estimateMonsterCR(5, 5)).toBe(5);
   });
 });

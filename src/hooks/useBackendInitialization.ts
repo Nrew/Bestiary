@@ -4,7 +4,6 @@ import type { GameEnums } from "@/types";
 import { RETRY } from "@/lib/dnd/constants";
 import { getAppReady } from "@/lib/api";
 
-// Circuit breaker constants
 const MAX_RETRIES = RETRY.MAX_ATTEMPTS;
 const INITIAL_BACKOFF_MS = RETRY.INITIAL_BACKOFF;
 const MAX_BACKOFF_MS = RETRY.MAX_BACKOFF;
@@ -25,13 +24,11 @@ export const useBackendInitialization = (): BackendState & { retry: () => void }
     canRetry: true,
   });
 
-  // Track if a request is currently in-flight to prevent double-requests
   const isRequestInFlight = useRef(false);
   const isMounted = useRef(true);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const performInit = useCallback(async (retryCount: number) => {
-    // Prevent concurrent requests
     if (isRequestInFlight.current) return;
     isRequestInFlight.current = true;
 
@@ -67,6 +64,8 @@ export const useBackendInitialization = (): BackendState & { retry: () => void }
 
   const retry = useCallback(() => {
     if (!state.canRetry || isRequestInFlight.current) return;
+    // Hold the in-flight flag through the backoff window so rapid second
+    // clicks early-return at the guard above instead of resetting the timer.
     isRequestInFlight.current = true;
 
     if (retryTimerRef.current !== null) {

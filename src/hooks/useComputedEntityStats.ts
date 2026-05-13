@@ -34,7 +34,6 @@ const DEFAULT_STAT_BLOCK: StatBlock = {
 };
 
 export interface ComputedEntityStats {
-  // Core modifiers
   proficiencyBonus: number;
   strModifier: number;
   dexModifier: number;
@@ -42,25 +41,17 @@ export interface ComputedEntityStats {
   intModifier: number;
   wisModifier: number;
   chaModifier: number;
-
-  // Formatted modifiers (with + or -)
   strModifierFormatted: string;
   dexModifierFormatted: string;
   conModifierFormatted: string;
   intModifierFormatted: string;
   wisModifierFormatted: string;
   chaModifierFormatted: string;
-
-  // Passive scores
   passivePerception: number;
   passiveInvestigation: number;
   passiveInsight: number;
-
-  // Hit dice
   hitDice: string | null;
   averageHP: number | null;
-
-  // Initiative
   initiative: number;
 }
 

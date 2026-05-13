@@ -71,7 +71,6 @@ export function useSidebarData() {
     overscan: 5,
   });
 
-  // Load more when scrolling near the end (only when not searching)
   const loadMoreIfNeeded = useCallback(() => {
     const virtualItems = rowVirtualizer.getVirtualItems();
     const lastItem = virtualItems[virtualItems.length - 1];

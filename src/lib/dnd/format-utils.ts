@@ -42,6 +42,11 @@ export function formatValue(value: unknown): string {
   return "[Function]";
 }
 
+/** Signed integer bonus formatting for stat blocks (saving throws, skills, modifiers). */
+export function formatBonus(value: number): string {
+  return value >= 0 ? `+${value}` : `${value}`;
+}
+
 /** Used for color-coding modifiers. percentMult < 100 is negative (e.g. 50 = halved). */
 export function isNegativeStatValue(stat: StatValue): boolean {
   switch (stat.type) {
