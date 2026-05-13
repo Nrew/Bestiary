@@ -1,8 +1,7 @@
-import React from "react";
 import { BookOpen } from "lucide-react";
 import { IlluminatedLetter, DecorativeFlourish } from "@/components/shared/ornaments";
 
-export const EmptyState: React.FC = () => {
+export function EmptyState() {
   return (
     <div className="flex h-full flex-1 items-center justify-center p-8">
       <div className="text-center font-serif max-w-4xl flex flex-col items-center gap-8 animate-fade-in">
@@ -42,6 +41,6 @@ export const EmptyState: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default EmptyState;

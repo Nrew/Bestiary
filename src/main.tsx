@@ -14,22 +14,25 @@ import { disposeAllCaches } from "./lib/cache";
 import { tryCatch } from "./lib/errors";
 import { logger } from "./lib/logger";
 
-const LoadingScreen: React.FC = () => (
-  <div className="fixed inset-0 flex flex-col items-center justify-center bg-background">
-    <div className="relative">
-      <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      <div className="absolute inset-0 h-12 w-12 animate-pulse rounded-full border-4 border-primary/20" />
+function LoadingScreen() {
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background">
+      <div className="relative">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <div className="absolute inset-0 h-12 w-12 animate-pulse rounded-full border-4 border-primary/20" />
+      </div>
+      <p className="mt-6 text-sm text-muted-foreground font-medium">Initializing Bestiary...</p>
+      <p className="mt-1 text-xs text-muted-foreground/60">Loading compendium database</p>
     </div>
-    <p className="mt-6 text-sm text-muted-foreground font-medium">Initializing Bestiary...</p>
-    <p className="mt-1 text-xs text-muted-foreground/60">Loading compendium database</p>
-  </div>
-);
+  );
+}
 
-const ErrorScreen: React.FC<{ error: string; canRetry: boolean; onRetry: () => void }> = ({
+function ErrorScreen({
   error,
   canRetry,
   onRetry,
-}) => (
+}: { error: string; canRetry: boolean; onRetry: () => void }) {
+  return (
   <div className="fixed inset-0 flex items-center justify-center bg-background p-6">
     <div className="text-center max-w-md">
       <div className="h-16 w-16 mx-auto mb-6 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -37,6 +40,12 @@ const ErrorScreen: React.FC<{ error: string; canRetry: boolean; onRetry: () => v
       </div>
       <h2 className="text-lg font-semibold mb-3">Startup Issue</h2>
       <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{error}</p>
+      {/* Raw <button>s instead of the <Button> primitive: this fallback runs
+          before the lazy-loaded form/editor bundles and even before the
+          ThemeProvider; importing the cva-based Button here would drag its
+          dependency graph (cva + tailwind-merge + Slot) into the critical
+          startup chunk. The visual styling intentionally mirrors variant
+          "default" / "secondary" so the surface still feels on-brand. */}
       <div className="space-y-3">
         <button
           type="button"
@@ -56,32 +65,35 @@ const ErrorScreen: React.FC<{ error: string; canRetry: boolean; onRetry: () => v
       </div>
     </div>
   </div>
-);
+  );
+}
 
 // Shown when safeInvoke dispatches a `backend-panic` event mid-session.
 // Reload is the fix; it re-spawns the Tauri backend process.
-const BackendCrashBanner: React.FC = () => (
-  <div className="fixed inset-0 z-9999 flex items-center justify-center bg-background/95 backdrop-blur p-6">
-    <div className="text-center max-w-md">
-      <div className="h-16 w-16 mx-auto mb-6 rounded-full bg-destructive/10 flex items-center justify-center">
-        <span className="text-destructive text-2xl">⚠</span>
+function BackendCrashBanner() {
+  return (
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-background/95 backdrop-blur p-6">
+      <div className="text-center max-w-md">
+        <div className="h-16 w-16 mx-auto mb-6 rounded-full bg-destructive/10 flex items-center justify-center">
+          <span className="text-destructive text-2xl">⚠</span>
+        </div>
+        <h2 className="text-lg font-semibold mb-3">Backend Crashed</h2>
+        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+          The application backend has crashed. Please restart the application to continue.
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
+          Reload
+        </button>
       </div>
-      <h2 className="text-lg font-semibold mb-3">Backend Crashed</h2>
-      <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-        The application backend has crashed. Please restart the application to continue.
-      </p>
-      <button
-        type="button"
-        onClick={() => window.location.reload()}
-        className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
-      >
-        Reload
-      </button>
     </div>
-  </div>
-);
+  );
+}
 
-const AppInitializer: React.FC = () => {
+function AppInitializer() {
   const initialize = useAppStore((s) => s.initialize);
   const setError = useAppStore((s) => s.setError);
   const { status, error, retry, gameEnums, canRetry } = useBackendInitialization();
@@ -143,24 +155,26 @@ const AppInitializer: React.FC = () => {
   }
 
   return <App />;
-};
+}
 
-const ToastSetup: React.FC = () => {
+function ToastSetup() {
   const toastHandler = useToast();
   React.useEffect(() => {
     setGlobalToastHandler(toastHandler);
   }, [toastHandler]);
   return null;
-};
+}
 
-const AppProviders: React.FC<React.PropsWithChildren> = ({ children }) => (
-  <ToastProvider>
-    <ToastSetup />
-    <TooltipProvider delayDuration={100}>
-      <WikiLinkProvider>{children}</WikiLinkProvider>
-    </TooltipProvider>
-  </ToastProvider>
-);
+function AppProviders({ children }: React.PropsWithChildren) {
+  return (
+    <ToastProvider>
+      <ToastSetup />
+      <TooltipProvider delayDuration={100}>
+        <WikiLinkProvider>{children}</WikiLinkProvider>
+      </TooltipProvider>
+    </ToastProvider>
+  );
+}
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");

@@ -1,14 +1,14 @@
-import React, { useCallback } from "react";
-import { motion } from "framer-motion";
-import { headerSlideLeft, headerSlideRight } from "@/lib/animations";
+import React, { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Crown, PlusCircle } from "lucide-react";
+import { BookOpen, Crown, Keyboard, PlusCircle, Settings, Swords } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
 import { useNavigationGuard } from "@/hooks/useNavigationGuard";
 import { useKeyboardShortcut, APP_SHORTCUTS, formatShortcutKey } from "@/lib/keyboard-shortcuts";
 import { DiceTypePicker } from "@/components/features/entry-creation/DiceTypePicker";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import type { ViewContext } from "@/types";
 
+// Each dialog assumes the parent unmounts on close (clears local state).
 const ShortcutsDialog = React.lazy(() =>
   import("./ShortcutsDialog").then((module) => ({ default: module.ShortcutsDialog }))
 );
@@ -19,11 +19,15 @@ const EncounterBuilder = React.lazy(() =>
   import("@/components/features/encounter").then((module) => ({ default: module.EncounterBuilder }))
 );
 
-// Search lives in the sidebar; this bar handles navigation and entry creation only.
-export const AppHeader: React.FC<{ onTocOpen: () => void }> = ({ onTocOpen }) => {
+const NEW_ENTRY_TITLE = `Create new entry (${formatShortcutKey(APP_SHORTCUTS.NEW)})`;
+
+export function AppHeader({ onTocOpen }: { onTocOpen: () => void }) {
   const currentContext = useAppStore((s) => s.currentContext);
   const { createEntry } = useNavigationGuard();
-  const [isDiceTypePickerOpen, setIsDiceTypePickerOpen] = React.useState(false);
+  const [isDiceTypePickerOpen, setIsDiceTypePickerOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isEncounterOpen, setIsEncounterOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const handleCreate = useCallback(() => {
     setIsDiceTypePickerOpen(true);
@@ -42,12 +46,7 @@ export const AppHeader: React.FC<{ onTocOpen: () => void }> = ({ onTocOpen }) =>
 
   return (
     <header className="codex-header animate-fade-in-up">
-      <motion.div
-        className="flex items-center gap-4 md:gap-8"
-        variants={headerSlideLeft}
-        initial="hidden"
-        animate="visible"
-      >
+      <div className="flex items-center gap-4 md:gap-8">
         <div className="flex items-center gap-3 text-leather">
           <Crown className="w-8 h-8 flex-none text-rune" />
           <div className="hidden sm:block">
@@ -57,39 +56,76 @@ export const AppHeader: React.FC<{ onTocOpen: () => void }> = ({ onTocOpen }) =>
           </div>
         </div>
 
-        <Button onClick={onTocOpen} variant="codex" className="gap-2">
+        <Button onClick={onTocOpen} variant="codex">
           <BookOpen className="w-4 h-4" />
           Contents
         </Button>
-      </motion.div>
+      </div>
 
-      <motion.div
-        className="flex items-center gap-2"
-        variants={headerSlideRight}
-        initial="hidden"
-        animate="visible"
-      >
-        <DiceTypePicker
-          open={isDiceTypePickerOpen}
-          currentContext={currentContext}
-          onOpenChange={setIsDiceTypePickerOpen}
-          onConfirm={handleCreateConfirm}
-        />
-        <React.Suspense fallback={null}>
-          <ShortcutsDialog />
-          <EncounterBuilder />
-          <SettingsDialog />
-        </React.Suspense>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghostLeather"
+          size="icon"
+          aria-label="Keyboard shortcuts"
+          title="Keyboard shortcuts"
+          aria-haspopup="dialog"
+          aria-expanded={isShortcutsOpen}
+          onClick={() => setIsShortcutsOpen(true)}
+        >
+          <Keyboard className="w-5 h-5" />
+        </Button>
+        <Button
+          variant="ghostLeather"
+          size="icon"
+          aria-label="Encounter Builder"
+          title="Encounter Builder"
+          aria-haspopup="dialog"
+          aria-expanded={isEncounterOpen}
+          onClick={() => setIsEncounterOpen(true)}
+        >
+          <Swords className="w-5 h-5" />
+        </Button>
+        <Button
+          variant="ghostLeather"
+          size="icon"
+          aria-label="Settings"
+          title="Settings"
+          aria-haspopup="dialog"
+          aria-expanded={isSettingsOpen}
+          onClick={() => setIsSettingsOpen(true)}
+        >
+          <Settings className="w-5 h-5" />
+        </Button>
         <Button
           onClick={handleCreate}
-          variant="codex-primary"
-          className="gap-2 px-4 sm:px-6"
-          title={`Create new entry (${formatShortcutKey(APP_SHORTCUTS.NEW)})`}
+          variant="codexPrimary"
+          className="px-4 sm:px-6"
+          title={NEW_ENTRY_TITLE}
         >
           <PlusCircle className="w-4 h-4" />
           <span className="hidden sm:inline">Scribe New Entry</span>
         </Button>
-      </motion.div>
+      </div>
+
+      <DiceTypePicker
+        open={isDiceTypePickerOpen}
+        currentContext={currentContext}
+        onOpenChange={setIsDiceTypePickerOpen}
+        onConfirm={handleCreateConfirm}
+      />
+      <ErrorBoundary level="component">
+        <React.Suspense fallback={null}>
+          {isShortcutsOpen && (
+            <ShortcutsDialog open onOpenChange={setIsShortcutsOpen} />
+          )}
+          {isEncounterOpen && (
+            <EncounterBuilder open onOpenChange={setIsEncounterOpen} />
+          )}
+          {isSettingsOpen && (
+            <SettingsDialog open onOpenChange={setIsSettingsOpen} />
+          )}
+        </React.Suspense>
+      </ErrorBoundary>
     </header>
   );
-};
+}

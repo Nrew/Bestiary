@@ -20,7 +20,7 @@ function useSelectionValidation() {
   }, [selectedId, selectedIdExists, setSelectedId]);
 }
 
-const MainContent: React.FC = React.memo(() => {
+const MainContent = React.memo(() => {
   const selectedId = useAppStore((s) => s.selectedId);
   const currentContext = useAppStore((s) => s.currentContext);
 

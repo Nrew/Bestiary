@@ -11,7 +11,7 @@ const Sidebar = React.lazy(() =>
   import("@/components/features/sidebar/Sidebar").then(m => ({ default: m.Sidebar }))
 );
 
-export const Layout: React.FC<React.PropsWithChildren> = ({ children }) => {
+export function Layout({ children }: React.PropsWithChildren) {
   const [isTocOpen, setIsTocOpen] = React.useState(false);
   const selectedId = useAppStore((s) => s.selectedId);
   const navigationNonce = useAppStore((s) => s.navigationNonce);
@@ -58,4 +58,4 @@ export const Layout: React.FC<React.PropsWithChildren> = ({ children }) => {
       </div>
     </div>
   );
-};
+}

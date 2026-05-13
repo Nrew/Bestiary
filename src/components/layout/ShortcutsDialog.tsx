@@ -1,23 +1,23 @@
-import React, { useState } from "react";
+import React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
-import { Keyboard, X } from "lucide-react";
+import { X } from "lucide-react";
 import { keyboardManager, formatShortcutKey } from "@/lib/keyboard-shortcuts";
 
-export const ShortcutsDialog: React.FC = () => {
-  const [open, setOpen] = useState(false);
+interface ShortcutsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
+  // Parent gates mount on `open`, so when this renders we always need the list.
   const shortcuts = React.useMemo(
-    () => open ? keyboardManager.getShortcuts().filter((s) => s.description) : [],
-    [open]
+    () => keyboardManager.getShortcuts().filter((s) => s.description),
+    []
   );
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Keyboard shortcuts" title="Keyboard shortcuts" className="text-leather hover:text-leather hover:bg-leather/10">
-          <Keyboard className="w-5 h-5" />
-        </Button>
-      </Dialog.Trigger>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-fade-in" />
         <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-[85vh] overflow-y-auto glass-panel p-6 rounded-xl shadow-2xl animate-slide-up focus:outline-none motion-reduce:animate-none">
@@ -49,4 +49,4 @@ export const ShortcutsDialog: React.FC = () => {
       </Dialog.Portal>
     </Dialog.Root>
   );
-};
+}
