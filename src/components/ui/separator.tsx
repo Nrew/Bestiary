@@ -17,7 +17,7 @@ const separatorVariants = cva(
         muted: "bg-muted",
         accent: "bg-accent",
         destructive: "bg-destructive/20",
-        gradient: "bg-gradient-to-r from-transparent via-border to-transparent",
+        gradient: "bg-linear-to-r from-transparent via-border to-transparent",
       },
       size: {
         default: "",

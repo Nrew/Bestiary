@@ -90,5 +90,5 @@ export const COMPONENT_STYLES = {
   /** Stat block container */
   statBlock: "bg-parchment/80 rounded-lg border-2 border-leather/30 p-4 font-serif text-foreground shadow-lg",
   /** Decorative divider line */
-  divider: "my-3 h-px w-full bg-gradient-to-r from-transparent via-wine/50 to-transparent",
+  divider: "my-3 h-px w-full bg-linear-to-r from-transparent via-wine/50 to-transparent",
 } as const;
