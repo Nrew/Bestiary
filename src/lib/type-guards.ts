@@ -44,7 +44,7 @@ export function isAbility(entry: unknown): entry is Ability {
     entry !== null &&
     'slug' in entry &&
     'effects' in entry &&
-    'type' in entry &&
+    'timing' in entry &&
     !('taxonomy' in entry) &&
     !('weight' in entry)
   );

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useAbilitiesMap, useAppStore } from "@/store/appStore";
 import { useLoadedReferences } from "@/hooks/useLoadedReferences";
 import { isAbility } from "@/lib/type-guards";
+import { assertNever } from "@/lib/dnd/format-utils";
 import type { Ability, Entity } from "@/types";
 
 export interface EntityAbilities {
@@ -12,6 +13,8 @@ export interface EntityAbilities {
   legendaryActions: Ability[];
   mythicActions: Ability[];
   lairActions: Ability[];
+  multiattacks: Ability[];
+  regionalEffects: Ability[];
   missingIds: string[];
   loading: boolean;
   error: Error | null;
@@ -25,16 +28,13 @@ const emptyEntityAbilities: EntityAbilities = {
   legendaryActions: [],
   mythicActions: [],
   lairActions: [],
+  multiattacks: [],
+  regionalEffects: [],
   missingIds: [],
   loading: false,
   error: null,
 };
 
-/**
- * Single source of truth for resolving + grouping an entity's referenced
- * abilities. Sibling sections (AbilitiesSection, LairActionsPanel) call this
- * once at the viewer level so they share one IPC load + one loading state.
- */
 export function useEntityAbilities(data: Entity): EntityAbilities {
   const abilities = useAbilitiesMap();
   const ensureAbilitiesLoaded = useAppStore((s) => s.ensureAbilitiesLoaded);
@@ -56,11 +56,22 @@ export function useEntityAbilities(data: Entity): EntityAbilities {
       legendaryActions: [],
       mythicActions: [],
       lairActions: [],
+      multiattacks: [],
+      regionalEffects: [],
     };
 
     for (const candidate of entries) {
       if (!isAbility(candidate)) continue;
-      switch (candidate.type) {
+      // category > timing: multiattack-as-bonus-action groups under multiattacks
+      if (candidate.category === "multiattack") {
+        grouped.multiattacks.push(candidate);
+        continue;
+      }
+      if (candidate.category === "regionalEffect") {
+        grouped.regionalEffects.push(candidate);
+        continue;
+      }
+      switch (candidate.timing) {
         case "action": grouped.actions.push(candidate); break;
         case "bonusAction": grouped.bonusActions.push(candidate); break;
         case "reaction": grouped.reactions.push(candidate); break;
@@ -68,9 +79,11 @@ export function useEntityAbilities(data: Entity): EntityAbilities {
         case "mythic": grouped.mythicActions.push(candidate); break;
         case "passive": grouped.traits.push(candidate); break;
         case "lair": grouped.lairActions.push(candidate); break;
+        default:
+          assertNever(candidate.timing);
       }
     }
 
     return { ...grouped, missingIds, loading, error };
-  }, [abilityIds.length, entries, missingIds, loading, error]);
+  }, [abilityIds, entries, missingIds, loading, error]);
 }
