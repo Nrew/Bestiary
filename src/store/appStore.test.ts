@@ -235,8 +235,11 @@ describe("appStore saveEntry", () => {
     apiMocks.getGameEnums.mockResolvedValueOnce({
       itemTypes: [],
       rarities: [],
-      abilityTypes: [],
+      abilityTimings: [],
+      abilityCategories: [],
       aoeShapes: [],
+      magicSchools: [],
+      restTypes: [],
       damageTypes: [],
       entitySizes: [],
       threatLevels: [],

@@ -72,7 +72,7 @@ macro_rules! define_game_enum {
 define_game_enum!(ItemType, Weapon, Armor, Consumable, Trinket, Material, Organic, Tool);
 define_game_enum!(Rarity, Common, Uncommon, Rare, VeryRare, Legendary, Mythic, Unique);
 define_game_enum!(
-    AbilityType,
+    AbilityTiming,
     Action,
     BonusAction,
     Reaction,
@@ -81,7 +81,24 @@ define_game_enum!(
     Lair,
     Mythic
 );
+define_game_enum!(AbilityCategory, None, Multiattack, RegionalEffect);
+
+fn default_ability_category() -> AbilityCategory {
+    AbilityCategory::None
+}
 define_game_enum!(AoeShape, Sphere, Cube, Cone, Line, Cylinder);
+define_game_enum!(
+    MagicSchool,
+    Abjuration,
+    Conjuration,
+    Divination,
+    Enchantment,
+    Evocation,
+    Illusion,
+    Necromancy,
+    Transmutation
+);
+define_game_enum!(RestType, Short, Long, Dawn);
 define_game_enum!(
     DamageType,
     Acid,
@@ -117,8 +134,11 @@ define_game_enum!(ResistanceLevel, Vulnerable, Resistant, Immune);
 pub struct GameEnums {
     pub item_types: Vec<ItemType>,
     pub rarities: Vec<Rarity>,
-    pub ability_types: Vec<AbilityType>,
+    pub ability_timings: Vec<AbilityTiming>,
+    pub ability_categories: Vec<AbilityCategory>,
     pub aoe_shapes: Vec<AoeShape>,
+    pub magic_schools: Vec<MagicSchool>,
+    pub rest_types: Vec<RestType>,
     pub damage_types: Vec<DamageType>,
     pub entity_sizes: Vec<EntitySize>,
     pub threat_levels: Vec<ThreatLevel>,
@@ -198,14 +218,25 @@ impl StatBlock {
     pub fn normalize_legacy_custom_stats(&mut self) {
         // Legacy keys that may exist only under `custom`; each maps to a typed field above.
         let legacy_keys = [
-            "hitDice", "hit_dice",
-            "armorType", "armor_type", "armorNote", "armor_note",
-            "burrowSpeed", "burrow_speed",
-            "climbSpeed", "climb_speed",
-            "swimSpeed", "swim_speed",
-            "flySpeed", "fly_speed",
-            "hoverSpeed", "hover_speed",
-            "initiative", "initiativeBonus", "initiative_bonus",
+            "hitDice",
+            "hit_dice",
+            "armorType",
+            "armor_type",
+            "armorNote",
+            "armor_note",
+            "burrowSpeed",
+            "burrow_speed",
+            "climbSpeed",
+            "climb_speed",
+            "swimSpeed",
+            "swim_speed",
+            "flySpeed",
+            "fly_speed",
+            "hoverSpeed",
+            "hover_speed",
+            "initiative",
+            "initiativeBonus",
+            "initiative_bonus",
         ];
 
         for key in legacy_keys {
@@ -349,6 +380,17 @@ pub struct SavingThrow {
     pub attribute: Attribute,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
+#[ts(export_to = "../../src/types/generated.ts")]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum AbilityUses {
+    Recharge { min: u8, max: u8 },
+    PerDay { count: u32 },
+    PerRest { count: u32, rest: RestType },
+    AtWill,
+    Once,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, TS)]
 #[ts(export_to = "../../src/types/generated.ts")]
 #[serde(tag = "type", rename_all = "camelCase")]
@@ -474,14 +516,23 @@ pub struct AbilityExport {
     )]
     pub slug: String,
     pub description: String,
-    pub r#type: AbilityType,
+    pub timing: AbilityTiming,
+    #[serde(default = "default_ability_category")]
+    pub category: AbilityCategory,
     pub target: Option<AbilityTarget>,
-    pub casting_time: Option<String>,
     #[serde(default)]
     pub requires_concentration: bool,
     pub components: Option<SpellComponents>,
-    pub recharge: Option<String>,
-    #[validate(length(min = 1, message = "Ability must have at least one effect."))]
+    #[serde(default)]
+    pub spell_level: Option<u8>,
+    #[serde(default)]
+    pub school: Option<MagicSchool>,
+    #[serde(default)]
+    pub ritual: bool,
+    #[serde(default)]
+    pub higher_levels: Option<String>,
+    #[serde(default)]
+    pub uses: Option<AbilityUses>,
     pub effects: Vec<AbilityEffect>,
     pub created_at: String,
     pub updated_at: String,
@@ -573,12 +624,16 @@ pub struct Ability {
     pub name: String,
     pub slug: String,
     pub description: String,
-    pub r#type: AbilityType,
+    pub timing: AbilityTiming,
+    pub category: AbilityCategory,
     pub target_json: Option<Json<AbilityTarget>>,
-    pub casting_time: Option<String>,
     pub requires_concentration: bool,
     pub components_json: Option<Json<SpellComponents>>,
-    pub recharge: Option<String>,
+    pub spell_level: Option<i64>,
+    pub school: Option<MagicSchool>,
+    pub ritual: bool,
+    pub higher_levels: Option<String>,
+    pub uses_json: Option<Json<AbilityUses>>,
     pub effects_json: Json<Vec<AbilityEffect>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -667,12 +722,16 @@ impl From<Ability> for AbilityExport {
             name: db.name,
             slug: db.slug,
             description: db.description,
-            r#type: db.r#type,
+            timing: db.timing,
+            category: db.category,
             target: db.target_json.map(|t| t.0),
-            casting_time: db.casting_time,
             requires_concentration: db.requires_concentration,
             components: db.components_json.map(|c| c.0),
-            recharge: db.recharge,
+            spell_level: db.spell_level.map(|n| n as u8),
+            school: db.school,
+            ritual: db.ritual,
+            higher_levels: db.higher_levels,
+            uses: db.uses_json.map(|j| j.0),
             effects: db.effects_json.0,
             created_at: db.created_at.to_rfc3339(),
             updated_at: db.updated_at.to_rfc3339(),
@@ -854,10 +913,43 @@ impl Validatable for ItemExport {
     }
 }
 
+fn validate_ability_consistency(errors: &mut Vec<String>, ability: &AbilityExport) {
+    if ability.category == AbilityCategory::None {
+        return;
+    }
+    let label = match ability.category {
+        AbilityCategory::Multiattack => "multiattack",
+        AbilityCategory::RegionalEffect => "regionalEffect",
+        AbilityCategory::None => unreachable!(),
+    };
+
+    let mut deny = |present: bool, field: &str| {
+        if present {
+            errors.push(format!("{field} is not allowed on category='{label}'"));
+        }
+    };
+    deny(ability.spell_level.is_some(), "spellLevel");
+    deny(ability.school.is_some(), "school");
+    deny(ability.ritual, "ritual");
+    deny(ability.higher_levels.is_some(), "higherLevels");
+    deny(ability.components.is_some(), "components");
+    deny(ability.target.is_some(), "target");
+    deny(ability.requires_concentration, "requiresConcentration");
+    deny(ability.uses.is_some(), "uses");
+
+    if ability.category == AbilityCategory::Multiattack && !ability.effects.is_empty() {
+        errors.push(
+            "multiattack should have no effects; author constituent attacks as separate abilities"
+                .to_string(),
+        );
+    }
+}
+
 impl Validatable for AbilityExport {
     fn validate(&self) -> Result<(), Vec<String>> {
         let mut errors = collect_schema_errors(self);
         validate_uuid(&mut errors, "Ability ID", &self.id);
+        validate_ability_consistency(&mut errors, self);
         for effect in &self.effects {
             validate_ability_effect_ids(&mut errors, effect);
         }
@@ -902,8 +994,8 @@ mod stat_block_normalize_tests {
         assert_eq!(sb.climb_speed, Some(20.0));
         assert_eq!(sb.hit_dice.as_deref(), Some("8d10 + 40"));
         assert_eq!(sb.custom.get("SpellPower"), Some(&json!(15)));
-        assert!(sb.custom.get("climbSpeed").is_none());
-        assert!(sb.custom.get("hitDice").is_none());
+        assert!(!sb.custom.contains_key("climbSpeed"));
+        assert!(!sb.custom.contains_key("hitDice"));
     }
 
     #[test]
@@ -917,7 +1009,7 @@ mod stat_block_normalize_tests {
         assert_eq!(sb.fly_speed, None);
         // Legacy key is removed even when value can't be parsed — leaving it in
         // `custom` would still render as a phantom row in the UI.
-        assert!(sb.custom.get("flySpeed").is_none());
+        assert!(!sb.custom.contains_key("flySpeed"));
     }
 
     #[test]
@@ -931,7 +1023,7 @@ mod stat_block_normalize_tests {
         sb.normalize_legacy_custom_stats();
 
         assert_eq!(sb.armor_note.as_deref(), Some("natural armor"));
-        assert!(sb.custom.get("armorType").is_none());
+        assert!(!sb.custom.contains_key("armorType"));
         assert_eq!(sb.custom.get("SpellPower"), Some(&json!(15)));
     }
 
@@ -947,8 +1039,7 @@ mod stat_block_normalize_tests {
     fn accepts_snake_case_legacy_keys() {
         let mut sb = empty_stat_block();
         sb.custom.insert("climb_speed".to_string(), json!("15"));
-        sb.custom
-            .insert("initiative_bonus".to_string(), json!("2"));
+        sb.custom.insert("initiative_bonus".to_string(), json!("2"));
 
         sb.normalize_legacy_custom_stats();
 
@@ -964,7 +1055,7 @@ mod stat_block_normalize_tests {
         sb.normalize_legacy_custom_stats();
 
         assert_eq!(sb.initiative_bonus, Some(3));
-        assert!(sb.custom.get("initiative").is_none());
+        assert!(!sb.custom.contains_key("initiative"));
     }
 
     /// JSON round-trip integration test: a legacy stat block (with movement
@@ -1005,10 +1096,10 @@ mod stat_block_normalize_tests {
         assert_eq!(sb.initiative_bonus, Some(2));
 
         // Legacy keys removed from custom; user-defined keys preserved
-        assert!(sb.custom.get("climbSpeed").is_none());
-        assert!(sb.custom.get("hitDice").is_none());
-        assert!(sb.custom.get("armorType").is_none());
-        assert!(sb.custom.get("initiativeBonus").is_none());
+        assert!(!sb.custom.contains_key("climbSpeed"));
+        assert!(!sb.custom.contains_key("hitDice"));
+        assert!(!sb.custom.contains_key("armorType"));
+        assert!(!sb.custom.contains_key("initiativeBonus"));
         assert_eq!(sb.custom.get("SpellPower"), Some(&json!(15)));
 
         // Re-serialize and confirm the shape the frontend will see
@@ -1019,6 +1110,240 @@ mod stat_block_normalize_tests {
         assert_eq!(serialized["initiativeBonus"], json!(2));
         assert_eq!(serialized["custom"]["SpellPower"], json!(15));
         assert!(serialized["custom"].get("climbSpeed").is_none());
+    }
+}
+
+#[cfg(test)]
+mod ability_consistency_tests {
+    use super::*;
+
+    fn base(category: AbilityCategory) -> AbilityExport {
+        AbilityExport {
+            id: "00000000-0000-4000-8000-000000000001".into(),
+            name: "Test".into(),
+            slug: "test".into(),
+            description: String::new(),
+            timing: AbilityTiming::Action,
+            category,
+            target: None,
+            requires_concentration: false,
+            components: None,
+            spell_level: None,
+            school: None,
+            ritual: false,
+            higher_levels: None,
+            uses: None,
+            effects: vec![],
+            created_at: chrono::Utc::now().to_rfc3339(),
+            updated_at: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+
+    fn collect(ability: &AbilityExport) -> Vec<String> {
+        let mut errors = Vec::new();
+        validate_ability_consistency(&mut errors, ability);
+        errors
+    }
+
+    #[test]
+    fn standard_category_with_spell_fields_passes() {
+        let mut a = base(AbilityCategory::None);
+        a.spell_level = Some(3);
+        a.school = Some(MagicSchool::Evocation);
+        a.effects = vec![AbilityEffect::Damage {
+            formula: "8d6".into(),
+            damage_type: DamageType::Fire,
+        }];
+        assert!(collect(&a).is_empty());
+    }
+
+    #[test]
+    fn standard_category_with_empty_effects_passes() {
+        assert!(collect(&base(AbilityCategory::None)).is_empty());
+    }
+
+    #[test]
+    fn multiattack_with_empty_effects_passes() {
+        assert!(collect(&base(AbilityCategory::Multiattack)).is_empty());
+    }
+
+    #[test]
+    fn multiattack_with_effects_fails() {
+        let mut a = base(AbilityCategory::Multiattack);
+        a.effects = vec![AbilityEffect::Damage {
+            formula: "1d4".into(),
+            damage_type: DamageType::Slashing,
+        }];
+        let errors = collect(&a);
+        assert!(errors
+            .iter()
+            .any(|e| e.contains("multiattack should have no effects")));
+    }
+
+    #[test]
+    fn multiattack_rejects_every_disallowed_field() {
+        let mut a = base(AbilityCategory::Multiattack);
+        a.spell_level = Some(3);
+        a.school = Some(MagicSchool::Evocation);
+        a.ritual = true;
+        a.higher_levels = Some("x".into());
+        a.components = Some(SpellComponents {
+            verbal: true,
+            somatic: false,
+            material: None,
+        });
+        a.target = Some(AbilityTarget::SelfTarget);
+        a.requires_concentration = true;
+        a.uses = Some(AbilityUses::PerDay { count: 1 });
+
+        let errors = collect(&a);
+        for field in [
+            "spellLevel",
+            "school",
+            "ritual",
+            "higherLevels",
+            "components",
+            "target",
+            "requiresConcentration",
+            "uses",
+        ] {
+            assert!(
+                errors.iter().any(|e| e.contains(field)),
+                "missing error for {field}: {errors:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn regional_effect_rejects_spell_fields() {
+        let mut a = base(AbilityCategory::RegionalEffect);
+        a.spell_level = Some(0);
+        a.target = Some(AbilityTarget::SelfTarget);
+        let errors = collect(&a);
+        assert!(errors.iter().any(|e| e.contains("regionalEffect")));
+        assert!(errors.iter().any(|e| e.contains("spellLevel")));
+        assert!(errors.iter().any(|e| e.contains("target")));
+    }
+}
+
+#[cfg(test)]
+mod ability_axis_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn ability_timing_variants_roundtrip() {
+        for (variant, expected) in [
+            (AbilityTiming::Action, "action"),
+            (AbilityTiming::BonusAction, "bonusAction"),
+            (AbilityTiming::Reaction, "reaction"),
+            (AbilityTiming::Passive, "passive"),
+            (AbilityTiming::Legendary, "legendary"),
+            (AbilityTiming::Lair, "lair"),
+            (AbilityTiming::Mythic, "mythic"),
+        ] {
+            let serialized = serde_json::to_value(&variant).unwrap();
+            assert_eq!(serialized, json!(expected), "serialize {:?}", variant);
+            let parsed: AbilityTiming = serde_json::from_value(json!(expected)).unwrap();
+            assert_eq!(parsed, variant, "deserialize {:?}", variant);
+        }
+    }
+
+    #[test]
+    fn ability_category_variants_roundtrip() {
+        for (variant, expected) in [
+            (AbilityCategory::None, "none"),
+            (AbilityCategory::Multiattack, "multiattack"),
+            (AbilityCategory::RegionalEffect, "regionalEffect"),
+        ] {
+            let serialized = serde_json::to_value(&variant).unwrap();
+            assert_eq!(serialized, json!(expected), "serialize {:?}", variant);
+            let parsed: AbilityCategory = serde_json::from_value(json!(expected)).unwrap();
+            assert_eq!(parsed, variant, "deserialize {:?}", variant);
+        }
+    }
+}
+
+#[cfg(test)]
+mod ability_uses_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn ability_export_includes_spell_fields() {
+        let export = AbilityExport {
+            id: "00000000-0000-0000-0000-000000000001".to_string(),
+            name: "Fireball".into(),
+            slug: "fireball".into(),
+            description: "A bright streak flashes\u{2026}".into(),
+            timing: AbilityTiming::Action,
+            category: AbilityCategory::None,
+            target: None,
+            requires_concentration: false,
+            components: Some(SpellComponents {
+                verbal: true,
+                somatic: true,
+                material: Some("a tiny ball of bat guano and sulfur".into()),
+            }),
+            spell_level: Some(3),
+            school: Some(MagicSchool::Evocation),
+            ritual: false,
+            higher_levels: Some(
+                "When you cast this spell using a slot of 4th level or higher\u{2026}".into(),
+            ),
+            uses: None,
+            effects: vec![],
+            created_at: chrono::Utc::now().to_rfc3339(),
+            updated_at: chrono::Utc::now().to_rfc3339(),
+        };
+        let value = serde_json::to_value(&export).unwrap();
+        assert_eq!(value["spellLevel"], json!(3));
+        assert_eq!(value["school"], json!("evocation"));
+        assert_eq!(value["ritual"], json!(false));
+        assert!(value["higherLevels"].is_string());
+    }
+
+    #[test]
+    fn ability_uses_tagged_union_roundtrip() {
+        let cases = [
+            (
+                AbilityUses::Recharge { min: 5, max: 6 },
+                json!({"kind":"recharge","min":5,"max":6}),
+            ),
+            (
+                AbilityUses::PerDay { count: 3 },
+                json!({"kind":"perDay","count":3}),
+            ),
+            (
+                AbilityUses::PerRest {
+                    count: 1,
+                    rest: RestType::Short,
+                },
+                json!({"kind":"perRest","count":1,"rest":"short"}),
+            ),
+            (
+                AbilityUses::PerRest {
+                    count: 1,
+                    rest: RestType::Long,
+                },
+                json!({"kind":"perRest","count":1,"rest":"long"}),
+            ),
+            (
+                AbilityUses::PerRest {
+                    count: 1,
+                    rest: RestType::Dawn,
+                },
+                json!({"kind":"perRest","count":1,"rest":"dawn"}),
+            ),
+            (AbilityUses::AtWill, json!({"kind":"atWill"})),
+            (AbilityUses::Once, json!({"kind":"once"})),
+        ];
+        for (variant, expected) in cases {
+            let actual = serde_json::to_value(&variant).unwrap();
+            assert_eq!(actual, expected, "serialize {:?}", variant);
+            let parsed: AbilityUses = serde_json::from_value(expected.clone()).unwrap();
+            assert_eq!(parsed, variant, "deserialize {:?}", variant);
+        }
     }
 }
 
