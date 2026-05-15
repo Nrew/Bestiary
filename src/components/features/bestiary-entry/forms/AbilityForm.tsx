@@ -9,10 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { DeferredMount } from "@/components/shared/DeferredMount";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Icon } from "@/components/shared";
 import { useGameEnums } from "@/store/appStore";
-import { ABILITY_TYPE_LABELS, AOE_SHAPE_LABELS } from "@/lib/dnd/constants";
+import { ABILITY_TIMING_LABELS, ABILITY_CATEGORY_LABELS, AOE_SHAPE_LABELS } from "@/lib/dnd/constants";
 import { AbilityEffectEditor } from "./ability";
-import type { Ability, AbilityType, AoeShape } from "@/types";
+import { SpellFieldsSection } from "./ability/SpellFieldsSection";
+import { UsesEditor } from "./ability/UsesEditor";
+import type { AbilityCategory, AbilityTiming, AoeShape } from "@/types";
+import type { AbilityFormData } from "@/types/schemas";
 
 const RICH_TEXT_FALLBACK = (
   <Skeleton variant="shimmer" className="min-h-49.5 w-full rounded-md" aria-hidden />
@@ -23,7 +27,7 @@ export function AbilityForm() {
     register,
     control,
     setValue,
-  } = useFormContext<Ability>();
+  } = useFormContext<AbilityFormData>();
   const gameEnums = useGameEnums();
 
   const { fields: effectFields, append: appendEffect, remove: removeEffect } = useFieldArray({
@@ -31,7 +35,8 @@ export function AbilityForm() {
     name: "effects",
   });
 
-  const type = useWatch({ control, name: "type" });
+  const timing = useWatch({ control, name: "timing" });
+  const category = useWatch({ control, name: "category" });
   const target = useWatch({ control, name: "target" });
   const requiresConcentration = useWatch({ control, name: "requiresConcentration" });
   const components = useWatch({ control, name: "components" });
@@ -40,24 +45,24 @@ export function AbilityForm() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <FormSection title="Ability Details" iconCategory="game" iconName="spell">
-        <FormInput<Ability> name="name" label="Name" placeholder="Fireball" autoFocus />
-        <FormInput<Ability> name="slug" label="Slug" placeholder="fireball" />
+        <FormInput<AbilityFormData> name="name" label="Name" placeholder="Fireball" autoFocus />
+        <FormInput<AbilityFormData> name="slug" label="Slug" placeholder="fireball" />
 
         <div className="space-y-2">
-          <Label htmlFor="ability-type">Type</Label>
+          <Label htmlFor="ability-timing">Timing</Label>
           <Select
-            value={type || "passive"}
-            onValueChange={(value: AbilityType) =>
-              setValue("type", value, { shouldDirty: true })
+            value={timing || "passive"}
+            onValueChange={(value: AbilityTiming) =>
+              setValue("timing", value, { shouldDirty: true })
             }
           >
-            <SelectTrigger id="ability-type">
+            <SelectTrigger id="ability-timing">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {gameEnums?.abilityTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {ABILITY_TYPE_LABELS[type]}
+              {gameEnums?.abilityTimings.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {ABILITY_TIMING_LABELS[t]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -65,37 +70,82 @@ export function AbilityForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="castingTime">Casting Time</Label>
-          <Input
-            id="castingTime"
-            {...register("castingTime")}
-            placeholder="e.g., 1 action, 1 bonus action, 1 reaction"
-          />
+          <Label htmlFor="ability-category">Category</Label>
+          <Select
+            value={category || "none"}
+            onValueChange={(value: AbilityCategory) => {
+              setValue("category", value, { shouldDirty: true });
+              if (value !== "none") {
+                setValue("spellLevel", null, { shouldDirty: true });
+                setValue("school", null, { shouldDirty: true });
+                setValue("ritual", false, { shouldDirty: true });
+                setValue("higherLevels", null, { shouldDirty: true });
+                setValue("components", null, { shouldDirty: true });
+                setValue("target", null, { shouldDirty: true });
+                setValue("requiresConcentration", false, { shouldDirty: true });
+                setValue("uses", null, { shouldDirty: true });
+              }
+              if (value === "multiattack") {
+                setValue("effects", [], { shouldDirty: true });
+              }
+            }}
+          >
+            <SelectTrigger id="ability-category">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {gameEnums?.abilityCategories.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {ABILITY_CATEGORY_LABELS[c]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="recharge">Recharge</Label>
-          <Input
-            id="recharge"
-            {...register("recharge")}
-            placeholder="e.g., 5-6, short rest, long rest"
-          />
-        </div>
+        {category === "none" && (
+          <>
+            <UsesEditor />
 
-        <div className="col-span-full flex items-center space-x-2">
-          <Checkbox
-            id="requiresConcentration"
-            checked={requiresConcentration || false}
-            onCheckedChange={(checked) =>
-              setValue("requiresConcentration", !!checked, { shouldDirty: true })
-            }
-          />
-          <Label htmlFor="requiresConcentration" className="cursor-pointer">
-            Requires Concentration
-          </Label>
-        </div>
+            <div className="col-span-full flex items-center space-x-2">
+              <Checkbox
+                id="requiresConcentration"
+                checked={requiresConcentration || false}
+                onCheckedChange={(checked) =>
+                  setValue("requiresConcentration", !!checked, { shouldDirty: true })
+                }
+              />
+              <Label htmlFor="requiresConcentration" className="cursor-pointer">
+                Requires Concentration
+              </Label>
+            </div>
+          </>
+        )}
       </FormSection>
 
+      {category === "multiattack" && (
+        <aside className="flex items-start gap-2 rounded-sm border-l-2 border-sapphire/40 bg-stone/10 p-3 font-serif text-sm text-ink/70">
+          <Icon category="game" name="source-book" size="sm" className="mt-0.5 shrink-0 text-sapphire/70" />
+          <div>
+            <strong className="font-display text-ink">Multiattack.</strong>{" "}
+            Describe the attack pattern in the description. Author individual
+            constituent attacks as separate Action abilities.
+          </div>
+        </aside>
+      )}
+      {category === "regionalEffect" && (
+        <aside className="flex items-start gap-2 rounded-sm border-l-2 border-sapphire/40 bg-stone/10 p-3 font-serif text-sm text-ink/70">
+          <Icon category="game" name="source-book" size="sm" className="mt-0.5 shrink-0 text-sapphire/70" />
+          <div>
+            <strong className="font-display text-ink">Regional Effect.</strong>{" "}
+            Describe the ambient effect on the surrounding region. Targeting,
+            components, and uses do not apply.
+          </div>
+        </aside>
+      )}
+      {category === "none" && <SpellFieldsSection />}
+
+      {category === "none" && (
       <FormSection title="Targeting" iconCategory="combat" iconName="target">
         <div className="col-span-full space-y-4">
           <div className="space-y-2">
@@ -127,7 +177,7 @@ export function AbilityForm() {
           </div>
 
           {target?.type === "target" && (
-            <div className="grid grid-cols-2 gap-4 ml-4">
+            <div role="group" aria-label="Target details" className="grid grid-cols-2 gap-4 ml-4">
               <div className="space-y-2">
                 <Label htmlFor="ability-target-range">Range (feet)</Label>
                 <Input
@@ -158,7 +208,7 @@ export function AbilityForm() {
           )}
 
           {target?.type === "area" && (
-            <div className="grid grid-cols-2 gap-4 ml-4">
+            <div role="group" aria-label="Area of effect details" className="grid grid-cols-2 gap-4 ml-4">
               <div className="space-y-2">
                 <Label htmlFor="ability-target-shape">Shape</Label>
                 <Select
@@ -196,7 +246,9 @@ export function AbilityForm() {
           )}
         </div>
       </FormSection>
+      )}
 
+      {category === "none" && (
       <FormSection title="Spell Components" iconCategory="spell" iconName="vocal">
         <div className="col-span-full space-y-4">
           <div className="flex items-center space-x-2">
@@ -217,7 +269,7 @@ export function AbilityForm() {
           </div>
 
           {!!components && (
-            <div className="ml-6 space-y-4">
+            <div role="group" aria-label="Spell components" className="ml-6 space-y-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="verbal"
@@ -256,7 +308,9 @@ export function AbilityForm() {
           )}
         </div>
       </FormSection>
+      )}
 
+      {category !== "multiattack" && (
       <FormSection title="Effects" iconCategory="dice" iconName="roll">
         <div className="col-span-full space-y-4">
           <div className="flex items-center justify-between">
@@ -288,6 +342,7 @@ export function AbilityForm() {
           )}
         </div>
       </FormSection>
+      )}
 
       <FormSection title="Description" iconCategory="ui" iconName="book">
         <Controller
