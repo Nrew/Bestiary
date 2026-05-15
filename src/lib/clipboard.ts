@@ -114,8 +114,7 @@ export async function copyAbilityFormatted(ability: AbilityExport): Promise<void
 ${ability.name}
 ${'='.repeat(ability.name.length)}
 
-Type: ${ability.type}
-${ability.castingTime ? `Casting Time: ${ability.castingTime}` : ''}
+Timing: ${ability.timing}${ability.category !== "none" ? ` (${ability.category})` : ""}
 
 Effects:
 ${effectsText}

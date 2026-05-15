@@ -68,6 +68,13 @@ export function stripHtml(html: string): string {
 
 // === Number helpers ===
 
+export function ordinalize(n: number): string {
+  const s = ["th","st","nd","rd"];
+  const v = n % 100;
+  const suffix = s[(v - 20) % 10] ?? s[v] ?? s[0];
+  return `${n}${suffix}`;
+}
+
 export function formatCR(cr: number): string {
   return CR_FRACTION_DISPLAY[cr] ?? cr.toString();
 }

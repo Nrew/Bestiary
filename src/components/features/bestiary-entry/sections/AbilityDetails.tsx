@@ -3,13 +3,19 @@ import { RichTextViewer } from "@/components/shared/RichTextViewer";
 import { useAppStore } from "@/store/appStore";
 import { useWikiLink } from "@/components/shared/wiki-link/WikiLinkProvider";
 import {
-  ABILITY_TYPE_LABELS,
+  ABILITY_TIMING_LABELS,
+  ABILITY_CATEGORY_LABELS,
   ABILITY_SCORE_LABELS,
   AOE_SHAPE_LABELS,
   DAMAGE_TYPE_LABELS,
 } from "@/lib/dnd/constants";
 import { hasRichTextContent } from "@/lib/empty";
-import { formatStatValue, formatValue } from "@/lib/dnd/format-utils";
+import {
+  formatAbilityUses,
+  formatSpellLevel,
+  formatStatValue,
+  formatValue,
+} from "@/lib/dnd/format-utils";
 import { formatLabel } from "@/lib/utils";
 import type { Ability, AbilityEffect, ViewContext } from "@/types";
 import { useReferencedEntryName } from "@/hooks/useReferencedEntryName";
@@ -187,20 +193,26 @@ export function AbilityDetailsSection({ data }: { data: Ability }) {
           Ability Details
         </h3>
         <div className="space-y-2 text-sm font-serif">
-          <div className="flex justify-between">
-            <strong className="text-foreground/70">Type</strong>
-            <Badge variant="outline">{ABILITY_TYPE_LABELS[data.type]}</Badge>
-          </div>
-          {data.castingTime && (
-            <div className="flex justify-between">
-              <strong className="text-foreground/70">Casting Time</strong>
-              <span>{data.castingTime}</span>
+          {data.category === "none" && (data.spellLevel != null || data.school) && (
+            <div className="text-sm italic text-foreground/70">
+              {formatSpellLevel(data.spellLevel, data.school)}
+              {data.ritual && " (ritual)"}
             </div>
           )}
-          {data.recharge && (
+          <div className="flex justify-between">
+            <strong className="text-foreground/70">Timing</strong>
+            <Badge variant="outline">{ABILITY_TIMING_LABELS[data.timing]}</Badge>
+          </div>
+          {data.category !== "none" && (
             <div className="flex justify-between">
-              <strong className="text-foreground/70">Recharge</strong>
-              <span>{data.recharge}</span>
+              <strong className="text-foreground/70">Category</strong>
+              <Badge variant="outline">{ABILITY_CATEGORY_LABELS[data.category]}</Badge>
+            </div>
+          )}
+          {data.uses && (
+            <div className="flex justify-between">
+              <strong className="text-foreground/70">Uses</strong>
+              <span>{formatAbilityUses(data.uses)}</span>
             </div>
           )}
           {data.requiresConcentration && (
@@ -210,6 +222,12 @@ export function AbilityDetailsSection({ data }: { data: Ability }) {
             </div>
           )}
         </div>
+        {data.category === "none" && data.higherLevels && (
+          <div className="mt-3 text-sm font-serif">
+            <strong>At Higher Levels.</strong>{" "}
+            <RichTextViewer html={data.higherLevels} />
+          </div>
+        )}
       </div>
 
       {hasTarget && data.target && (
