@@ -67,6 +67,7 @@ export function AbilitiesSection({ data, abilities }: { data: Entity; abilities:
   return (
     <div className="space-y-4">
       <AbilityGroup abilities={abilities.traits} />
+      <AbilityGroup abilities={abilities.multiattacks} header="Multiattack" />
       <AbilityGroup abilities={abilities.actions} header="Actions" />
       <AbilityGroup abilities={abilities.bonusActions} header="Bonus Actions" />
       <AbilityGroup abilities={abilities.reactions} header="Reactions" />
@@ -83,9 +84,13 @@ export function AbilitiesSection({ data, abilities }: { data: Entity; abilities:
         abilities={abilities.mythicActions}
         header="Mythic Actions"
       />
+      <SpecialAbilityGroup
+        abilities={abilities.regionalEffects}
+        header="Regional Effects"
+      />
       {abilities.missingIds.length > 0 && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-destructive/60" />
+          <AlertTriangle className="h-4 w-4 text-destructive/60" aria-hidden />
           {abilities.missingIds.length === 1
             ? "One linked ability could not be loaded."
             : `${abilities.missingIds.length} linked abilities could not be loaded.`}
