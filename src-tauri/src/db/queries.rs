@@ -322,28 +322,36 @@ impl Repository<AbilityExport, Ability> for AbilityRepository {
         let now = Utc::now();
         sqlx::query(
             r#"
-            INSERT INTO abilities (id, name, slug, description, type, target_json, casting_time,
-                                   requires_concentration, components_json, recharge, effects_json,
-                                   created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO abilities (id, name, slug, description, timing, category, target_json,
+                                   requires_concentration, components_json,
+                                   spell_level, school, ritual, higher_levels, uses_json,
+                                   effects_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name, slug = excluded.slug, description = excluded.description,
-                type = excluded.type, target_json = excluded.target_json, casting_time = excluded.casting_time,
+                timing = excluded.timing, category = excluded.category,
+                target_json = excluded.target_json,
                 requires_concentration = excluded.requires_concentration, components_json = excluded.components_json,
-                recharge = excluded.recharge, effects_json = excluded.effects_json,
-                updated_at = excluded.updated_at
+                spell_level = excluded.spell_level, school = excluded.school,
+                ritual = excluded.ritual, higher_levels = excluded.higher_levels,
+                uses_json = excluded.uses_json,
+                effects_json = excluded.effects_json, updated_at = excluded.updated_at
             "#
         )
         .bind(&export.id)
         .bind(&export.name)
         .bind(&export.slug)
         .bind(&export.description)
-        .bind(&export.r#type)
+        .bind(&export.timing)
+        .bind(&export.category)
         .bind(export.target.as_ref().map(Json))
-        .bind(&export.casting_time)
         .bind(export.requires_concentration)
         .bind(export.components.as_ref().map(Json))
-        .bind(&export.recharge)
+        .bind(export.spell_level.map(|n| n as i64))
+        .bind(&export.school)
+        .bind(export.ritual)
+        .bind(&export.higher_levels)
+        .bind(export.uses.as_ref().map(Json))
         .bind(Json(&export.effects))
         .bind(now)
         .bind(now)
@@ -870,7 +878,7 @@ mod migration_tests {
             ("long-rest", "Long Rest"),
             ("dawn", "dawn"),
             ("recharge-range", "Recharge 5-6"),
-            ("recharge-endash", "Recharge 5â€“6"),
+            ("recharge-endash", "Recharge 5–6"),
             ("recharge-single", "Recharge 6"),
             ("per-day", "3/day"),
             ("per-short-rest", "2/short rest"),
@@ -928,6 +936,60 @@ mod migration_tests {
                 .is_none(),
             "unparseable values should be left as NULL",
         );
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod ability_repository_tests {
+    use super::AbilityRepository;
+    use crate::db::Repository;
+    use crate::models::{
+        AbilityCategory, AbilityEffect, AbilityExport, AbilityTiming, AbilityUses, DamageType,
+        MagicSchool,
+    };
+    use sqlx::SqlitePool;
+    use uuid::Uuid;
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn ability_save_load_roundtrip_with_spell_fields(pool: SqlitePool) -> sqlx::Result<()> {
+        let id = Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let export = AbilityExport {
+            id: id.clone(),
+            name: "Fireball".into(),
+            slug: "fireball".into(),
+            description: String::new(),
+            timing: AbilityTiming::Action,
+            category: AbilityCategory::None,
+            target: None,
+            requires_concentration: false,
+            components: None,
+            spell_level: Some(3),
+            school: Some(MagicSchool::Evocation),
+            ritual: false,
+            higher_levels: Some("Damage increases by 1d6 per slot".into()),
+            uses: Some(AbilityUses::PerDay { count: 1 }),
+            effects: vec![AbilityEffect::Damage {
+                formula: "8d6".into(),
+                damage_type: DamageType::Fire,
+            }],
+            created_at: now.clone(),
+            updated_at: now,
+        };
+
+        let loaded = AbilityRepository::save(&pool, export)
+            .await
+            .map_err(|e| sqlx::Error::Protocol(format!("save: {e}")))?;
+
+        assert_eq!(loaded.spell_level, Some(3));
+        assert_eq!(loaded.school, Some(MagicSchool::Evocation));
+        assert!(!loaded.ritual);
+        assert_eq!(
+            loaded.higher_levels.as_deref(),
+            Some("Damage increases by 1d6 per slot")
+        );
+        assert_eq!(loaded.uses, Some(AbilityUses::PerDay { count: 1 }));
         Ok(())
     }
 }
