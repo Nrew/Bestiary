@@ -819,3 +819,115 @@ pub async fn save_ability(
 pub async fn delete_ability(pool: &Pool<Sqlite>, id: &ID) -> Result<(), AppError> {
     AbilityRepository::delete(pool, id).await
 }
+
+#[cfg(test)]
+mod migration_tests {
+    use sqlx::SqlitePool;
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn migration_002_shapes_abilities_table(pool: SqlitePool) -> sqlx::Result<()> {
+        let cols: Vec<String> =
+            sqlx::query_scalar("SELECT name FROM pragma_table_info('abilities')")
+                .fetch_all(&pool)
+                .await?;
+        for required in [
+            "spell_level",
+            "school",
+            "ritual",
+            "higher_levels",
+            "uses_json",
+            "timing",
+            "category",
+        ] {
+            assert!(
+                cols.iter().any(|c| c == required),
+                "missing column: {}",
+                required
+            );
+        }
+        for removed in ["type", "casting_time", "recharge"] {
+            assert!(
+                !cols.iter().any(|c| c == removed),
+                "column should no longer exist: {}",
+                removed
+            );
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn migration_002_backfills_recharge_patterns_into_uses_json() -> sqlx::Result<()> {
+        let m001 = include_str!("../../migrations/001_initial_schema.sql");
+        let m002 = include_str!("../../migrations/002_abilities_scope_b.sql");
+
+        let pool = SqlitePool::connect("sqlite::memory:").await?;
+        sqlx::raw_sql(m001).execute(&pool).await?;
+
+        let fixtures: &[(&str, &str)] = &[
+            ("at-will", "At Will"),
+            ("once", "Once"),
+            ("short-rest", "short rest"),
+            ("long-rest", "Long Rest"),
+            ("dawn", "dawn"),
+            ("recharge-range", "Recharge 5-6"),
+            ("recharge-endash", "Recharge 5â€“6"),
+            ("recharge-single", "Recharge 6"),
+            ("per-day", "3/day"),
+            ("per-short-rest", "2/short rest"),
+            ("per-long-rest", "1/long rest"),
+            ("per-dawn", "1/dawn"),
+            ("unparseable", "1d4 hours"),
+        ];
+        for (id, recharge) in fixtures {
+            sqlx::query(
+                "INSERT INTO abilities (id, name, slug, description, type, recharge, effects_json) \
+                 VALUES (?, ?, ?, '', 'action', ?, '[]')",
+            )
+            .bind(id)
+            .bind(id)
+            .bind(id)
+            .bind(recharge)
+            .execute(&pool)
+            .await?;
+        }
+
+        sqlx::raw_sql(m002).execute(&pool).await?;
+
+        let rows: Vec<(String, Option<String>)> =
+            sqlx::query_as("SELECT id, uses_json FROM abilities ORDER BY id")
+                .fetch_all(&pool)
+                .await?;
+        let by_id: std::collections::HashMap<_, _> = rows.into_iter().collect();
+
+        let check = |id: &str, expected_substring: &str| {
+            let actual = by_id.get(id).and_then(|v| v.as_deref()).unwrap_or("<NULL>");
+            assert!(
+                actual.contains(expected_substring),
+                "row {id}: expected uses_json to contain {expected_substring:?}, got {actual:?}",
+            );
+        };
+        check("at-will", "\"kind\":\"atWill\"");
+        check("once", "\"kind\":\"once\"");
+        check("short-rest", "\"rest\":\"short\"");
+        check("long-rest", "\"rest\":\"long\"");
+        check("dawn", "\"rest\":\"dawn\"");
+        check("recharge-range", "\"min\":5");
+        check("recharge-range", "\"max\":6");
+        check("recharge-endash", "\"min\":5");
+        check("recharge-single", "\"min\":6");
+        check("recharge-single", "\"max\":6");
+        check("per-day", "\"kind\":\"perDay\"");
+        check("per-day", "\"count\":3");
+        check("per-short-rest", "\"count\":2");
+        check("per-long-rest", "\"rest\":\"long\"");
+        check("per-dawn", "\"rest\":\"dawn\"");
+        assert!(
+            by_id
+                .get("unparseable")
+                .and_then(|v| v.as_deref())
+                .is_none(),
+            "unparseable values should be left as NULL",
+        );
+        Ok(())
+    }
+}
