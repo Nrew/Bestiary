@@ -109,7 +109,7 @@ export const CONTEXT_REGISTRY: Record<ViewContext, ContextConfig> = {
   }, createApiWrapper(statusApi)),
 
   abilities: createConfig('abilities', 'Ability', 'Abilities', 'zap', {
-    displayLabel: 'Powers',
+    displayLabel: 'Abilities',
     iconName: 'sparkles',
     colorClass: 'text-bloodstone',
     description: 'Spells and techniques',
