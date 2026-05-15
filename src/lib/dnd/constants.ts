@@ -1,4 +1,4 @@
-import type { ItemType, Rarity, AbilityType, AoeShape, DamageType, EntitySize, ThreatLevel, Attribute, ResistanceLevel } from "@/types";
+import type { ItemType, Rarity, AbilityTiming, AbilityCategory, AoeShape, DamageType, EntitySize, ThreatLevel, Attribute, ResistanceLevel, MagicSchool, RestType } from "@/types";
 
 /** SRD base modifier added to all spell/ability save DCs (PHB p. 205). */
 export const SAVE_DC_BASE = 8;
@@ -130,7 +130,7 @@ export const ALIGNMENT_OPTIONS: ReadonlyArray<string> = [
   "Any Alignment",
 ];
 
-export const ABILITY_TYPE_LABELS: Record<AbilityType, string> = {
+export const ABILITY_TIMING_LABELS: Record<AbilityTiming, string> = {
   action: "Action",
   bonusAction: "Bonus Action",
   reaction: "Reaction",
@@ -138,6 +138,12 @@ export const ABILITY_TYPE_LABELS: Record<AbilityType, string> = {
   legendary: "Legendary",
   mythic: "Mythic",
   lair: "Lair Action",
+};
+
+export const ABILITY_CATEGORY_LABELS: Record<AbilityCategory, string> = {
+  none: "Standard",
+  multiattack: "Multiattack",
+  regionalEffect: "Regional Effect",
 };
 
 export const AOE_SHAPE_LABELS: Record<AoeShape, string> = {
@@ -328,3 +334,17 @@ export const RETRY = {
   /** Maximum backoff delay (ms) */
   MAX_BACKOFF: 30000,
 } as const;
+
+export const MAGIC_SCHOOL_LABELS: Record<MagicSchool, string> = {
+  abjuration: "Abjuration", conjuration: "Conjuration",
+  divination: "Divination", enchantment: "Enchantment",
+  evocation: "Evocation", illusion: "Illusion",
+  necromancy: "Necromancy", transmutation: "Transmutation",
+};
+
+export const REST_TYPE_LABELS: Record<RestType, string> = {
+  short: "Short Rest", long: "Long Rest", dawn: "Dawn",
+};
+
+export const MAGIC_SCHOOLS = Object.keys(MAGIC_SCHOOL_LABELS) as [MagicSchool, ...MagicSchool[]];
+export const REST_TYPES = Object.keys(REST_TYPE_LABELS) as [RestType, ...RestType[]];

@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { formatAbilityUses, formatSpellLevel } from "./dnd/format-utils";
+import { ordinalize } from "./utils";
 import {
   // Ability scores
   calculateAbilityModifier,
@@ -511,6 +513,51 @@ describe("calculateXPThresholds", () => {
   it("returns all zeros for an empty party", () => {
     const t = calculateXPThresholds([]);
     expect(t).toEqual({ easy: 0, medium: 0, hard: 0, deadly: 0 });
+  });
+});
+
+describe("formatAbilityUses", () => {
+  it("formats every variant", () => {
+    expect(formatAbilityUses(null)).toBeNull();
+    expect(formatAbilityUses({ kind: "recharge", min: 5, max: 6 })).toBe("Recharge 5-6");
+    expect(formatAbilityUses({ kind: "recharge", min: 6, max: 6 })).toBe("Recharge 6");
+    expect(formatAbilityUses({ kind: "perDay", count: 3 })).toBe("3/Day");
+    expect(formatAbilityUses({ kind: "perRest", count: 1, rest: "short" })).toBe("1/short rest");
+    expect(formatAbilityUses({ kind: "perRest", count: 2, rest: "long" })).toBe("2/long rest");
+    expect(formatAbilityUses({ kind: "perRest", count: 1, rest: "dawn" })).toBe("1/dawn");
+    expect(formatAbilityUses({ kind: "atWill" })).toBe("At Will");
+    expect(formatAbilityUses({ kind: "once" })).toBe("Once");
+  });
+});
+
+describe("ordinalize", () => {
+  it("handles common values with the right suffix", () => {
+    expect(ordinalize(0)).toBe("0th");
+    expect(ordinalize(1)).toBe("1st");
+    expect(ordinalize(2)).toBe("2nd");
+    expect(ordinalize(3)).toBe("3rd");
+    expect(ordinalize(4)).toBe("4th");
+    expect(ordinalize(9)).toBe("9th");
+    expect(ordinalize(11)).toBe("11th");
+    expect(ordinalize(21)).toBe("21st");
+  });
+});
+
+describe("formatSpellLevel", () => {
+  it("renders cantrips with the school as a noun phrase", () => {
+    expect(formatSpellLevel(0, "evocation")).toBe("Evocation Cantrip");
+    expect(formatSpellLevel(0, null)).toBe("Cantrip");
+  });
+  it("renders leveled spells with school as adjective", () => {
+    expect(formatSpellLevel(3, "evocation")).toBe("3rd-level Evocation");
+    expect(formatSpellLevel(1, null)).toBe("1st-level");
+  });
+  it("returns an empty string when nothing is known", () => {
+    expect(formatSpellLevel(null, null)).toBe("");
+    expect(formatSpellLevel(null, undefined)).toBe("");
+  });
+  it("renders just the school when level is unknown", () => {
+    expect(formatSpellLevel(null, "necromancy")).toBe("Necromancy");
   });
 });
 
