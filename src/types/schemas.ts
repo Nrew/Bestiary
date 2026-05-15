@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { isValidDiceFormula } from "@/lib/dnd";
+import { MAGIC_SCHOOLS, REST_TYPES } from "@/lib/dnd/constants";
 
 export const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 import type {
+  AbilityCategory,
   AbilityEffect,
-  AbilityType,
+  AbilityTiming,
   AoeShape,
   Attribute,
   DamageType,
@@ -24,7 +26,8 @@ import type {
 // Type-safe enum values matching generated types
 const ITEM_TYPES: [ItemType, ...ItemType[]] = ["weapon", "armor", "consumable", "trinket", "material", "organic", "tool"];
 const RARITIES: [Rarity, ...Rarity[]] = ["common", "uncommon", "rare", "veryRare", "legendary", "mythic", "unique"];
-const ABILITY_TYPES: [AbilityType, ...AbilityType[]] = ["action", "bonusAction", "reaction", "passive", "legendary", "mythic", "lair"];
+const ABILITY_TIMINGS: [AbilityTiming, ...AbilityTiming[]] = ["action", "bonusAction", "reaction", "passive", "legendary", "mythic", "lair"];
+const ABILITY_CATEGORIES: [AbilityCategory, ...AbilityCategory[]] = ["none", "multiattack", "regionalEffect"];
 const AOE_SHAPES: [AoeShape, ...AoeShape[]] = ["sphere", "cube", "cone", "line", "cylinder"];
 const DAMAGE_TYPES: [DamageType, ...DamageType[]] = ["acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder"];
 const ENTITY_SIZES: [EntitySize, ...EntitySize[]] = ["tiny", "small", "medium", "large", "huge", "gargantuan"];
@@ -197,6 +200,28 @@ const abilityTargetSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("area"), shape: z.enum(AOE_SHAPES), range: z.number().int().nonnegative() }),
 ]);
 
+const abilityUsesSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("recharge"),
+    min: z.number().int().min(1).max(6),
+    max: z.number().int().min(1).max(6),
+  }).refine(v => v.min <= v.max, {
+    message: "recharge: min must be <= max",
+    path: ["max"],
+  }),
+  z.object({
+    kind: z.literal("perDay"),
+    count: z.number().int().min(1),
+  }),
+  z.object({
+    kind: z.literal("perRest"),
+    count: z.number().int().min(1),
+    rest: z.enum(REST_TYPES),
+  }),
+  z.object({ kind: z.literal("atWill") }),
+  z.object({ kind: z.literal("once") }),
+]);
+
 // lazy() is required because AbilityEffect.areaOfEffect.effects references AbilityEffect itself
 const abilityEffectSchema: z.ZodType<AbilityEffect> = z.lazy(() =>
   z.discriminatedUnion("type", [
@@ -265,13 +290,47 @@ export const itemSchema = baseSchema.extend({
 export const abilitySchema = baseSchema.extend({
   slug: z.string().regex(SLUG_REGEX, "Slug must be a valid slug format."),
   description: z.string().default(""),
-  type: z.enum(ABILITY_TYPES),
+  timing: z.enum(ABILITY_TIMINGS),
+  category: z.enum(ABILITY_CATEGORIES).default("none"),
   target: abilityTargetSchema.nullable(),
-  castingTime: nullableString,
   requiresConcentration: z.boolean().default(false),
   components: spellComponentsSchema.nullable(),
-  recharge: nullableString,
+  spellLevel: z.number().int().min(0).max(9).nullable().default(null),
+  school: z.enum(MAGIC_SCHOOLS).nullable().default(null),
+  ritual: z.boolean().default(false),
+  higherLevels: nullableString,
+  uses: abilityUsesSchema.nullable().default(null),
   effects: z.array(abilityEffectSchema).default([]),
+}).superRefine((v, ctx) => {
+  if (v.category !== "none") {
+    if (v.spellLevel != null) {
+      ctx.addIssue({ code: "custom", message: "spellLevel requires category='none'", path: ["spellLevel"] });
+    }
+    if (v.school != null) {
+      ctx.addIssue({ code: "custom", message: "school requires category='none'", path: ["school"] });
+    }
+    if (v.ritual) {
+      ctx.addIssue({ code: "custom", message: "ritual requires category='none'", path: ["ritual"] });
+    }
+    if (v.higherLevels != null) {
+      ctx.addIssue({ code: "custom", message: "higherLevels requires category='none'", path: ["higherLevels"] });
+    }
+    if (v.components != null) {
+      ctx.addIssue({ code: "custom", message: `components not allowed on category='${v.category}'`, path: ["components"] });
+    }
+    if (v.target != null) {
+      ctx.addIssue({ code: "custom", message: `target not allowed on category='${v.category}'`, path: ["target"] });
+    }
+    if (v.requiresConcentration) {
+      ctx.addIssue({ code: "custom", message: `requiresConcentration not allowed on category='${v.category}'`, path: ["requiresConcentration"] });
+    }
+    if (v.uses != null) {
+      ctx.addIssue({ code: "custom", message: `uses not allowed on category='${v.category}'`, path: ["uses"] });
+    }
+  }
+  if (v.category === "multiattack" && v.effects.length > 0) {
+    ctx.addIssue({ code: "custom", message: "multiattack should have no effects; author constituent attacks as separate abilities", path: ["effects"] });
+  }
 });
 
 export const entitySchema = baseSchema.extend({
