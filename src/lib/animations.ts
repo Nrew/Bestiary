@@ -57,3 +57,28 @@ export const contentVariants: Variants = {
   },
 };
 
+export type PageFlipDirection = "back" | "forward" | "direct";
+
+const pageFlipSign = (direction: PageFlipDirection): number => {
+  if (direction === "back") return -1;
+  if (direction === "forward") return 1;
+  return 0;
+};
+
+export const pageFlipVariants: Variants = {
+  hidden: ({ direction }: { direction: PageFlipDirection }) => ({
+    opacity: 0,
+    x: pageFlipSign(direction) * 24,
+  }),
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: DURATION.base, ease: EASE_OUT },
+  },
+  exit: ({ direction }: { direction: PageFlipDirection }) => ({
+    opacity: 0,
+    x: pageFlipSign(direction) * -24,
+    transition: { duration: DURATION.fast, ease: EASE_OUT },
+  }),
+};
+

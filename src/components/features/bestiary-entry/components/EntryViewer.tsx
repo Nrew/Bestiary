@@ -22,16 +22,17 @@ import {
 import { EntryHeader } from "./EntryHeader";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { Edit } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   contentVariants,
-  slideUpVariants,
+  pageFlipVariants,
   staggerContainerVariants,
 } from "@/lib/animations";
 import { ENTITY_SIZE_LABELS, THREAT_LEVEL_LABELS } from "@/lib/dnd/constants";
 import { hasItems, hasMeaningfulString } from "@/lib/empty";
 import { isAbility, isEntity, isItem, isStatus } from "@/lib/type-guards";
 import { useEntityAbilities } from "@/hooks/useEntityAbilities";
+import { useNavDirection } from "@/store/appStore";
 import type { BestiaryEntry, Entity, Item, Status, Ability, ViewContext } from "@/types";
 
 function Section({ children }: { children: React.ReactNode }) {
@@ -168,6 +169,10 @@ export const EntryViewer = React.memo(({ entry, entryType, onEdit }: {
   entryType: ViewContext;
   onEdit: () => void;
 }) => {
+  const storeDirection = useNavDirection();
+  const prefersReducedMotion = useReducedMotion();
+  const navDirection = prefersReducedMotion ? "direct" : storeDirection;
+
   const renderByEntryShape = () => {
     if (isEntity(entry)) return <EntityViewer data={entry} />;
     if (isItem(entry)) return <ItemViewer data={entry} />;
@@ -193,10 +198,11 @@ export const EntryViewer = React.memo(({ entry, entryType, onEdit }: {
 
   return (
     <div className="h-full relative">
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence mode="popLayout" custom={{ direction: navDirection }}>
         <motion.div
           key={entry.id}
-          variants={slideUpVariants}
+          custom={{ direction: navDirection }}
+          variants={pageFlipVariants}
           initial="hidden"
           animate="visible"
           exit="exit"
