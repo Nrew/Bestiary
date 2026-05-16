@@ -50,6 +50,8 @@ vi.mock("@/store/appStore", async () => {
     ...actual,
     useAppStore,
     useHasUnsavedChanges: () => api.getState().hasUnsavedChanges,
+    useCanGoBack: () => api.getState().navBack.length > 0,
+    useCanGoForward: () => api.getState().navForward.length > 0,
   };
 });
 
@@ -149,5 +151,64 @@ describe("useNavigationGuard outside provider", () => {
       /must be used within NavigationGuardProvider/i,
     );
     spy.mockRestore();
+  });
+});
+
+describe("useNavigationGuard.goBack / goForward", () => {
+  beforeEach(() => {
+    confirmSpy.mockReset();
+    confirmSpy.mockResolvedValue(true);
+    setGuardState(false, []);
+    useAppStore.setState({ navBack: [], navForward: [] });
+  });
+
+  it("goBack is a no-op when navBack is empty", async () => {
+    const guard = probeGuard();
+    await expect(guard.goBack()).resolves.toBe(false);
+    expect(confirmSpy).not.toHaveBeenCalled();
+  });
+
+  it("goForward is a no-op when navForward is empty", async () => {
+    useAppStore.setState({ navBack: [], navForward: [] });
+    const guard = probeGuard();
+    await expect(guard.goForward()).resolves.toBe(false);
+    expect(confirmSpy).not.toHaveBeenCalled();
+  });
+
+  it("goBack runs through confirmNavigation when there are unsaved changes", async () => {
+    useAppStore.setState({
+      navBack: [{ context: "items", id: "a" }],
+      navForward: [],
+    });
+    setGuardState(true, []);
+    confirmSpy.mockResolvedValueOnce(true);
+
+    const guard = probeGuard();
+    await expect(guard.goBack()).resolves.toBe(true);
+    expect(confirmSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Unsaved Changes" }),
+    );
+  });
+
+  it("goBack returns false when the confirm prompt is denied", async () => {
+    useAppStore.setState({
+      navBack: [{ context: "items", id: "a" }],
+      navForward: [],
+    });
+    setGuardState(true, []);
+    confirmSpy.mockResolvedValueOnce(false);
+
+    const guard = probeGuard();
+    await expect(guard.goBack()).resolves.toBe(false);
+  });
+
+  it("exposes canGoBack and canGoForward derived from stack sizes", () => {
+    useAppStore.setState({
+      navBack: [{ context: "items", id: "a" }],
+      navForward: [{ context: "items", id: "c" }],
+    });
+    const guard = probeGuard();
+    expect(guard.canGoBack).toBe(true);
+    expect(guard.canGoForward).toBe(true);
   });
 });
