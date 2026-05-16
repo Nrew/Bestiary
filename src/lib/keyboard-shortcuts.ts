@@ -6,6 +6,8 @@ export interface KeyboardShortcut {
   preventDefault?: boolean;
   /** Only active when this element/selector is focused */
   scope?: string;
+  /** Fire even when an input, textarea, or contentEditable has focus. */
+  allowInEditable?: boolean;
   enabled?: boolean;
 }
 
@@ -107,10 +109,15 @@ class KeyboardShortcutsManager {
         if (!scopeElement?.contains(target)) continue;
       }
 
-      // For most shortcuts, skip if input is focused (unless it's Escape)
+      // For most shortcuts, skip if input is focused (unless it's Escape).
+      // Ctrl/Cmd shortcuts pass through; `allowInEditable` is an explicit opt-in
+      // for non-modifier shortcuts like nav history traversal.
       if (isInputFocused && shortcut.parsed.key !== 'escape') {
-        // Allow Ctrl/Cmd shortcuts even in inputs
-        if (!shortcut.parsed.ctrl && !shortcut.parsed.meta) continue;
+        if (
+          !shortcut.allowInEditable &&
+          !shortcut.parsed.ctrl &&
+          !shortcut.parsed.meta
+        ) continue;
       }
 
       if (matchesShortcut(e, shortcut.parsed)) {
@@ -146,7 +153,7 @@ export function useKeyboardShortcut(
   handler: (e: KeyboardEvent) => void,
   options: Omit<KeyboardShortcut, 'key' | 'handler'> = {}
 ): void {
-  const { description, preventDefault, scope, enabled = true } = options;
+  const { description, preventDefault, scope, allowInEditable, enabled = true } = options;
 
   // Stable ID that persists across re-renders
   const idRef = useRef<string | null>(null);
@@ -168,10 +175,11 @@ export function useKeyboardShortcut(
       description,
       preventDefault,
       scope,
+      allowInEditable,
       enabled,
     });
     return unregister;
-  }, [key, description, preventDefault, scope, enabled]);
+  }, [key, description, preventDefault, scope, allowInEditable, enabled]);
 }
 
 export function useKeyboardShortcuts(
@@ -197,6 +205,8 @@ export const APP_SHORTCUTS = {
   NEW: 'ctrl+n',
   SEARCH: 'ctrl+k',
   ESCAPE: 'escape',
+  NAV_BACK: 'alt+arrowleft',
+  NAV_FORWARD: 'alt+arrowright',
 } as const;
 
 interface NavigatorUAData {
