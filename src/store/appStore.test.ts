@@ -27,7 +27,7 @@ vi.mock("@/lib/idle", () => ({
   scheduleIdle: (cb: () => void) => { cb(); return () => {}; },
 }));
 
-const { useAppStore } = await import("./appStore");
+const { useAppStore, MAX_NAV_HISTORY } = await import("./appStore");
 
 const createItem = (name: string): Item => ({
   id: "550e8400-e29b-41d4-a716-446655440000",
@@ -357,5 +357,205 @@ describe("appStore saveEntry", () => {
     await useAppStore.getState().ensureItemsLoaded([loadedItem.id, loadedItem.id]);
 
     expect(apiMocks.itemApi.getDetails).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("appStore navHistory", () => {
+  const item = (id: string, name = id): Item => ({ ...createItem(name), id });
+
+  beforeEach(() => {
+    apiMocks.saveItem.mockReset();
+    useAppStore.setState({
+      currentContext: "items",
+      selectedId: null,
+      data: {
+        entities: { entries: new Map(), count: 0 },
+        items: {
+          entries: new Map([
+            ["a", item("a", "Alpha")],
+            ["b", item("b", "Beta")],
+            ["c", item("c", "Gamma")],
+            ["d", item("d", "Delta")],
+          ]),
+          count: 4,
+        },
+        statuses: { entries: new Map(), count: 0 },
+        abilities: { entries: new Map(), count: 0 },
+      },
+      navBack: [],
+      navForward: [],
+      navDirection: "direct",
+      draftEntries: new Set(),
+    });
+  });
+
+  it("makes the navigated entry the current selection without filling navBack", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    const s = useAppStore.getState();
+    expect(s.selectedId).toBe("a");
+    expect(s.navBack).toEqual([]);
+    expect(s.navForward).toEqual([]);
+    expect(s.navDirection).toBe("direct");
+  });
+
+  it("dedupes consecutive navigation to the same entry", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().navigateToEntry("items", "a");
+    const s = useAppStore.getState();
+    expect(s.navBack).toEqual([]);
+    expect(s.selectedId).toBe("a");
+  });
+
+  it("truncates forward history when navigating after going back", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().navigateToEntry("items", "b");
+    await useAppStore.getState().navigateToEntry("items", "c");
+    await useAppStore.getState().goBack();
+    expect(useAppStore.getState().selectedId).toBe("b");
+    await useAppStore.getState().navigateToEntry("items", "d");
+    const s = useAppStore.getState();
+    expect(s.navBack.map((e) => e.id)).toEqual(["a", "b"]);
+    expect(s.selectedId).toBe("d");
+    expect(s.navForward).toEqual([]);
+  });
+
+  it("caps navBack at MAX_NAV_HISTORY entries", async () => {
+    const overflow = MAX_NAV_HISTORY + 5;
+    useAppStore.setState({
+      data: {
+        ...useAppStore.getState().data,
+        items: {
+          entries: new Map(
+            Array.from({ length: overflow }, (_, i) => [`x${i}`, item(`x${i}`)]),
+          ),
+          count: overflow,
+        },
+      },
+    });
+    for (let i = 0; i < overflow; i++) {
+      await useAppStore.getState().navigateToEntry("items", `x${i}`);
+    }
+    const s = useAppStore.getState();
+    expect(s.navBack).toHaveLength(MAX_NAV_HISTORY);
+    expect(s.navBack[0].id).toBe(`x${overflow - MAX_NAV_HISTORY - 1}`);
+    expect(s.navBack[MAX_NAV_HISTORY - 1].id).toBe(`x${overflow - 2}`);
+    expect(s.selectedId).toBe(`x${overflow - 1}`);
+  });
+
+  it("dedupes consecutive same-entry pushes but allows non-consecutive repeats", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().navigateToEntry("items", "a");
+    expect(useAppStore.getState().navBack).toEqual([]);
+
+    await useAppStore.getState().navigateToEntry("items", "b");
+    await useAppStore.getState().navigateToEntry("items", "a");
+    const s = useAppStore.getState();
+    expect(s.navBack.map((e) => e.id)).toEqual(["a", "b"]);
+    expect(s.selectedId).toBe("a");
+  });
+
+  it("goBack pops navBack, pushes current onto navForward, tags direction", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().navigateToEntry("items", "b");
+    await useAppStore.getState().goBack();
+    const s = useAppStore.getState();
+    expect(s.navBack).toEqual([]);
+    expect(s.navForward.map((e) => e.id)).toEqual(["b"]);
+    expect(s.navDirection).toBe("back");
+    expect(s.selectedId).toBe("a");
+  });
+
+  it("goForward shifts navForward, pushes current onto navBack, tags direction", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().navigateToEntry("items", "b");
+    await useAppStore.getState().goBack();
+    await useAppStore.getState().goForward();
+    const s = useAppStore.getState();
+    expect(s.navBack.map((e) => e.id)).toEqual(["a"]);
+    expect(s.navForward).toEqual([]);
+    expect(s.navDirection).toBe("forward");
+    expect(s.selectedId).toBe("b");
+  });
+
+  it("goBack and goForward are no-ops when their stacks are empty", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().goBack();
+    expect(useAppStore.getState().selectedId).toBe("a");
+    expect(useAppStore.getState().navBack).toEqual([]);
+    await useAppStore.getState().goForward();
+    expect(useAppStore.getState().selectedId).toBe("a");
+    expect(useAppStore.getState().navForward).toEqual([]);
+  });
+
+  it("goBackTo jumps to an arbitrary back-stack index", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().navigateToEntry("items", "b");
+    await useAppStore.getState().navigateToEntry("items", "c");
+    await useAppStore.getState().goBackTo(0);
+    const s = useAppStore.getState();
+    expect(s.navBack).toEqual([]);
+    expect(s.selectedId).toBe("a");
+    expect(s.navForward.map((e) => e.id)).toEqual(["b", "c"]);
+    expect(s.navDirection).toBe("back");
+  });
+
+  it("round-trip goBack/goForward preserves total visited entries", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().navigateToEntry("items", "b");
+    await useAppStore.getState().navigateToEntry("items", "c");
+    const total = (s = useAppStore.getState()) =>
+      s.navBack.length + (s.selectedId ? 1 : 0) + s.navForward.length;
+    const before = total();
+    await useAppStore.getState().goBack();
+    await useAppStore.getState().goForward();
+    expect(total()).toBe(before);
+    expect(useAppStore.getState().selectedId).toBe("c");
+  });
+
+  it("scrubs deleted entries from navBack", async () => {
+    apiMocks.itemApi.delete = vi.fn().mockResolvedValue(undefined);
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().navigateToEntry("items", "b");
+    await useAppStore.getState().navigateToEntry("items", "c");
+    await useAppStore.getState().deleteEntry("items", "b");
+    const s = useAppStore.getState();
+    expect(s.navBack.map((e) => e.id)).toEqual(["a"]);
+    expect(s.navForward).toEqual([]);
+    expect(s.selectedId).toBe("c");
+  });
+
+  it("scrubs discarded drafts from navBack", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().createNewEntry("items");
+    const draftId = requireSelectedId();
+    expect(
+      useAppStore.getState().navBack.some((e) => e.id === "a"),
+    ).toBe(true);
+    expect(useAppStore.getState().selectedId).toBe(draftId);
+
+    useAppStore.getState().discardDraftEntry("items", draftId);
+    const s = useAppStore.getState();
+    expect(s.navBack.some((e) => e.id === draftId)).toBe(false);
+    expect(s.navForward.some((e) => e.id === draftId)).toBe(false);
+    expect(s.selectedId).toBeNull();
+  });
+
+  it("rewrites navBack entries when the backend reassigns a draft ID on save", async () => {
+    await useAppStore.getState().createNewEntry("items");
+    const draftId = requireSelectedId();
+    const draft = requireStoredItem(draftId);
+    await useAppStore.getState().navigateToEntry("items", "a");
+    expect(
+      useAppStore.getState().navBack.some((e) => e.id === draftId),
+    ).toBe(true);
+
+    const backendId = `backend-${Date.now()}`;
+    apiMocks.saveItem.mockResolvedValue({ ...draft, id: backendId });
+
+    await useAppStore.getState().saveEntry("items", draft);
+
+    const s = useAppStore.getState();
+    expect(s.navBack.some((e) => e.id === draftId)).toBe(false);
+    expect(s.navBack.some((e) => e.id === backendId)).toBe(true);
   });
 });

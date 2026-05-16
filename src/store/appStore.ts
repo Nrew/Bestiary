@@ -28,6 +28,16 @@ const log = getLogger("appStore");
 
 type EntryMap = Map<string, BestiaryEntry>;
 
+export interface NavHistoryEntry {
+  context: ViewContext;
+  id: string;
+}
+
+export type NavDirection = "back" | "forward" | "direct";
+
+// Bookmark register, not browser history: bounded so the popover stays scannable.
+export const MAX_NAV_HISTORY = 30;
+
 interface ContextData {
   entries: EntryMap;
   count: number;
@@ -41,6 +51,12 @@ interface AppState {
   selectedId: string | null;
   /** Incremented when `navigateToEntry` completes so consumers can react even if `selectedId` is unchanged. */
   navigationNonce: number;
+  // Browser-style history modeled as two stacks. Current entry lives in
+  // `selectedId`+`currentContext`; navBack/navForward only hold entries the
+  // user has explicitly stepped through.
+  navBack: NavHistoryEntry[];
+  navForward: NavHistoryEntry[];
+  navDirection: NavDirection;
   editOnSelect: boolean;
   gameEnums: GameEnums | null;
   // Version counter to prevent race conditions in async fetches
@@ -60,6 +76,9 @@ interface AppActions {
   setCurrentContext: (context: ViewContext) => void;
   setSearchQuery: (query: string) => void;
   setSelectedId: (id: string | null, edit?: boolean) => void;
+  goBack: () => Promise<void>;
+  goForward: () => Promise<void>;
+  goBackTo: (index: number) => Promise<void>;
   clearEditOnSelect: () => void;
   setError: (error: string | null) => void;
   setHasUnsavedChanges: (hasChanges: boolean) => void;
@@ -74,7 +93,7 @@ interface AppActions {
   createNewEntry: (context: ViewContext) => Promise<void>;
   discardDraftEntry: (context: ViewContext, id: string) => void;
   fetchPage: (context: ViewContext, isNew?: boolean) => Promise<void>;
-  navigateToEntry: (context: ViewContext, id: string) => Promise<void>;
+  navigateToEntry: (context: ViewContext, id: string, edit?: boolean) => Promise<void>;
 
   getEntry: <T extends BestiaryEntry>(context: ViewContext, id: string) => T | undefined;
   getEntriesMap: (context: ViewContext) => EntryMap;
@@ -90,6 +109,36 @@ const createInitialData = (): Record<ViewContext, ContextData> => ({
   statuses: { entries: new Map(), count: 0 },
   abilities: { entries: new Map(), count: 0 },
 });
+
+const isSameNavEntry = (
+  a: NavHistoryEntry | null,
+  b: NavHistoryEntry | null,
+): boolean => !!a && !!b && a.context === b.context && a.id === b.id;
+
+const pushNavHistory = (
+  state: AppState,
+  previous: NavHistoryEntry | null,
+  next: NavHistoryEntry,
+) => {
+  if (isSameNavEntry(previous, next)) {
+    state.navDirection = "direct";
+    return;
+  }
+  if (previous) {
+    state.navBack.push(previous);
+    while (state.navBack.length > MAX_NAV_HISTORY) state.navBack.shift();
+  }
+  state.navForward = [];
+  state.navDirection = "direct";
+};
+
+const scrubNavHistory = (
+  state: AppState,
+  shouldRemove: (entry: NavHistoryEntry) => boolean,
+) => {
+  state.navBack = state.navBack.filter((e) => !shouldRemove(e));
+  state.navForward = state.navForward.filter((e) => !shouldRemove(e));
+};
 
 export const useAppStore = create<AppState & AppActions>()(
   immer((set, get) => {
@@ -129,6 +178,50 @@ export const useAppStore = create<AppState & AppActions>()(
       });
     };
 
+    const captureSelection = (): NavHistoryEntry | null => {
+      const sid = get().selectedId;
+      return sid ? { context: get().currentContext, id: sid } : null;
+    };
+
+    const doNavigate = async (
+      context: ViewContext,
+      id: string,
+      options: { edit?: boolean; pushHistory: boolean },
+    ) => {
+      const finishNavigation = () => {
+        const previous = captureSelection();
+        get().setCurrentContext(context);
+        get().setSelectedId(id, options.edit ?? false);
+        set((state) => {
+          state.navigationNonce += 1;
+          if (options.pushHistory) {
+            pushNavHistory(state, previous, { context, id });
+          }
+        });
+      };
+
+      if (get().data[context].entries.has(id)) {
+        finishNavigation();
+        return;
+      }
+
+      const config = getContextConfig(context);
+      try {
+        const entry = await config.api.getDetails(id);
+        set((state) => {
+          state.data[context].entries.set(entry.id, entry);
+        });
+      } catch (err) {
+        const message = formatErrorMessage("Failed to navigate to entry", err);
+        set((state) => {
+          state.error = message;
+        });
+        return;
+      }
+
+      finishNavigation();
+    };
+
     return {
     currentContext: "entities",
     isLoading: true,
@@ -136,6 +229,9 @@ export const useAppStore = create<AppState & AppActions>()(
     searchQuery: "",
     selectedId: null,
     navigationNonce: 0,
+    navBack: [],
+    navForward: [],
+    navDirection: "direct",
     editOnSelect: false,
     gameEnums: null,
     fetchVersion: 0,
@@ -154,6 +250,10 @@ export const useAppStore = create<AppState & AppActions>()(
           const draftId = state.selectedId;
           state.draftEntries.delete(draftId);
           state.data[oldCtx].entries.delete(draftId);
+          scrubNavHistory(
+            state,
+            (entry) => entry.context === oldCtx && entry.id === draftId,
+          );
           state.selectedId = null;
         }
         state.fetchVersion += 1;
@@ -271,6 +371,12 @@ export const useAppStore = create<AppState & AppActions>()(
             if (state.selectedId === entry.id) {
               state.selectedId = saved.id;
             }
+            const rewrite = (h: NavHistoryEntry): NavHistoryEntry =>
+              h.context === context && h.id === entry.id
+                ? { context, id: saved.id }
+                : h;
+            state.navBack = state.navBack.map(rewrite);
+            state.navForward = state.navForward.map(rewrite);
           }
           if (shouldIncrementCount) {
             data.count += 1;
@@ -312,6 +418,10 @@ export const useAppStore = create<AppState & AppActions>()(
           if (state.selectedId === id) {
             state.selectedId = null;
           }
+          scrubNavHistory(
+            state,
+            (entry) => entry.context === context && entry.id === id,
+          );
           state.nameVersion += 1;
           state.error = null;
         });
@@ -355,16 +465,16 @@ export const useAppStore = create<AppState & AppActions>()(
         state.data[context].count = count;
       }),
 
-    createNewEntry: (context) => {
+    createNewEntry: async (context) => {
       if (get().isCreatingEntry) {
-        return Promise.resolve();
+        return;
       }
 
       set({ isCreatingEntry: true });
       if (get().currentContext !== context) {
         get().setCurrentContext(context);
       }
-      const { setSearchQuery, setSelectedId, setError } = get();
+      const { setSearchQuery, setError } = get();
       const config = getContextConfig(context);
 
       try {
@@ -378,7 +488,7 @@ export const useAppStore = create<AppState & AppActions>()(
           state.nameVersion += 1;
         });
         setSearchQuery("");
-        setSelectedId(newEntry.id, true);
+        await get().navigateToEntry(context, newEntry.id, true);
       } catch (error) {
         const message = formatErrorMessage(`Failed to create ${config.label.toLowerCase()}`, error);
         setError(message);
@@ -386,7 +496,6 @@ export const useAppStore = create<AppState & AppActions>()(
       } finally {
         set({ isCreatingEntry: false });
       }
-      return Promise.resolve();
     },
 
     discardDraftEntry: (context, id) =>
@@ -397,6 +506,10 @@ export const useAppStore = create<AppState & AppActions>()(
         if (state.selectedId === id) {
           state.selectedId = null;
         }
+        scrubNavHistory(
+          state,
+          (entry) => entry.context === context && entry.id === id,
+        );
         state.nameVersion += 1;
       }),
 
@@ -449,35 +562,51 @@ export const useAppStore = create<AppState & AppActions>()(
     ensureStatusesLoaded: (statusIds: string[]) =>
       ensureEntriesLoaded("statuses", statusIds),
 
-    navigateToEntry: async (context, id) => {
-      const finishNavigation = () => {
-        get().setCurrentContext(context);
-        get().setSelectedId(id);
-        set((state) => {
-          state.navigationNonce += 1;
-        });
-      };
+    navigateToEntry: (context, id, edit = false) =>
+      doNavigate(context, id, { edit, pushHistory: true }),
 
-      if (get().data[context].entries.has(id)) {
-        finishNavigation();
-        return;
-      }
+    goBack: async () => {
+      const back = get().navBack;
+      if (back.length === 0) return;
+      const target = back[back.length - 1];
+      const previous = captureSelection();
+      set((state) => {
+        if (previous) state.navForward.unshift(previous);
+        state.navBack.pop();
+        state.navDirection = "back";
+      });
+      await doNavigate(target.context, target.id, { pushHistory: false });
+    },
 
-      const config = getContextConfig(context);
-      try {
-        const entry = await config.api.getDetails(id);
-        set((state) => {
-          state.data[context].entries.set(entry.id, entry);
-        });
-      } catch (err) {
-        const message = formatErrorMessage("Failed to navigate to entry", err);
-        set((state) => {
-          state.error = message;
-        });
-        return;
-      }
+    goForward: async () => {
+      const forward = get().navForward;
+      if (forward.length === 0) return;
+      const target = forward[0];
+      const previous = captureSelection();
+      set((state) => {
+        if (previous) {
+          state.navBack.push(previous);
+          while (state.navBack.length > MAX_NAV_HISTORY) state.navBack.shift();
+        }
+        state.navForward.shift();
+        state.navDirection = "forward";
+      });
+      await doNavigate(target.context, target.id, { pushHistory: false });
+    },
 
-      finishNavigation();
+    goBackTo: async (historyIndex) => {
+      const back = get().navBack;
+      if (historyIndex < 0 || historyIndex >= back.length) return;
+      const target = back[historyIndex];
+      const previous = captureSelection();
+      set((state) => {
+        const moved = state.navBack.slice(historyIndex + 1);
+        if (previous) moved.push(previous);
+        state.navForward = [...moved, ...state.navForward];
+        state.navBack = state.navBack.slice(0, historyIndex);
+        state.navDirection = "back";
+      });
+      await doNavigate(target.context, target.id, { pushHistory: false });
     },
     };
   })
@@ -489,6 +618,12 @@ export const useSelectedId = () => useAppStore((s) => s.selectedId);
 export const useIsLoading = () => useAppStore((s) => s.isLoading);
 export const useError = () => useAppStore((s) => s.error);
 export const useHasUnsavedChanges = () => useAppStore((s) => s.hasUnsavedChanges);
+
+export const useNavBack = () => useAppStore(useShallow((s) => s.navBack));
+export const useNavForward = () => useAppStore(useShallow((s) => s.navForward));
+export const useNavDirection = () => useAppStore((s) => s.navDirection);
+export const useCanGoBack = () => useAppStore((s) => s.navBack.length > 0);
+export const useCanGoForward = () => useAppStore((s) => s.navForward.length > 0);
 
 export const useCurrentEntriesMap = () =>
   useAppStore((s) => s.data[s.currentContext].entries);
