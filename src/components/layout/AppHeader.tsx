@@ -6,6 +6,7 @@ import { useNavigationGuard } from "@/hooks/useNavigationGuard";
 import { useKeyboardShortcut, APP_SHORTCUTS, formatShortcutKey } from "@/lib/keyboard-shortcuts";
 import { DiceTypePicker } from "@/components/features/entry-creation/DiceTypePicker";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { HistoryBookmark } from "@/components/layout/HistoryBookmark";
 import type { ViewContext } from "@/types";
 
 // Each dialog assumes the parent unmounts on close (clears local state).
@@ -63,6 +64,7 @@ export function AppHeader({ onTocOpen }: { onTocOpen: () => void }) {
       </div>
 
       <div className="flex items-center gap-2">
+        <HistoryBookmark />
         <Button
           variant="ghostLeather"
           size="icon"
