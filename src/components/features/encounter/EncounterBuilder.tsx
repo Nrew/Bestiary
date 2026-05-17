@@ -403,7 +403,7 @@ export function EncounterBuilder({ open, onOpenChange }: EncounterBuilderProps) 
         <Dialog.Content
           className={cn(
             "fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-            "w-full max-w-3xl max-h-[90vh] flex flex-col",
+            "w-full max-w-3xl h-176 max-h-[90vh] flex flex-col",
             "glass-panel rounded-xl shadow-2xl animate-slide-up focus:outline-none",
             "p-0"
           )}
@@ -426,12 +426,12 @@ export function EncounterBuilder({ open, onOpenChange }: EncounterBuilderProps) 
             </Dialog.Close>
           </div>
 
-          <div className="p-6 flex flex-col gap-6 overflow-y-auto min-h-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="p-6 flex flex-col gap-6 flex-1 min-h-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 flex-1 min-h-0">
 
               <section
                 aria-labelledby="party-heading"
-                className="rounded-lg border border-leather/20 p-4 bg-card/40 flex flex-col gap-3"
+                className="rounded-lg border border-leather/20 p-4 bg-card/40 flex flex-col gap-3 min-h-0"
               >
                 <div className="shrink-0 flex items-center justify-between">
                   <h2
@@ -457,13 +457,12 @@ export function EncounterBuilder({ open, onOpenChange }: EncounterBuilderProps) 
                 </div>
 
                 {partyLevels.length === 0 ? (
-                  <p className="text-sm text-muted-foreground font-serif italic text-center py-4">
+                  <p className="flex-1 flex items-center justify-center text-sm text-muted-foreground font-serif italic">
                     No adventurers yet.
                   </p>
                 ) : (
                   <ul
-                    // 4 × h-8 + 3 × space-y-2 = 152px; 5th row scrolls internally.
-                    className="max-h-38 space-y-2 overflow-y-auto pr-1"
+                    className="flex-1 min-h-0 space-y-2 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     aria-label="Party members"
                   >
                     {partyLevels.map((member, idx) => (
@@ -505,7 +504,7 @@ export function EncounterBuilder({ open, onOpenChange }: EncounterBuilderProps) 
 
               <section
                 aria-labelledby="monsters-heading"
-                className="rounded-lg border border-leather/20 p-4 bg-card/40 flex flex-col gap-3"
+                className="rounded-lg border border-leather/20 p-4 bg-card/40 flex flex-col gap-3 min-h-0"
               >
                 <div className="shrink-0 flex items-center justify-between">
                   <h2
@@ -527,11 +526,14 @@ export function EncounterBuilder({ open, onOpenChange }: EncounterBuilderProps) 
                 </div>
 
                 {monsters.length === 0 ? (
-                  <p className="text-sm text-muted-foreground font-serif italic text-center py-3">
+                  <p className="flex-1 flex items-center justify-center text-sm text-muted-foreground font-serif italic">
                     Search and add creatures above.
                   </p>
                 ) : (
-                  <ul className="max-h-38 space-y-1.5 overflow-y-auto pr-1" aria-label="Monster roster">
+                  <ul
+                    className="flex-1 min-h-0 space-y-1.5 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    aria-label="Monster roster"
+                  >
                     {monsters.map((monster) => {
                       const crLabel =
                         monster.cr !== null
