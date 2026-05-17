@@ -6,7 +6,8 @@ import {
   type EntryEditMode,
 } from "@/hooks/useEntrySessionMode";
 import { useExternalEntryUpdate } from "@/hooks/useExternalEntryUpdate";
-import { useEntryShortcuts } from "@/hooks/useEntryShortcuts";
+import { useLatestRef } from "@/hooks/useLatestRef";
+import { useKeyboardShortcut, APP_SHORTCUTS } from "@/lib/keyboard-shortcuts";
 import type { BestiaryEntry } from "@/types";
 
 export type { EntryEditMode };
@@ -94,13 +95,23 @@ export function useBestiaryEntrySession({
     form.reset(baseline);
   }, [form, baseline]);
 
-  useEntryShortcuts({
-    mode,
-    form,
-    formRef,
-    isDirtyRef,
-    onCancel: confirmDiscardEdit,
-  });
+  const isSubmittingRef = useLatestRef(form.formState.isSubmitting);
+
+  useKeyboardShortcut(
+    APP_SHORTCUTS.SAVE,
+    () => {
+      if (isDirtyRef.current && !isSubmittingRef.current) {
+        formRef.current?.requestSubmit();
+      }
+    },
+    { description: "Save entry", enabled: mode === "edit" },
+  );
+
+  useKeyboardShortcut(
+    APP_SHORTCUTS.ESCAPE,
+    () => { void confirmDiscardEdit(); },
+    { description: "Cancel edit", enabled: mode === "edit" },
+  );
 
   return {
     baseline,
