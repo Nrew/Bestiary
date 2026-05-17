@@ -173,26 +173,16 @@ export const EntryViewer = React.memo(({ entry, entryType, onEdit }: {
   const prefersReducedMotion = useReducedMotion();
   const navDirection = prefersReducedMotion ? "direct" : storeDirection;
 
-  const renderByEntryShape = () => {
-    if (isEntity(entry)) return <EntityViewer data={entry} />;
-    if (isItem(entry)) return <ItemViewer data={entry} />;
-    if (isStatus(entry)) return <StatusViewer data={entry} />;
-    if (isAbility(entry)) return <AbilityViewer data={entry} />;
-    return null;
-  };
-
   const renderContent = () => {
     switch (entryType) {
       case "entities":
-        return isEntity(entry) ? <EntityViewer data={entry} /> : renderByEntryShape();
+        return isEntity(entry) ? <EntityViewer data={entry} /> : null;
       case "items":
-        return isItem(entry) ? <ItemViewer data={entry} /> : renderByEntryShape();
+        return isItem(entry) ? <ItemViewer data={entry} /> : null;
       case "statuses":
-        return isStatus(entry) ? <StatusViewer data={entry} /> : renderByEntryShape();
+        return isStatus(entry) ? <StatusViewer data={entry} /> : null;
       case "abilities":
-        return isAbility(entry) ? <AbilityViewer data={entry} /> : renderByEntryShape();
-      default:
-        return renderByEntryShape();
+        return isAbility(entry) ? <AbilityViewer data={entry} /> : null;
     }
   };
 
