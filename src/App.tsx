@@ -5,31 +5,33 @@ import { BestiaryPage } from "./components/features/bestiary-entry/BestiaryPage"
 import { EmptyState } from "./components/layout/EmptyState";
 import { NavigationGuardProvider } from "./hooks/useNavigationGuard";
 
-// Stable existence check so Map reference churn doesn't trigger re-renders.
 function useSelectionValidation() {
   const selectedId = useAppStore((s) => s.selectedId);
+  const selectedContext = useAppStore((s) => s.selectedContext);
   const setSelectedId = useAppStore((s) => s.setSelectedId);
   const selectedIdExists = useAppStore((s) =>
-    s.selectedId ? s.data[s.currentContext].entries.has(s.selectedId) : true
+    s.selectedId && s.selectedContext
+      ? s.data[s.selectedContext].entries.has(s.selectedId)
+      : true
   );
 
   useEffect(() => {
-    if (selectedId && !selectedIdExists) {
+    if (selectedId && selectedContext && !selectedIdExists) {
       setSelectedId(null);
     }
-  }, [selectedId, selectedIdExists, setSelectedId]);
+  }, [selectedId, selectedContext, selectedIdExists, setSelectedId]);
 }
 
 const MainContent = React.memo(() => {
   const selectedId = useAppStore((s) => s.selectedId);
-  const currentContext = useAppStore((s) => s.currentContext);
+  const selectedContext = useAppStore((s) => s.selectedContext);
 
   useSelectionValidation();
 
   const content = useMemo(() => {
-    if (!selectedId) return <EmptyState />;
-    return <BestiaryPage entryId={selectedId} entryType={currentContext} />;
-  }, [selectedId, currentContext]);
+    if (!selectedId || !selectedContext) return <EmptyState />;
+    return <BestiaryPage entryId={selectedId} entryType={selectedContext} />;
+  }, [selectedId, selectedContext]);
 
   return content;
 });

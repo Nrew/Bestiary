@@ -44,16 +44,19 @@ interface ContextData {
 }
 
 interface AppState {
+  // Drives the sidebar listing; independent of the displayed entry so
+  // browsing sidebar categories doesn't replace the main view.
   currentContext: ViewContext;
   isLoading: boolean;
   error: string | null;
   searchQuery: string;
   selectedId: string | null;
+  // Context the displayed entry belongs to. Set in lockstep with selectedId
+  // so the page renders the right viewer even when the sidebar shows a
+  // different category.
+  selectedContext: ViewContext | null;
   /** Incremented when `navigateToEntry` completes so consumers can react even if `selectedId` is unchanged. */
   navigationNonce: number;
-  // Browser-style history modeled as two stacks. Current entry lives in
-  // `selectedId`+`currentContext`; navBack/navForward only hold entries the
-  // user has explicitly stepped through.
   navBack: NavHistoryEntry[];
   navForward: NavHistoryEntry[];
   navDirection: NavDirection;
@@ -180,7 +183,8 @@ export const useAppStore = create<AppState & AppActions>()(
 
     const captureSelection = (): NavHistoryEntry | null => {
       const sid = get().selectedId;
-      return sid ? { context: get().currentContext, id: sid } : null;
+      const sctx = get().selectedContext;
+      return sid && sctx ? { context: sctx, id: sid } : null;
     };
 
     const doNavigate = async (
@@ -228,6 +232,7 @@ export const useAppStore = create<AppState & AppActions>()(
     error: null,
     searchQuery: "",
     selectedId: null,
+    selectedContext: null,
     navigationNonce: 0,
     navBack: [],
     navForward: [],
@@ -255,6 +260,7 @@ export const useAppStore = create<AppState & AppActions>()(
             (entry) => entry.context === oldCtx && entry.id === draftId,
           );
           state.selectedId = null;
+          state.selectedContext = null;
         }
         state.fetchVersion += 1;
         state.currentContext = context;
@@ -273,6 +279,7 @@ export const useAppStore = create<AppState & AppActions>()(
     setSelectedId: (id, edit = false) =>
       set((state) => {
         state.selectedId = id;
+        state.selectedContext = id ? state.currentContext : null;
         state.editOnSelect = edit;
       }),
 
@@ -415,8 +422,9 @@ export const useAppStore = create<AppState & AppActions>()(
           if (!isDraft) {
             data.count = Math.max(0, data.count - 1);
           }
-          if (state.selectedId === id) {
+          if (state.selectedId === id && state.selectedContext === context) {
             state.selectedId = null;
+            state.selectedContext = null;
           }
           scrubNavHistory(
             state,
@@ -503,8 +511,9 @@ export const useAppStore = create<AppState & AppActions>()(
         if (!state.draftEntries.has(id)) return;
         state.draftEntries.delete(id);
         state.data[context].entries.delete(id);
-        if (state.selectedId === id) {
+        if (state.selectedId === id && state.selectedContext === context) {
           state.selectedId = null;
+          state.selectedContext = null;
         }
         scrubNavHistory(
           state,
@@ -615,6 +624,7 @@ export const useAppStore = create<AppState & AppActions>()(
 export const useGameEnums = () => useAppStore((s) => s.gameEnums);
 export const useCurrentContext = () => useAppStore((s) => s.currentContext);
 export const useSelectedId = () => useAppStore((s) => s.selectedId);
+export const useSelectedContext = () => useAppStore((s) => s.selectedContext);
 export const useIsLoading = () => useAppStore((s) => s.isLoading);
 export const useError = () => useAppStore((s) => s.error);
 export const useHasUnsavedChanges = () => useAppStore((s) => s.hasUnsavedChanges);
