@@ -23,7 +23,7 @@ export function NotesSection({ data }: { data: BestiaryEntry }) {
             "inset 2px 2px 8px hsl(30, 20%, 10%, 0.1), 2px 2px 5px hsl(0,0%,0%,0.2)",
         }}
       >
-        <div className="prose prose-lg max-w-none font-serif viewer-prose">
+        <div className="max-w-none font-serif viewer-prose">
           <RichTextViewer html={notes} />
         </div>
       </div>

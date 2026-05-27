@@ -289,7 +289,7 @@ function RichTextEditorInner({
       "aria-expanded": suggestion ? "true" : "false",
       "aria-controls": SUGGESTION_LISTBOX_ID,
       class: cn(
-        "prose dark:prose-invert max-w-none focus:outline-none p-4 min-h-[150px] font-serif",
+        "max-w-none focus:outline-none p-4 min-h-[150px] font-serif",
         editable ? "is-editable" : "viewer-prose"
       ),
     };

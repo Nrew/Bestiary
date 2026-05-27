@@ -140,7 +140,7 @@ export function ItemDescriptionSection({ data }: { data: Item }) {
   if (!hasRichTextContent(data.description)) return null;
 
   return (
-    <div className="prose prose-lg dark:prose-invert max-w-none viewer-prose font-serif">
+    <div className="max-w-none viewer-prose font-serif">
       <RichTextViewer html={data.description} />
     </div>
   );

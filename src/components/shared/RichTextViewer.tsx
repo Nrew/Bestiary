@@ -131,7 +131,7 @@ export function RichTextViewer({ html, className }: RichTextViewerProps) {
 
   return (
     <div
-      className={cn("prose dark:prose-invert max-w-none font-serif viewer-prose", className)}
+      className={cn("max-w-none font-serif viewer-prose", className)}
       dangerouslySetInnerHTML={{ __html: processedHtml }}
       onClick={handleClick}
       onMouseOver={handleMouseOver}
