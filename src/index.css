@@ -195,6 +195,12 @@
   /* Modal / lightbox backdrop */
   --color-overlay: oklch(10% 0.01 30 / 0.85);
 
+  /* Parchment texture overlay tones (1-2% alpha) */
+  --bg-bloom-warm: oklch(45% 0.08 45 / 1.5%);
+  --bg-bloom-gold: oklch(85% 0.15 85 / 2%);
+  --bg-bloom-cool: oklch(62% 0.02 240 / 1%);
+  --bg-thread: oklch(15% 0.01 45 / 0.3%);
+
   /* Glass effect shadows (reusable) */
   --shadow-glass: 0 8px 32px var(--color-ink-10), inset 0 1px 0 var(--color-parchment-80), inset 0 -1px 0 var(--color-stone-30);
 
@@ -296,15 +302,15 @@
 
     /* Parchment texture */
     background-image:
-      radial-gradient(circle at 20% 30%, oklch(45% 0.08 45 / 1.5%) 0%, transparent 40%),
-      radial-gradient(circle at 80% 70%, oklch(85% 0.15 85 / 2%) 0%, transparent 35%),
-      radial-gradient(circle at 40% 80%, oklch(62% 0.02 240 / 1%) 0%, transparent 50%),
+      radial-gradient(circle at 20% 30%, var(--bg-bloom-warm) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, var(--bg-bloom-gold) 0%, transparent 35%),
+      radial-gradient(circle at 40% 80%, var(--bg-bloom-cool) 0%, transparent 50%),
       repeating-linear-gradient(
         45deg,
         transparent,
         transparent 1px,
-        oklch(15% 0.01 45 / 0.3%) 1px,
-        oklch(15% 0.01 45 / 0.3%) 2px
+        var(--bg-thread) 1px,
+        var(--bg-thread) 2px
       );
     background-attachment: fixed;
   }
