@@ -1,10 +1,7 @@
 import type { AbilityUses, MagicSchool, StatValue } from "@/types";
 import { MAGIC_SCHOOL_LABELS } from "./constants";
 import { ordinalize } from "@/lib/utils";
-
-export function assertNever(value: never): never {
-  throw new Error(`Unexpected value: ${JSON.stringify(value)}`);
-}
+import { assertNever } from "@/lib/type-utils";
 
 export function formatStatValue(stat: StatValue): string {
   switch (stat.type) {
@@ -74,8 +71,11 @@ export function formatAbilityUses(uses: AbilityUses | null): string | null {
       return "At Will";
     case "once":
       return "Once";
-    default:
-      return assertNever(uses);
+    default: {
+      const _exhaustive: never = uses;
+      void _exhaustive;
+      return null;
+    }
   }
 }
 

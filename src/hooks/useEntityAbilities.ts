@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useAbilitiesMap, useAppStore } from "@/store/appStore";
 import { useLoadedReferences } from "@/hooks/useLoadedReferences";
 import { isAbility } from "@/lib/type-guards";
-import { assertNever } from "@/lib/dnd/format-utils";
+import { assertNever } from "@/lib/type-utils";
 import type { Ability, Entity } from "@/types";
 
 export interface EntityAbilities {
