@@ -33,12 +33,6 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
   }
 }
 
-function mergeRefs<T>(...refs: (Ref<T> | undefined)[]): React.RefCallback<T> {
-  return (value) => {
-    for (const r of refs) assignRef(r, value);
-  };
-}
-
 export interface DeferredMountProps {
   children: ReactNode;
   fallback: ReactNode;
@@ -117,16 +111,22 @@ export function DeferredMount({
     };
   }, [mounted, idleTimeout, rootMargin]);
 
+  const childRef = isValidElement(children)
+    ? (children as ReactElement & { ref?: Ref<unknown> }).ref
+    : undefined;
+  const mergedChildRef = useCallback<React.RefCallback<unknown>>(
+    (value) => {
+      assignRef(forwardedRef, value);
+      if (childRef) assignRef(childRef, value);
+    },
+    [forwardedRef, childRef]
+  );
+
   const renderedChild = (() => {
     if (!mounted) return fallback;
     if (!isValidElement(children)) return children;
     const only = children as ReactElement<Record<string, unknown>>;
-    return cloneElement(only, {
-      ref: mergeRefs(
-        forwardedRef,
-        (only as ReactElement & { ref?: Ref<unknown> }).ref,
-      ),
-    });
+    return cloneElement(only, { ref: mergedChildRef });
   })();
 
   return (
