@@ -328,8 +328,6 @@ describe("isValidDiceFormula", () => {
   });
 
   it("accepts zero-count or zero-side dice — the regex does not enforce minimums", () => {
-    // The implementation uses a pure regex match and does not validate that
-    // numDice > 0 or dieSize > 0. These are syntactically valid formulas.
     expect(isValidDiceFormula("0d6")).toBe(true);
     expect(isValidDiceFormula("1d0")).toBe(true);
   });
