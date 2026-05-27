@@ -201,6 +201,13 @@
   --bg-bloom-cool: oklch(62% 0.02 240 / 1%);
   --bg-thread: oklch(15% 0.01 45 / 0.3%);
 
+  /* d4 picker ground-shadow ellipse */
+  --shadow-die-ground: radial-gradient(ellipse 50% 50% at 50% 50%, oklch(18% 0.02 45 / 0.32), oklch(18% 0.02 45 / 0) 72%);
+
+  /* Dialog / editor surface bounds */
+  --dialog-max-h: 85vh;
+  --editor-min-h: 9.375rem;
+
   /* Glass effect shadows (reusable) */
   --shadow-glass: 0 8px 32px var(--color-ink-10), inset 0 1px 0 var(--color-parchment-80), inset 0 -1px 0 var(--color-stone-30);
 
@@ -294,7 +301,7 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-serif);
-    font-size: 1rem;
+    font-size: var(--text-base);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -677,7 +684,7 @@
     position: absolute;
     top: -0.25rem;
     right: -0.5rem;
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     font-weight: 700;
     color: var(--color-destructive);
     background-color: var(--color-card);
