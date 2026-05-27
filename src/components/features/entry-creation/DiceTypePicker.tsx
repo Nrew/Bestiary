@@ -105,8 +105,7 @@ export function DiceTypePicker({
                 aria-hidden
                 className="pointer-events-none absolute left-1/2 top-1/2 h-14 w-64 -translate-x-1/2 translate-y-22"
                 style={{
-                  background:
-                    "radial-gradient(ellipse 50% 50% at 50% 50%, oklch(18% 0.02 45 / 0.32), oklch(18% 0.02 45 / 0) 72%)",
+                  background: "var(--shadow-die-ground)",
                   filter: "blur(3px)",
                 }}
               />
