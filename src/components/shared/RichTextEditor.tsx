@@ -241,11 +241,13 @@ function RichTextEditorInner({
       if (!editable || query === null) {
         setSuggestion(null);
       } else {
-        setSuggestion((prev) => ({
-          query,
-          coords: coords ?? prev?.coords ?? { top: 0, left: 0 },
-          selectedIdx: 0,
-        }));
+        setSuggestion((prev) => {
+          const nextCoords = coords ?? prev?.coords ?? { top: 0, left: 0 };
+          if (prev && prev.query === query) {
+            return { query, coords: nextCoords, selectedIdx: prev.selectedIdx };
+          }
+          return { query, coords: nextCoords, selectedIdx: 0 };
+        });
       }
     },
   );
@@ -384,7 +386,7 @@ function RichTextEditorInner({
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     editor.view.dom.setAttribute("aria-expanded", suggestion ? "true" : "false");
-  }, [editor, suggestion]);
+  }, [editor, suggestion, editorAttributes]);
 
   const selectSuggestion = useCallback(
     (item: WikiLinkItem) => {
