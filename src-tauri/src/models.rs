@@ -1007,8 +1007,7 @@ mod stat_block_normalize_tests {
         sb.normalize_legacy_custom_stats();
 
         assert_eq!(sb.fly_speed, None);
-        // Legacy key is removed even when value can't be parsed — leaving it in
-        // `custom` would still render as a phantom row in the UI.
+        // Unparseable legacy keys are still dropped so they don't render as phantom UI rows.
         assert!(!sb.custom.contains_key("flySpeed"));
     }
 
