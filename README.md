@@ -19,7 +19,6 @@ Bestiary keeps monsters, magic items, abilities, and conditions on your machine.
 - [Backup, import, and export](#backup-import-and-export)
 - [Troubleshooting](#troubleshooting)
 - [Build from source](#build-from-source)
-- [Known limitations](#known-limitations)
 - [Content & licensing](#content--licensing)
 - [Documentation & community](#documentation--community)
 - [License](#license)
