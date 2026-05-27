@@ -658,6 +658,116 @@
   }
 }
 
+.viewer-prose {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--color-ink);
+}
+
+.viewer-prose h1,
+.viewer-prose h2,
+.viewer-prose h3,
+.viewer-prose h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: 1.25;
+  margin-top: 1.75em;
+  margin-bottom: 0.5em;
+}
+
+.viewer-prose h1 { font-size: 1.875rem; }
+.viewer-prose h2 { font-size: 1.5rem; }
+.viewer-prose h3 { font-size: 1.25rem; }
+.viewer-prose h4 { font-size: 1.0625rem; }
+
+.viewer-prose > :first-child { margin-top: 0; }
+.viewer-prose > :last-child { margin-bottom: 0; }
+
+.viewer-prose p {
+  margin: 0.75em 0;
+}
+
+.viewer-prose ul,
+.viewer-prose ol {
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+
+.viewer-prose ul { list-style: disc; }
+.viewer-prose ol { list-style: decimal; }
+
+.viewer-prose li {
+  margin: 0.25em 0;
+}
+
+.viewer-prose li > p {
+  margin: 0.25em 0;
+}
+
+.viewer-prose blockquote {
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  border-left: 3px solid var(--color-leather);
+  background: var(--color-leather-10);
+  font-style: italic;
+  color: var(--color-ink-muted);
+}
+
+.viewer-prose blockquote > :first-child { margin-top: 0; }
+.viewer-prose blockquote > :last-child { margin-bottom: 0; }
+
+.viewer-prose strong {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.viewer-prose em {
+  font-style: italic;
+}
+
+.viewer-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-rune-10);
+  color: var(--color-leather);
+  padding: 0.125em 0.375em;
+  border-radius: var(--radius-sm);
+}
+
+.viewer-prose pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-ink-05);
+  padding: 1em;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.viewer-prose pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.viewer-prose hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 2em 0;
+}
+
+.viewer-prose a:not(.wiki-link) {
+  color: var(--color-leather);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.viewer-prose a:not(.wiki-link):hover {
+  color: var(--color-leather-lifted);
+}
+
 .viewer-prose .wiki-link-bracket {
   display: none;
 }
