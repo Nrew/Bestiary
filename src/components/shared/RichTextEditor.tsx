@@ -291,7 +291,7 @@ function RichTextEditorInner({
       "aria-expanded": "false",
       "aria-controls": SUGGESTION_LISTBOX_ID,
       class: cn(
-        "max-w-none focus:outline-none p-4 min-h-[150px] font-serif",
+        "max-w-none focus:outline-none p-4 min-h-(--editor-min-h) font-serif",
         editable ? "is-editable" : "viewer-prose"
       ),
     };
