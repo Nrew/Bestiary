@@ -28,6 +28,7 @@ const NavigationGuardContext = createContext<NavigationGuardValue | null>(null);
 export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
   const hasUnsavedChanges = useHasUnsavedChanges();
   const currentContext = useAppStore((s) => s.currentContext);
+  const selectedContext = useAppStore((s) => s.selectedContext);
   const selectedId = useAppStore((s) => s.selectedId);
   const setCurrentContext = useAppStore((s) => s.setCurrentContext);
   const navigateStoreToEntry = useAppStore((s) => s.navigateToEntry);
@@ -73,7 +74,7 @@ export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
 
   const navigateToEntry = useCallback(
     async (context: ViewContext, id: string, edit = false) => {
-      const isSameEntry = context === currentContext && id === selectedId && !edit;
+      const isSameEntry = context === selectedContext && id === selectedId && !edit;
       if (!isSameEntry && !(await confirmNavigation())) {
         return false;
       }
@@ -81,7 +82,7 @@ export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
       startTransition(() => { void navigateStoreToEntry(context, id, edit); });
       return true;
     },
-    [confirmNavigation, currentContext, navigateStoreToEntry, selectedId]
+    [confirmNavigation, selectedContext, navigateStoreToEntry, selectedId]
   );
 
   const changeContext = useCallback(
