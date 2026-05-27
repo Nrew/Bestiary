@@ -124,6 +124,20 @@
   --color-bloodstone: oklch(40% 0.16 25);
   --color-sapphire: oklch(50% 0.14 260);
 
+  /* d4 entry-picker face palette: hue-shared with category colors, lighter stops for paper feel */
+  --color-die-entities-tint: oklch(94% 0.035 145 / 0.5);
+  --color-die-entities-deep: oklch(78% 0.085 145 / 0.55);
+  --color-die-entities-ink: oklch(32% 0.11 145);
+  --color-die-items-tint: oklch(95% 0.04 70 / 0.5);
+  --color-die-items-deep: oklch(82% 0.09 70 / 0.55);
+  --color-die-items-ink: oklch(40% 0.10 70);
+  --color-die-statuses-tint: oklch(90% 0.045 290 / 0.5);
+  --color-die-statuses-deep: oklch(72% 0.10 290 / 0.55);
+  --color-die-statuses-ink: oklch(32% 0.13 290);
+  --color-die-abilities-tint: oklch(90% 0.045 25 / 0.5);
+  --color-die-abilities-deep: oklch(72% 0.105 25 / 0.55);
+  --color-die-abilities-ink: oklch(32% 0.14 25);
+
   /* Semantic colors */
   --color-success: oklch(55% 0.14 145);
   --color-warning: oklch(75% 0.14 85);

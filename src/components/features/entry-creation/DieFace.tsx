@@ -18,20 +18,20 @@ import { cn } from "@/lib/utils";
 
 const FACE_GRADIENT: Record<ViewContext, string> = {
   entities:
-    "linear-gradient(180deg, oklch(94% 0.035 145 / 0.5), oklch(78% 0.085 145 / 0.55))",
+    "linear-gradient(180deg, var(--color-die-entities-tint), var(--color-die-entities-deep))",
   items:
-    "linear-gradient(180deg, oklch(95% 0.04 70 / 0.5), oklch(82% 0.09 70 / 0.55))",
+    "linear-gradient(180deg, var(--color-die-items-tint), var(--color-die-items-deep))",
   statuses:
-    "linear-gradient(180deg, oklch(90% 0.045 290 / 0.5), oklch(72% 0.10 290 / 0.55))",
+    "linear-gradient(180deg, var(--color-die-statuses-tint), var(--color-die-statuses-deep))",
   abilities:
-    "linear-gradient(180deg, oklch(90% 0.045 25 / 0.5), oklch(72% 0.105 25 / 0.55))",
+    "linear-gradient(180deg, var(--color-die-abilities-tint), var(--color-die-abilities-deep))",
 };
 
 const FACE_INK: Record<ViewContext, string> = {
-  entities: "oklch(32% 0.11 145)",
-  items: "oklch(40% 0.10 70)",
-  statuses: "oklch(32% 0.13 290)",
-  abilities: "oklch(32% 0.14 25)",
+  entities: "var(--color-die-entities-ink)",
+  items: "var(--color-die-items-ink)",
+  statuses: "var(--color-die-statuses-ink)",
+  abilities: "var(--color-die-abilities-ink)",
 };
 
 const DIAMOND_CLIP = "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)";
