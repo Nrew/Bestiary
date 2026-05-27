@@ -55,6 +55,7 @@ export function NestedEffectsEditor({ parentIndex }: NestedEffectsEditorProps) {
       nestedEffects.filter((_, i) => i !== subIndex),
       { shouldDirty: true }
     );
+    idsRef.current = idsRef.current.filter((_, i) => i !== subIndex);
   };
 
   const updateNestedEffect = (subIndex: number, effect: AbilityEffect) => {
