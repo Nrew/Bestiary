@@ -4,7 +4,6 @@ import { ErrorDisplay } from "@/components/shared/ErrorDisplay";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { useAppStore } from "@/store/appStore";
 import { useKeyboardShortcut, APP_SHORTCUTS } from "@/lib/keyboard-shortcuts";
-import type { SidebarSearchRef } from "@/components/features/sidebar/Sidebar";
 
 // Lazy load Sidebar since it's not critical for LCP
 const Sidebar = React.lazy(() =>
@@ -13,9 +12,9 @@ const Sidebar = React.lazy(() =>
 
 export function Layout({ children }: React.PropsWithChildren) {
   const [isTocOpen, setIsTocOpen] = React.useState(false);
+  const [autoFocusSearch, setAutoFocusSearch] = React.useState(false);
   const selectedId = useAppStore((s) => s.selectedId);
   const navigationNonce = useAppStore((s) => s.navigationNonce);
-  const searchRef = useRef<SidebarSearchRef>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -24,14 +23,16 @@ export function Layout({ children }: React.PropsWithChildren) {
     scroller.scrollTop = 0;
   }, [selectedId, navigationNonce]);
 
+  const openTocFromHeader = useCallback(() => {
+    setAutoFocusSearch(false);
+    setIsTocOpen(true);
+  }, []);
+
   useKeyboardShortcut(
     APP_SHORTCUTS.SEARCH,
     useCallback(() => {
+      setAutoFocusSearch(true);
       setIsTocOpen(true);
-      // Small delay to ensure sidebar is rendered before focusing
-      setTimeout(() => {
-        searchRef.current?.focus();
-      }, 100);
     }, []),
     { description: "Open search" }
   );
@@ -39,9 +40,13 @@ export function Layout({ children }: React.PropsWithChildren) {
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col">
       <Suspense fallback={null}>
-        <Sidebar ref={searchRef} isOpen={isTocOpen} onClose={() => setIsTocOpen(false)} />
+        <Sidebar
+          isOpen={isTocOpen}
+          onClose={() => setIsTocOpen(false)}
+          autoFocusSearch={autoFocusSearch}
+        />
       </Suspense>
-      <AppHeader onTocOpen={() => setIsTocOpen(true)} />
+      <AppHeader onTocOpen={openTocFromHeader} />
 
       <div
         ref={contentScrollRef}

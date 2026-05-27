@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { SidebarProvider, useSidebarContext } from "./SidebarContext";
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarNav } from "./SidebarNav";
-import { SidebarSearch, type SidebarSearchRef } from "./SidebarSearch";
+import { SidebarSearch } from "./SidebarSearch";
 import { SidebarList } from "./SidebarList";
 import { SidebarFooter } from "./SidebarFooter";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
@@ -15,10 +15,8 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  ref?: React.Ref<SidebarSearchRef>;
+  autoFocusSearch?: boolean;
 }
-
-export type { SidebarSearchRef };
 
 function AnimatedSection({ delay, className, children }: {
   delay: number;
@@ -37,7 +35,7 @@ function AnimatedSection({ delay, className, children }: {
   );
 }
 
-function SidebarContent({ ref }: { ref?: React.Ref<SidebarSearchRef> }) {
+function SidebarContent() {
   return (
     <>
       <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.HEADER}>
@@ -47,7 +45,7 @@ function SidebarContent({ ref }: { ref?: React.Ref<SidebarSearchRef> }) {
         <SidebarNav />
       </AnimatedSection>
       <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.SEARCH}>
-        <SidebarSearch ref={ref} />
+        <SidebarSearch />
       </AnimatedSection>
       <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.LIST} className="flex-1 overflow-auto">
         <ErrorBoundary level="component">
@@ -61,7 +59,7 @@ function SidebarContent({ ref }: { ref?: React.Ref<SidebarSearchRef> }) {
   );
 }
 
-function SidebarImpl({ ref }: { ref?: React.Ref<SidebarSearchRef> }) {
+function SidebarImpl({ autoFocusSearch }: { autoFocusSearch: boolean }) {
   const { isOpen, onClose } = useSidebarContext();
   const panelRef = React.useRef<HTMLElement>(null);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
@@ -84,9 +82,17 @@ function SidebarImpl({ ref }: { ref?: React.Ref<SidebarSearchRef> }) {
     };
 
     const focusFirstElement = window.setTimeout(() => {
-      getFocusableElements()[0]?.focus();
-      if (document.activeElement === document.body) {
-        panelRef.current?.focus();
+      const searchInput = autoFocusSearch
+        ? panelRef.current?.querySelector<HTMLInputElement>("#sidebar-search")
+        : null;
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      } else {
+        getFocusableElements()[0]?.focus();
+        if (document.activeElement === document.body) {
+          panelRef.current?.focus();
+        }
       }
     }, 0);
 
@@ -126,7 +132,7 @@ function SidebarImpl({ ref }: { ref?: React.Ref<SidebarSearchRef> }) {
       document.removeEventListener("keydown", handleKeyDown);
       previousFocusRef.current?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, autoFocusSearch]);
 
   return (
     <>
@@ -161,7 +167,7 @@ function SidebarImpl({ ref }: { ref?: React.Ref<SidebarSearchRef> }) {
               aria-label="Table of Contents"
               tabIndex={-1}
             >
-              <SidebarContent ref={ref} />
+              <SidebarContent />
             </motion.aside>
           </>
         )}
@@ -172,10 +178,10 @@ function SidebarImpl({ ref }: { ref?: React.Ref<SidebarSearchRef> }) {
   );
 }
 
-export function Sidebar({ isOpen, onClose, ref }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, autoFocusSearch = false }: SidebarProps) {
   return (
     <SidebarProvider isOpen={isOpen} onClose={onClose}>
-      <SidebarImpl ref={ref} />
+      <SidebarImpl autoFocusSearch={autoFocusSearch} />
     </SidebarProvider>
   );
 }

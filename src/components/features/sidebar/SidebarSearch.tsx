@@ -1,31 +1,16 @@
-import React, { useCallback, useImperativeHandle, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { Input, Button } from "@/components/ui";
 import { useAppStore } from "@/store/appStore";
 import { useSidebarContext } from "./SidebarContext";
 import { APP_SHORTCUTS, formatShortcutKey } from "@/lib/keyboard-shortcuts";
 import { Search, X } from "lucide-react";
 
-export interface SidebarSearchRef {
-  focus: () => void;
-}
-
-interface SidebarSearchProps {
-  ref?: React.Ref<SidebarSearchRef>;
-}
-
 // Debouncing happens in useSidebarData; this component just writes the query to the store.
-export const SidebarSearch = React.memo(function SidebarSearch({ ref }: SidebarSearchProps) {
+export const SidebarSearch = React.memo(function SidebarSearch() {
   const searchQuery = useAppStore((s) => s.searchQuery);
   const setSearchQuery = useAppStore((s) => s.setSearchQuery);
   const { contextConfig } = useSidebarContext();
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useImperativeHandle(ref, () => ({
-    focus: () => {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    },
-  }), []);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
