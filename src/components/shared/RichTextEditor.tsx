@@ -286,7 +286,7 @@ function RichTextEditorInner({
       role: "textbox",
       "aria-multiline": "true",
       "aria-haspopup": "listbox",
-      "aria-expanded": suggestion ? "true" : "false",
+      "aria-expanded": "false",
       "aria-controls": SUGGESTION_LISTBOX_ID,
       class: cn(
         "max-w-none focus:outline-none p-4 min-h-[150px] font-serif",
@@ -299,7 +299,7 @@ function RichTextEditorInner({
     if (ariaLabelledBy) attributes["aria-labelledby"] = ariaLabelledBy;
     if (ariaInvalid) attributes["aria-invalid"] = "true";
     return attributes;
-  }, [ariaDescribedBy, ariaInvalid, ariaLabel, ariaLabelledBy, editable, id, suggestion]);
+  }, [ariaDescribedBy, ariaInvalid, ariaLabel, ariaLabelledBy, editable, id]);
 
   // Defer ProseMirror construction to useEffect so edit clicks and IPC ticks
   // are less likely to overlap a single long synchronous task (Chrome
@@ -380,6 +380,11 @@ function RichTextEditorInner({
       editor.setEditable(editable);
     }
   }, [editable, editor]);
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.view.dom.setAttribute("aria-expanded", suggestion ? "true" : "false");
+  }, [editor, suggestion]);
 
   const selectSuggestion = useCallback(
     (item: WikiLinkItem) => {
