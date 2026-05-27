@@ -47,10 +47,7 @@ export const EntityForm = React.memo(() => {
       <TaxonomySection />
       <StatBlockSection />
 
-      {/* Below the fold: each section mounts lazily — either when it scrolls
-          near the viewport (IntersectionObserver) or after an idle tick (1.2s
-          fallback). Splits one huge commit into many small commits so React's
-          scheduler does not produce 200ms+ setTimeout chunks on form open. */}
+      {/* Below the fold: deferred to keep form-open under 200ms (avoids React scheduler chunking). */}
       <DeferredMount fallback={<SectionPlaceholder />}>
         <SavingThrowsSection />
       </DeferredMount>
