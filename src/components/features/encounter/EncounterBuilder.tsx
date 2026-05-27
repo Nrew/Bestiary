@@ -336,9 +336,12 @@ export function EncounterBuilder({ open, onOpenChange }: EncounterBuilderProps) 
 
 
   const addCharacter = useCallback(() => {
-    if (partyLevels.length >= MAX_PARTY_SIZE) return;
-    setPartyLevels((prev) => [...prev, { id: crypto.randomUUID(), level: 1 }]);
-  }, [partyLevels.length]);
+    setPartyLevels((prev) =>
+      prev.length >= MAX_PARTY_SIZE
+        ? prev
+        : [...prev, { id: crypto.randomUUID(), level: 1 }]
+    );
+  }, []);
 
   const removeCharacter = useCallback((id: string) => {
     setPartyLevels((prev) => prev.filter((m) => m.id !== id));
