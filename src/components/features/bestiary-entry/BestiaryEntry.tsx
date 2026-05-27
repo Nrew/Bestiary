@@ -152,11 +152,10 @@ export const BestiaryEntry = React.memo(({ entry, entryType }: BestiaryEntryProp
           : data;
       await saveAction(normalizedData);
       // Yield off the IPC `message` tick so the save response handler stays
-      // short; mode change + toast + error clear commit on the next frame.
+      // short; mode change + error clear commit on the next frame.
       requestAnimationFrame(() => {
         enterView();
         setError(null);
-        toast.success(`${config.label} saved successfully`);
       });
     } catch (error: unknown) {
       const message = `Failed to save ${config.label.toLowerCase()}: ${getErrorMessage(error)}`;
