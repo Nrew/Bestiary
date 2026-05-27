@@ -670,7 +670,7 @@
 
 .viewer-prose {
   font-family: var(--font-serif);
-  font-size: 1.0625rem;
+  font-size: var(--text-md);
   line-height: 1.7;
   color: var(--color-ink);
 }
@@ -685,12 +685,14 @@
   line-height: 1.25;
   margin-top: 1.75em;
   margin-bottom: 0.5em;
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
-.viewer-prose h1 { font-size: 1.875rem; }
-.viewer-prose h2 { font-size: 1.5rem; }
-.viewer-prose h3 { font-size: 1.25rem; }
-.viewer-prose h4 { font-size: 1.0625rem; }
+.viewer-prose h1 { font-size: var(--text-3xl); }
+.viewer-prose h2 { font-size: var(--text-2xl); }
+.viewer-prose h3 { font-size: var(--text-xl); }
+.viewer-prose h4 { font-size: var(--text-md); }
 
 .viewer-prose > :first-child { margin-top: 0; }
 .viewer-prose > :last-child { margin-bottom: 0; }
