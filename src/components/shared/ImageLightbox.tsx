@@ -76,10 +76,7 @@ export function ImageLightbox({
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay
-          className="fixed inset-0 z-100"
-          style={{ background: "oklch(10% 0.01 30 / 0.85)" }}
-        />
+        <Dialog.Overlay className="fixed inset-0 z-100 bg-overlay" />
         <Dialog.Content
           className="fixed inset-0 z-101 flex items-center justify-center focus:outline-none"
           aria-describedby="image-lightbox-description"

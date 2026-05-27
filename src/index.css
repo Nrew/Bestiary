@@ -190,6 +190,10 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-popover: 0 8px 24px oklch(0% 0 0 / 0.25), 0 0 0 1px var(--color-rune-10);
+
+  /* Modal / lightbox backdrop */
+  --color-overlay: oklch(10% 0.01 30 / 0.85);
 
   /* Glass effect shadows (reusable) */
   --shadow-glass: 0 8px 32px var(--color-ink-10), inset 0 1px 0 var(--color-parchment-80), inset 0 -1px 0 var(--color-stone-30);

@@ -49,7 +49,7 @@ export function HistoryBookmark() {
         sideOffset={8}
         className={cn(
           "w-72 p-0 bg-parchment border-rune/30",
-          "shadow-[0_8px_24px_oklch(0%_0_0/0.25),0_0_0_1px_var(--color-rune-10)]",
+          "shadow-popover",
         )}
       >
         <div className="border-b border-rune/20 px-3 py-2 font-display text-xs tracking-[0.2em] uppercase text-leather">
