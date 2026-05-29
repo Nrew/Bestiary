@@ -271,6 +271,7 @@ fn assign_string(target: &mut Option<String>, value: &serde_json::Value) -> bool
     let text = match value {
         serde_json::Value::String(s) => s.trim().to_string(),
         serde_json::Value::Number(n) => n.to_string(),
+        serde_json::Value::Null => return true,
         _ => return false,
     };
     if text.is_empty() {
@@ -1137,6 +1138,17 @@ mod stat_block_normalize_tests {
             sb.custom.get("flySpeed"),
             Some(&json!({ "base": 30, "max": 60 }))
         );
+    }
+
+    #[test]
+    fn drops_legacy_string_key_holding_null() {
+        let mut sb = empty_stat_block();
+        sb.custom.insert("hitDice".to_string(), json!(null));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.hit_dice, None);
+        assert!(!sb.custom.contains_key("hitDice"));
     }
 }
 
