@@ -57,16 +57,17 @@ export function useExternalEntryUpdate({
 
   useEffect(() => {
     const baselineIdChanged = prevBaselineIdRef.current !== baseline.id;
-    prevBaselineIdRef.current = baseline.id;
 
     const shouldReset =
       baselineIdChanged ||
       editOnSelect ||
       (!isDirtyRef.current && baseline !== prevBaselineRef.current);
 
-    prevBaselineRef.current = baseline;
-
-    if (!shouldReset) return;
+    if (!shouldReset) {
+      prevBaselineIdRef.current = baseline.id;
+      prevBaselineRef.current = baseline;
+      return;
+    }
 
     if (isDirtyRef.current && baselineIdChanged && mode === "edit") {
       const targetBaseline = baseline;
@@ -78,6 +79,8 @@ export function useExternalEntryUpdate({
         destructive: true,
       }).then((confirmed) => {
         if (!isMountedRef.current) return;
+        prevBaselineIdRef.current = targetBaseline.id;
+        prevBaselineRef.current = targetBaseline;
         if (!confirmed) return;
         form.reset(targetBaseline);
         clearUnsavedTracking();
@@ -91,6 +94,8 @@ export function useExternalEntryUpdate({
       return;
     }
 
+    prevBaselineIdRef.current = baseline.id;
+    prevBaselineRef.current = baseline;
     form.reset(baseline);
     clearUnsavedTracking();
 
