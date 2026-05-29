@@ -287,7 +287,8 @@ fn assign_f32(target: &mut Option<f32>, value: &serde_json::Value) -> bool {
     let parsed = match value {
         serde_json::Value::Number(n) => n.as_f64().map(|v| v as f32),
         serde_json::Value::String(s) => s.trim().parse::<f32>().ok(),
-        _ => None,
+        serde_json::Value::Null => return true,
+        _ => return false,
     };
     if let Some(v) = parsed.filter(|v| v.is_finite()) {
         *target = Some(v);
@@ -302,7 +303,8 @@ fn assign_i32(target: &mut Option<i32>, value: &serde_json::Value) -> bool {
     let parsed = match value {
         serde_json::Value::Number(n) => n.as_i64().and_then(|v| i32::try_from(v).ok()),
         serde_json::Value::String(s) => s.trim().parse::<i32>().ok(),
-        _ => None,
+        serde_json::Value::Null => return true,
+        _ => return false,
     };
     if let Some(v) = parsed {
         *target = Some(v);
@@ -1109,6 +1111,32 @@ mod stat_block_normalize_tests {
         assert_eq!(serialized["initiativeBonus"], json!(2));
         assert_eq!(serialized["custom"]["SpellPower"], json!(15));
         assert!(serialized["custom"].get("climbSpeed").is_none());
+    }
+
+    #[test]
+    fn drops_legacy_key_holding_null() {
+        let mut sb = empty_stat_block();
+        sb.custom.insert("burrowSpeed".to_string(), json!(null));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.burrow_speed, None);
+        assert!(!sb.custom.contains_key("burrowSpeed"));
+    }
+
+    #[test]
+    fn preserves_legacy_key_holding_structured_value() {
+        let mut sb = empty_stat_block();
+        sb.custom
+            .insert("flySpeed".to_string(), json!({ "base": 30, "max": 60 }));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.fly_speed, None);
+        assert_eq!(
+            sb.custom.get("flySpeed"),
+            Some(&json!({ "base": 30, "max": 60 }))
+        );
     }
 }
 
