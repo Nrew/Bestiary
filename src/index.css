@@ -206,6 +206,7 @@
 
   /* Dialog / editor surface bounds */
   --dialog-max-h: 85vh;
+  --dialog-max-h-workspace: 90vh;
   --editor-min-h: 9.375rem;
 
   /* Glass effect shadows (reusable) */

@@ -406,7 +406,7 @@ export function EncounterBuilder({ open, onOpenChange }: EncounterBuilderProps) 
         <Dialog.Content
           className={cn(
             "fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-            "w-full max-w-3xl h-176 max-h-[90vh] flex flex-col",
+            "w-full max-w-3xl h-176 max-h-(--dialog-max-h-workspace) flex flex-col",
             "glass-panel rounded-xl shadow-2xl animate-slide-up focus:outline-none",
             "p-0"
           )}

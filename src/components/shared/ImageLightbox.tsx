@@ -142,7 +142,7 @@ export function ImageLightbox({
             ref={imageRef}
             src={resolvedUrl}
             alt={`Image ${currentIndex + 1}`}
-            className={`max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl transition-opacity duration-200 ${
+            className={`max-h-(--dialog-max-h) max-w-[90vw] object-contain rounded-lg shadow-2xl transition-opacity duration-200 ${
               isImageLoaded ? "opacity-100" : "opacity-0"
             }`}
             loading="eager"
