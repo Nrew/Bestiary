@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Crown, Keyboard, PlusCircle, Settings, Swords } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
@@ -7,18 +7,21 @@ import { useKeyboardShortcut, APP_SHORTCUTS, formatShortcutKey } from "@/lib/key
 import { DiceTypePicker } from "@/components/features/entry-creation/DiceTypePicker";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { HistoryBookmark } from "@/components/layout/HistoryBookmark";
+import { scheduleIdle } from "@/lib/idle";
 import type { ViewContext } from "@/types";
 
-// Each dialog assumes the parent unmounts on close (clears local state).
-const ShortcutsDialog = React.lazy(() =>
-  import("./ShortcutsDialog").then((module) => ({ default: module.ShortcutsDialog }))
-);
-const SettingsDialog = React.lazy(() =>
-  import("./SettingsDialog").then((module) => ({ default: module.SettingsDialog }))
-);
-const EncounterBuilder = React.lazy(() =>
-  import("@/components/features/encounter").then((module) => ({ default: module.EncounterBuilder }))
-);
+// Dialogs reset on close via parent unmount; hover/focus prefetch warms the chunk before click.
+const importShortcuts = () => import("./ShortcutsDialog");
+const importSettings = () => import("./SettingsDialog");
+const importEncounter = () => import("@/components/features/encounter");
+
+const ShortcutsDialog = React.lazy(() => importShortcuts().then((m) => ({ default: m.ShortcutsDialog })));
+const SettingsDialog = React.lazy(() => importSettings().then((m) => ({ default: m.SettingsDialog })));
+const EncounterBuilder = React.lazy(() => importEncounter().then((m) => ({ default: m.EncounterBuilder })));
+
+const prefetchShortcuts = () => { void importShortcuts(); };
+const prefetchSettings = () => { void importSettings(); };
+const prefetchEncounter = () => { void importEncounter(); };
 
 const NEW_ENTRY_TITLE = `Create new entry (${formatShortcutKey(APP_SHORTCUTS.NEW)})`;
 
@@ -44,6 +47,12 @@ export function AppHeader({ onTocOpen }: { onTocOpen: () => void }) {
     handleCreate,
     { description: "Open new entry picker" }
   );
+
+  useEffect(() => scheduleIdle(() => {
+    prefetchShortcuts();
+    prefetchSettings();
+    prefetchEncounter();
+  }, 2000), []);
 
   return (
     <header className="codex-header animate-fade-in-up">
@@ -73,6 +82,8 @@ export function AppHeader({ onTocOpen }: { onTocOpen: () => void }) {
           aria-haspopup="dialog"
           aria-expanded={isShortcutsOpen}
           onClick={() => setIsShortcutsOpen(true)}
+          onMouseEnter={prefetchShortcuts}
+          onFocus={prefetchShortcuts}
         >
           <Keyboard className="w-5 h-5" />
         </Button>
@@ -84,6 +95,8 @@ export function AppHeader({ onTocOpen }: { onTocOpen: () => void }) {
           aria-haspopup="dialog"
           aria-expanded={isEncounterOpen}
           onClick={() => setIsEncounterOpen(true)}
+          onMouseEnter={prefetchEncounter}
+          onFocus={prefetchEncounter}
         >
           <Swords className="w-5 h-5" />
         </Button>
@@ -95,6 +108,8 @@ export function AppHeader({ onTocOpen }: { onTocOpen: () => void }) {
           aria-haspopup="dialog"
           aria-expanded={isSettingsOpen}
           onClick={() => setIsSettingsOpen(true)}
+          onMouseEnter={prefetchSettings}
+          onFocus={prefetchSettings}
         >
           <Settings className="w-5 h-5" />
         </Button>
