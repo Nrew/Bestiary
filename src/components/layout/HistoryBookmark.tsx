@@ -9,15 +9,19 @@ import { useNavigationGuard } from "@/hooks/useNavigationGuard";
 
 export function HistoryBookmark() {
   const navBack = useNavBack();
-  const entriesByContext = useAppStore((s) => s.data);
-  const { goBack, goBackTo } = useNavigationGuard();
   const [open, setOpen] = React.useState(false);
+  const liveData = useAppStore((s) => (open ? s.data : null));
+  const lastDataRef = React.useRef(liveData);
+  if (liveData) lastDataRef.current = liveData;
+  // Keep the last snapshot so the list survives the popover close animation.
+  const entriesByContext = liveData ?? lastDataRef.current;
+  const { goBack, goBackTo } = useNavigationGuard();
 
   if (navBack.length === 0) return null;
 
-  const items = navBack
-    .map((entry, idx) => ({ ...entry, historyIndex: idx }))
-    .reverse();
+  const items = entriesByContext
+    ? navBack.map((entry, idx) => ({ ...entry, historyIndex: idx })).reverse()
+    : null;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -56,10 +60,10 @@ export function HistoryBookmark() {
           Recent Codex Pages
         </div>
         <ul role="menu" className="max-h-80 overflow-y-auto py-1">
-          {items.map((item) => {
+          {items?.map((item) => {
             const config = getContextConfig(item.context);
             const name =
-              entriesByContext[item.context].entries.get(item.id)?.name ??
+              entriesByContext?.[item.context].entries.get(item.id)?.name ??
               `${config.label} ${item.id.slice(0, 8)}`;
             return (
               <li key={`${item.context}:${item.id}:${item.historyIndex}`} role="none">
