@@ -11,10 +11,9 @@ export function HistoryBookmark() {
   const navBack = useNavBack();
   const [open, setOpen] = React.useState(false);
   const liveData = useAppStore((s) => (open ? s.data : null));
-  const lastDataRef = React.useRef(liveData);
-  if (liveData) lastDataRef.current = liveData;
-  // Keep the last snapshot so the list survives the popover close animation.
-  const entriesByContext = liveData ?? lastDataRef.current;
+  const lastOpenDataRef = React.useRef(liveData);
+  if (liveData) lastOpenDataRef.current = liveData;
+  const entriesByContext = liveData ?? lastOpenDataRef.current;
   const { goBack, goBackTo } = useNavigationGuard();
 
   if (navBack.length === 0) return null;
