@@ -19,8 +19,6 @@ interface NavigationGuardValue {
   goBack: () => Promise<boolean>;
   goForward: () => Promise<boolean>;
   goBackTo: (historyIndex: number) => Promise<boolean>;
-  canGoBack: boolean;
-  canGoForward: boolean;
 }
 
 const NavigationGuardContext = createContext<NavigationGuardValue | null>(null);
@@ -41,13 +39,21 @@ export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
   const savingCount = useAppStore((s) => s.savingEntries.size);
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
 
+  const hasUnsavedChangesRef = useLatestRef(hasUnsavedChanges);
+  const savingCountRef = useLatestRef(savingCount);
+  const canGoBackRef = useLatestRef(canGoBack);
+  const canGoForwardRef = useLatestRef(canGoForward);
+  const currentContextRef = useLatestRef(currentContext);
+  const selectedContextRef = useLatestRef(selectedContext);
+  const selectedIdRef = useLatestRef(selectedId);
+
   const confirmNavigation = useCallback(async () => {
     // A save is in-flight. If there are no unsaved changes, the save already captured
     // everything the user cared about; navigation can proceed while the IPC settles
     // in the background. If there ARE still unsaved changes on top of the in-flight
     // save, block and tell the user to wait rather than risk losing those edits.
-    if (savingCount > 0) {
-      if (!hasUnsavedChanges) {
+    if (savingCountRef.current > 0) {
+      if (!hasUnsavedChangesRef.current) {
         return true;
       }
       await confirm({
@@ -59,7 +65,7 @@ export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
       return false;
     }
 
-    if (!hasUnsavedChanges) {
+    if (!hasUnsavedChangesRef.current) {
       return true;
     }
 
@@ -70,11 +76,11 @@ export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
       cancelLabel: "Stay",
       destructive: true,
     });
-  }, [confirm, hasUnsavedChanges, savingCount]);
+  }, [confirm, hasUnsavedChangesRef, savingCountRef]);
 
   const navigateToEntry = useCallback(
     async (context: ViewContext, id: string, edit = false) => {
-      const isSameEntry = context === selectedContext && id === selectedId && !edit;
+      const isSameEntry = context === selectedContextRef.current && id === selectedIdRef.current && !edit;
       if (!isSameEntry && !(await confirmNavigation())) {
         return false;
       }
@@ -82,12 +88,12 @@ export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
       startTransition(() => { void navigateStoreToEntry(context, id, edit); });
       return true;
     },
-    [confirmNavigation, selectedContext, navigateStoreToEntry, selectedId]
+    [confirmNavigation, selectedContextRef, navigateStoreToEntry, selectedIdRef]
   );
 
   const changeContext = useCallback(
     async (context: ViewContext) => {
-      if (context === currentContext) {
+      if (context === currentContextRef.current) {
         return true;
       }
 
@@ -98,7 +104,7 @@ export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
       startTransition(() => { setCurrentContext(context); });
       return true;
     },
-    [confirmNavigation, currentContext, setCurrentContext]
+    [confirmNavigation, currentContextRef, setCurrentContext]
   );
 
   const createEntry = useCallback(
@@ -114,27 +120,27 @@ export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
   );
 
   const goBack = useCallback(async () => {
-    if (!canGoBack) return false;
+    if (!canGoBackRef.current) return false;
     if (!(await confirmNavigation())) return false;
     startTransition(() => { void goBackInStore(); });
     return true;
-  }, [canGoBack, confirmNavigation, goBackInStore]);
+  }, [canGoBackRef, confirmNavigation, goBackInStore]);
 
   const goForward = useCallback(async () => {
-    if (!canGoForward) return false;
+    if (!canGoForwardRef.current) return false;
     if (!(await confirmNavigation())) return false;
     startTransition(() => { void goForwardInStore(); });
     return true;
-  }, [canGoForward, confirmNavigation, goForwardInStore]);
+  }, [canGoForwardRef, confirmNavigation, goForwardInStore]);
 
   const goBackTo = useCallback(
     async (historyIndex: number) => {
-      if (!canGoBack) return false;
+      if (!canGoBackRef.current) return false;
       if (!(await confirmNavigation())) return false;
       startTransition(() => { void goBackToInStore(historyIndex); });
       return true;
     },
-    [canGoBack, confirmNavigation, goBackToInStore],
+    [canGoBackRef, confirmNavigation, goBackToInStore],
   );
 
   useKeyboardShortcut(
@@ -186,12 +192,8 @@ export function NavigationGuardProvider({ children }: React.PropsWithChildren) {
       goBack,
       goForward,
       goBackTo,
-      canGoBack,
-      canGoForward,
     }),
     [
-      canGoBack,
-      canGoForward,
       changeContext,
       confirmNavigation,
       createEntry,

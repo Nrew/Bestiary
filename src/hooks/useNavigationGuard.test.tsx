@@ -202,13 +202,4 @@ describe("useNavigationGuard.goBack / goForward", () => {
     await expect(guard.goBack()).resolves.toBe(false);
   });
 
-  it("exposes canGoBack and canGoForward derived from stack sizes", () => {
-    useAppStore.setState({
-      navBack: [{ context: "items", id: "a" }],
-      navForward: [{ context: "items", id: "c" }],
-    });
-    const guard = probeGuard();
-    expect(guard.canGoBack).toBe(true);
-    expect(guard.canGoForward).toBe(true);
-  });
 });
