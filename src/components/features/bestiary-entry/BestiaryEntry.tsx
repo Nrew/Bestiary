@@ -3,8 +3,10 @@ import React, {
   Suspense,
   useCallback,
   useDeferredValue,
+  useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -140,6 +142,16 @@ export const BestiaryEntry = React.memo(({ entry, entryType }: BestiaryEntryProp
 
   const isDraft = useAppStore((s) => s.draftEntries.has(baseline.id));
 
+  const [editPanePresent, setEditPanePresent] = useState(false);
+  useEffect(() => {
+    if (mode === "edit") setEditPanePresent(true);
+  }, [mode]);
+  const handleEditExitComplete = useCallback(() => {
+    setEditPanePresent(false);
+    finalizeDiscard();
+  }, [finalizeDiscard]);
+  const viewHidden = mode === "edit" || editPanePresent;
+
   // Edit-mode focus is handled by `autoFocus` on the first form input. Leaving
   // edit lets the browser fall back to <body>, which keeps tab order working
   // and avoids racing the closing-confirm-dialog's `aria-hidden` on root.
@@ -179,15 +191,13 @@ export const BestiaryEntry = React.memo(({ entry, entryType }: BestiaryEntryProp
       <div
         className={cn(
           "h-full min-h-0 min-w-0",
-          // Removed from flow during edit so its tall content doesn't drive
-          // a second outer scrollbar alongside the form pane.
-          mode === "edit" && "hidden",
+          viewHidden && "hidden",
         )}
-        inert={mode === "edit" ? true : undefined}
+        inert={viewHidden ? true : undefined}
       >
         <EntryViewer entry={baseline} entryType={entryType} onEdit={openEdit} />
       </div>
-      <AnimatePresence onExitComplete={finalizeDiscard}>
+      <AnimatePresence onExitComplete={handleEditExitComplete}>
         {mode === "edit" && (
           <EditPane
             form={form}
