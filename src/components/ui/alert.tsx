@@ -10,7 +10,7 @@ const alertVariants = cva(
         default: "bg-background text-foreground",
         destructive: "border-wine/50 text-wine bg-wine/5 [&>svg]:text-wine",
         success: "border-jade/50 text-jade bg-jade/5 [&>svg]:text-jade",
-        warning: "border-rune/50 text-rune bg-rune/5 [&>svg]:text-rune",
+        warning: "border-rune/50 text-warning-strong bg-rune/5 [&>svg]:text-warning-strong",
       },
     },
     defaultVariants: {

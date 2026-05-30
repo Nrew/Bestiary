@@ -20,13 +20,13 @@ export function EmptyState() {
               <h2 className="text-5xl font-bold font-display text-leather tracking-wide">
                 estiary
               </h2>
-              <h3 className="text-2xl font-display text-rune tracking-wider mt-2">
+              <h3 className="text-2xl font-display text-rune-strong tracking-wider mt-2">
                 Expand thy archives.
               </h3>
             </div>
           </div>
 
-          <DecorativeFlourish className="w-64 h-12 text-rune mx-auto" />
+          <DecorativeFlourish className="w-64 h-12 text-rune-strong mx-auto" />
 
           <div className="space-y-4 max-w-2xl">
             <p className="text-xl text-muted-foreground leading-relaxed">

@@ -37,7 +37,7 @@ export function FormActions<T extends FieldValues>({
     >
       {isDirty && (
         <span
-          className="text-xs font-serif italic text-warning text-center"
+          className="text-xs font-serif italic text-warning-strong text-center"
           aria-live="polite"
         >
           Unsaved changes

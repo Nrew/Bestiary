@@ -63,7 +63,7 @@ export const ITEM_STYLING = {
     selectedClass: "bg-moss/5 border-moss/20",
   },
   item: {
-    color: "text-brass",
+    color: "text-brass-strong",
     bg: "bg-brass/5",
     gradientClass: "bg-linear-to-b from-brass/20",
     hoverClass: "hover:bg-brass/10 hover:border-brass/30",

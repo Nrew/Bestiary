@@ -93,7 +93,7 @@ export const CONTEXT_REGISTRY: Record<ViewContext, ContextConfig> = {
   items: createConfig('items', 'Item', 'Items', 'package', {
     displayLabel: 'Artifacts',
     iconName: 'gem',
-    colorClass: 'text-brass',
+    colorClass: 'text-brass-strong',
     description: 'Weapons, armor, and treasures',
     variant: 'item',
     accentColor: 'var(--color-moss)',

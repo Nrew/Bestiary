@@ -58,7 +58,7 @@ export function AppHeader({ onTocOpen }: { onTocOpen: () => void }) {
     <header className="codex-header animate-fade-in-up">
       <div className="flex items-center gap-4 md:gap-8">
         <div className="flex items-center gap-3 text-leather">
-          <Crown className="w-8 h-8 flex-none text-rune" />
+          <Crown className="w-8 h-8 flex-none text-rune-strong" />
           <div className="hidden sm:block">
             <h1 className="font-display text-2xl font-bold tracking-wide">
               Bestiary Codex

@@ -95,7 +95,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-fade-in" />
+        <Dialog.Overlay className="fixed inset-0 bg-overlay-soft backdrop-blur-sm z-50 animate-fade-in" />
         <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-(--dialog-max-h) overflow-y-auto glass-panel p-6 rounded-xl shadow-2xl animate-slide-up focus:outline-none motion-reduce:animate-none">
           <Dialog.Title className="sr-only">Bestiary Settings</Dialog.Title>
           <Dialog.Description className="sr-only">
@@ -211,7 +211,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                       </p>
                       {importResult.errors.length > 0 && (
                         <details className="text-xs">
-                          <summary className="cursor-pointer text-warning px-2 py-1">
+                          <summary className="cursor-pointer text-warning-strong px-2 py-1">
                             {importResult.errors.length} error{importResult.errors.length === 1 ? "" : "s"} during import
                           </summary>
                           <ul className="mt-1 max-h-32 overflow-y-auto bg-muted/50 rounded px-2 py-1 space-y-0.5">

@@ -35,7 +35,7 @@ import type { BestiaryEntry } from "@/types";
 const sidebarItemVariants = cva(
   [
     "group relative flex items-center gap-3 p-4 pr-12 overflow-hidden rounded-lg border cursor-pointer",
-    "transition-all duration-200 hover:translate-x-1",
+    "transition duration-200 hover:translate-x-1",
     // Respect prefers-reduced-motion: strip transforms + transitions.
     "motion-reduce:transform-none motion-reduce:transition-none",
   ],
@@ -217,7 +217,7 @@ export const SidebarItem = React.memo<SidebarItemProps>(({
 
       <div
         className={cn(
-          "relative shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+          "relative shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition",
           isSelected ? styling.bg : "bg-secondary/50 group-hover:bg-brass/10"
         )}
       >
@@ -226,7 +226,7 @@ export const SidebarItem = React.memo<SidebarItemProps>(({
             "w-5 h-5 transition-colors",
             isSelected
               ? styling.color
-              : "text-muted-foreground group-hover:text-brass"
+              : "text-muted-foreground group-hover:text-brass-strong"
           )}
           aria-hidden="true"
         />

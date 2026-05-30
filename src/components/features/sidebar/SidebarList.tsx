@@ -13,7 +13,7 @@ const EmptyState = React.memo(() => {
 
   return (
     <div className="p-8 text-center text-muted-foreground animate-fade-in">
-      <Scroll className="w-8 h-8 mx-auto mb-4 text-rune/60" aria-hidden="true" />
+      <Scroll className="w-8 h-8 mx-auto mb-4 text-rune-strong" aria-hidden="true" />
       <h4 className="font-display text-leather mb-1">
         {searchQuery ? "No Results" : "Empty Archives"}
       </h4>
