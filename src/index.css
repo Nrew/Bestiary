@@ -141,6 +141,9 @@
   /* Semantic colors */
   --color-success: oklch(55% 0.14 145);
   --color-warning: oklch(75% 0.14 85);
+  --color-rune-strong: oklch(44% 0.13 85);
+  --color-brass-strong: oklch(44% 0.12 70);
+  --color-warning-strong: oklch(44% 0.13 80);
 
   /* Tailwind semantic mappings */
   --color-background: var(--color-parchment);
@@ -194,6 +197,7 @@
 
   /* Modal / lightbox backdrop */
   --color-overlay: oklch(10% 0.01 30 / 0.85);
+  --color-overlay-soft: oklch(10% 0.01 30 / 0.4);
 
   /* Parchment texture overlay tones (1-2% alpha) */
   --bg-bloom-warm: oklch(45% 0.08 45 / 1.5%);
@@ -276,7 +280,7 @@
   }
 
   @keyframes loot-die-glow {
-    0%  { opacity: 0; transform: scale(0.7); }
+    0%  { opacity: 0; transform: scale(0.92); }
     18% { opacity: var(--loot-glow-opacity, 0.5); transform: scale(1); }
     58% { opacity: 0.24; transform: scale(var(--loot-glow-scale, 1.35)); }
     100% { opacity: 0.12; transform: scale(1.55); }
