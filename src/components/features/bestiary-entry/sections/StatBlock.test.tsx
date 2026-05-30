@@ -226,4 +226,26 @@ describe("StatBlockSection", () => {
     expect(markup).toContain("Languages");
     expect(markup).toContain("Common");
   });
+
+  it("shows the Senses row for a creature whose only skill is a +0 Perception", () => {
+    const entity = createEntity({
+      skills: { perception: 0 },
+      statBlock: { ...createEntity().statBlock, custom: {} },
+    });
+
+    const markup = renderToStaticMarkup(<StatBlockSection data={entity} />);
+
+    expect(markup).toContain("Senses");
+    expect(markup).toContain("passive Perception 10");
+  });
+
+  it("groups large speeds with a thousands separator", () => {
+    const entity = createEntity({
+      statBlock: { ...createEntity().statBlock, speed: 1500, custom: {} },
+    });
+
+    const markup = renderToStaticMarkup(<StatBlockSection data={entity} />);
+
+    expect(markup).toContain("1,500 ft.");
+  });
 });

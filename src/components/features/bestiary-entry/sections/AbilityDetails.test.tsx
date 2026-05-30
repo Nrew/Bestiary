@@ -10,6 +10,10 @@ vi.mock("@/components/shared/wiki-link/WikiLinkProvider", () => ({
   useWikiLink: () => ({ showTooltip: vi.fn(), hideTooltip: vi.fn() }),
 }));
 
+vi.mock("@/hooks/useNavigationGuard", () => ({
+  useNavigationGuard: () => ({ navigateToEntry: vi.fn() }),
+}));
+
 vi.mock("@/hooks/useReferencedEntryName", () => ({
   useReferencedEntryName: () => ({ status: "found", name: "Test" }),
 }));

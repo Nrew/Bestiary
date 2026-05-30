@@ -124,6 +124,7 @@ const pushNavHistory = (
   next: NavHistoryEntry,
 ) => {
   if (isSameNavEntry(previous, next)) {
+    state.navForward = [];
     state.navDirection = "direct";
     return;
   }

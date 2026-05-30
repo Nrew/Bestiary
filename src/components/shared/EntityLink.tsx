@@ -1,5 +1,6 @@
 import React from "react";
-import { useEntitiesMap, useAppStore } from "@/store/appStore";
+import { useEntitiesMap } from "@/store/appStore";
+import { useNavigationGuard } from "@/hooks/useNavigationGuard";
 import { useWikiLink } from "@/components/shared/wiki-link/WikiLinkProvider";
 import { entityApi } from "@/lib/api";
 import { isNotFoundError } from "@/lib/errors";
@@ -21,7 +22,7 @@ export function EntityLink({ value }: { value: string | number }) {
   const strValue = String(value);
   const isUuid = UUID_REGEX.test(strValue);
   const entitiesMap = useEntitiesMap();
-  const navigateToEntry = useAppStore((s) => s.navigateToEntry);
+  const { navigateToEntry } = useNavigationGuard();
   const { showTooltip, hideTooltip } = useWikiLink();
   const [state, setState] = React.useState<ResolveState>("idle");
   const [entityName, setEntityName] = React.useState<string | null>(null);

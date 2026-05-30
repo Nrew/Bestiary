@@ -406,6 +406,18 @@ describe("appStore navHistory", () => {
     expect(s.selectedId).toBe("a");
   });
 
+  it("clears forward history when re-navigating to the current entry to edit it", async () => {
+    await useAppStore.getState().navigateToEntry("items", "a");
+    await useAppStore.getState().navigateToEntry("items", "b");
+    await useAppStore.getState().navigateToEntry("items", "c");
+    await useAppStore.getState().goBack();
+    expect(useAppStore.getState().selectedId).toBe("b");
+    expect(useAppStore.getState().navForward.map((e) => e.id)).toEqual(["c"]);
+
+    await useAppStore.getState().navigateToEntry("items", "b", true);
+    expect(useAppStore.getState().navForward).toEqual([]);
+  });
+
   it("truncates forward history when navigating after going back", async () => {
     await useAppStore.getState().navigateToEntry("items", "a");
     await useAppStore.getState().navigateToEntry("items", "b");

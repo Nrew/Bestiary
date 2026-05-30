@@ -97,6 +97,42 @@ describe("schema JSON object coercion", () => {
     expect(parsed.statBlock.flySpeed).toBeNull();
   });
 
+  it("treats whitespace-only numeric strings as null, not 0", () => {
+    const parsed = entitySchema.parse({
+      ...base,
+      slug: "test-entity",
+      size: null,
+      threatLevel: null,
+      alignment: null,
+      challengeRating: null,
+      experiencePoints: null,
+      proficiencyBonus: null,
+      legendaryActionsPerRound: null,
+      statBlock: {
+        hp: "  ",
+        hitDice: null,
+        armor: " ",
+        armorNote: null,
+        speed: null,
+        burrowSpeed: null,
+        climbSpeed: null,
+        flySpeed: null,
+        swimSpeed: null,
+        hoverSpeed: null,
+        initiativeBonus: null,
+        strength: null,
+        dexterity: null,
+        constitution: null,
+        intelligence: null,
+        wisdom: null,
+        charisma: null,
+        custom: {},
+      },
+    });
+    expect(parsed.statBlock.hp).toBeNull();
+    expect(parsed.statBlock.armor).toBeNull();
+  });
+
   it("rejects prototype-polluting custom status keys", () => {
     const result = statusSchema.safeParse({
       ...base,

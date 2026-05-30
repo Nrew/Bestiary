@@ -43,7 +43,7 @@ function isPresent(value: unknown): boolean {
 }
 
 function formatFeet(value: number): string {
-  return `${Number.isInteger(value) ? value : value.toLocaleString()} ft.`;
+  return `${value.toLocaleString()} ft.`;
 }
 
 function formatCustomLabel(key: string): string {
@@ -144,7 +144,7 @@ export function StatBlockSection({ data }: { data: Entity }) {
     filteredSenses.length > 0 ||
     hasAbilityScores ||
     data.challengeRating != null ||
-    Boolean(skills?.perception);
+    isPresent(skills?.perception);
   const hasMetaProfile =
     hasSensesProfile ||
     (data.languages && data.languages.length > 0) ||
@@ -188,8 +188,8 @@ export function StatBlockSection({ data }: { data: Entity }) {
             {(hasAbilityScores || initiativeBonus != null) && (
               <div className="flex flex-col items-center gap-0.5 text-center min-w-0">
                 <div className="flex items-center gap-1">
-                  <Icon category="dice" name="d20" size="sm" className="text-rune/70 shrink-0" />
-                  <span className="text-xs font-medium uppercase tracking-wide text-rune/70">Initiative</span>
+                  <Icon category="dice" name="d20" size="sm" className="text-rune-strong shrink-0" />
+                  <span className="text-xs font-medium uppercase tracking-wide text-rune-strong">Initiative</span>
                 </div>
                 <span className="text-base font-bold tabular-nums text-ink leading-none">
                   {formatBonus(displayInitiative)}
@@ -203,8 +203,8 @@ export function StatBlockSection({ data }: { data: Entity }) {
             <>
               <div className="h-px bg-rune/20 mx-2" />
               <div className="flex items-center justify-center gap-2 px-2">
-                <Icon category="movement" name="walking" size="sm" className="text-brass/70 shrink-0" />
-                <span className="text-sm font-medium uppercase tracking-wide text-brass/70">Speed</span>
+                <Icon category="movement" name="walking" size="sm" className="text-brass-strong shrink-0" />
+                <span className="text-sm font-medium uppercase tracking-wide text-brass-strong">Speed</span>
                 <span className="text-sm text-ink">{speedLine}</span>
               </div>
             </>

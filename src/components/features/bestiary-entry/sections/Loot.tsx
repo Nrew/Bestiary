@@ -4,6 +4,7 @@ import { Icon } from "@/components/shared/Icon";
 import { useNavigationGuard } from "@/hooks/useNavigationGuard";
 import { useWikiLink } from "@/components/shared/wiki-link/WikiLinkProvider";
 import { RARITY_LABELS } from "@/lib/dnd/constants";
+import { lootRollDropped } from "@/lib/dnd/loot";
 import { cn } from "@/lib/utils";
 import type { Entity, LootDrop, Rarity } from "@/types";
 
@@ -30,7 +31,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 const rollLootTable = (inventory: LootDrop[]): RollResult[] =>
   inventory.map((loot) => {
     const rolled = Math.floor(Math.random() * 100) + 1;
-    return { dropped: rolled > 100 - loot.dropChance * 100, roll: rolled };
+    return { dropped: lootRollDropped(rolled, loot.dropChance), roll: rolled };
   });
 
 const buildRollAnimation = (
@@ -151,7 +152,7 @@ const LootRow = React.memo<{
 
   return (
     <div className={cn(
-      "group flex items-center gap-3 py-3 border-b border-rune/15 last:border-0 -mx-5 px-5 rounded-sm transition-all duration-300",
+      "group flex items-center gap-3 py-3 border-b border-rune/15 last:border-0 -mx-5 px-5 rounded-sm transition-colors duration-300",
       !hasResult && "hover:bg-rune/4",
       hasResult && dropped && "bg-jade/15",
       hasResult && !dropped && "opacity-40",
@@ -195,7 +196,7 @@ const LootRow = React.memo<{
             )}
             <div className="w-20 h-1.5 rounded-full bg-ink/8 overflow-hidden" title={`${chancePercent.toFixed(0)}% drop chance`}>
               <div
-                className="h-full rounded-full bg-leather/50 transition-all"
+                className="h-full rounded-full bg-leather/50 transition-[width] duration-300"
                 style={{ width: `${chancePercent}%` }}
               />
             </div>

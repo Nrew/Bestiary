@@ -19,7 +19,18 @@ interface ParsedShortcut {
   key: string;
 }
 
-function parseShortcut(shortcut: string): ParsedShortcut {
+interface NavigatorUAData {
+  platform: string;
+}
+
+function isMacPlatform(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const uaData = (navigator as Navigator & { userAgentData?: NavigatorUAData }).userAgentData;
+  const platform = uaData?.platform ?? navigator.platform ?? '';
+  return platform.toUpperCase().includes('MAC');
+}
+
+export function parseShortcut(shortcut: string): ParsedShortcut {
   const parts = shortcut.toLowerCase().split('+');
   const key = parts.pop() || '';
 
@@ -32,16 +43,29 @@ function parseShortcut(shortcut: string): ParsedShortcut {
   };
 }
 
-function matchesShortcut(e: KeyboardEvent, parsed: ParsedShortcut): boolean {
+type ShortcutEventLike = Pick<KeyboardEvent, 'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey' | 'key'>;
+
+export function eventMatchesShortcut(
+  e: ShortcutEventLike,
+  parsed: ParsedShortcut,
+  isMac: boolean,
+): boolean {
   const eventKey = e.key.toLowerCase();
+  const wantsPrimary = parsed.ctrl || parsed.meta;
+  const primaryActive = isMac ? e.metaKey : e.ctrlKey;
+  const otherModifier = isMac ? e.ctrlKey : e.metaKey;
 
   return (
-    e.ctrlKey === parsed.ctrl &&
+    primaryActive === wantsPrimary &&
+    !otherModifier &&
     e.altKey === parsed.alt &&
     e.shiftKey === parsed.shift &&
-    e.metaKey === parsed.meta &&
     eventKey === parsed.key
   );
+}
+
+function matchesShortcut(e: KeyboardEvent, parsed: ParsedShortcut): boolean {
+  return eventMatchesShortcut(e, parsed, isMacPlatform());
 }
 
 class KeyboardShortcutsManager {
@@ -209,16 +233,11 @@ export const APP_SHORTCUTS = {
   NAV_FORWARD: 'alt+arrowright',
 } as const;
 
-interface NavigatorUAData {
-  platform: string;
-}
-
 export function formatShortcutKey(key: string): string {
-  const uaData = (navigator as Navigator & { userAgentData?: NavigatorUAData }).userAgentData;
-  const isMac = (uaData?.platform ?? navigator.platform).toUpperCase().indexOf('MAC') >= 0;
+  const isMac = isMacPlatform();
 
   return key
-    .replace(/ctrl\+/gi, isMac ? '⌃' : 'Ctrl+')
+    .replace(/ctrl\+/gi, isMac ? '⌘' : 'Ctrl+')
     .replace(/cmd\+/gi, isMac ? '⌘' : 'Ctrl+')
     .replace(/meta\+/gi, isMac ? '⌘' : 'Win+')
     .replace(/alt\+/gi, isMac ? '⌥' : 'Alt+')

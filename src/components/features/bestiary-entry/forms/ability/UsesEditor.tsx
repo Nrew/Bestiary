@@ -20,6 +20,22 @@ const KIND_OPTIONS: { value: UsesKind; label: string }[] = [
   { value: "recharge", label: "Recharge (dice)" },
 ];
 
+const clampDie = (n: number, fallback: number) =>
+  Number.isFinite(n) ? Math.min(6, Math.max(1, Math.round(n))) : fallback;
+
+export function rechargeWithField(
+  current: { min: number; max: number },
+  field: "min" | "max",
+  raw: number,
+): { min: number; max: number } {
+  if (field === "min") {
+    const min = clampDie(raw, 1);
+    return { min, max: Math.max(min, current.max) };
+  }
+  const max = clampDie(raw, 6);
+  return { min: Math.min(max, current.min), max };
+}
+
 const DEFAULTS_BY_KIND: Record<Exclude<UsesKind, "none">, AbilityUses> = {
   atWill: { kind: "atWill" },
   once: { kind: "once" },
@@ -71,8 +87,7 @@ export function UsesEditor() {
               type="number" min={1} max={6}
               value={uses.min}
               onChange={(e) => {
-                const v = Number(e.target.value);
-                patch({ min: Number.isFinite(v) ? v : 1 });
+                patch(rechargeWithField(uses, "min", Number(e.target.value)));
               }}
             />
           </div>
@@ -83,8 +98,7 @@ export function UsesEditor() {
               type="number" min={1} max={6}
               value={uses.max}
               onChange={(e) => {
-                const v = Number(e.target.value);
-                patch({ max: Number.isFinite(v) ? v : 6 });
+                patch(rechargeWithField(uses, "max", Number(e.target.value)));
               }}
             />
           </div>

@@ -37,6 +37,17 @@ describe("useLoadedReferences", () => {
     expect(probe.missingIds).toEqual([]);
   });
 
+  it("preserves the caller's id order rather than sorting", () => {
+    const map = new Map<string, { id: string; name: string }>([
+      ["a", { id: "a", name: "Alpha" }],
+      ["b", { id: "b", name: "Beta" }],
+      ["c", { id: "c", name: "Gamma" }],
+    ]);
+
+    const probe = readProbe(["c", "a", "b", "a"], map);
+    expect(probe.entries.map((e) => e.id)).toEqual(["c", "a", "b"]);
+  });
+
   it("reports unique missingIds for duplicate unloaded ids", () => {
     const probe = readProbe(["x", "x", "y"], new Map<string, { id: string }>());
     expect(probe.entries).toEqual([]);

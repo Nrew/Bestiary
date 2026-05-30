@@ -17,7 +17,7 @@ export function useLoadedReferences<T>(
   const ensureLoadedRef = useRef(ensureLoaded);
   ensureLoadedRef.current = ensureLoaded;
 
-  const idsFingerprint = useMemo(() => [...new Set(ids)].sort().join("\0"), [ids]);
+  const idsFingerprint = useMemo(() => [...new Set(ids)].join("\0"), [ids]);
 
   // Stable, deduplicated id list. Loot rows allow the same itemId in multiple
   // rows; we still want one load + one entry per unique id.

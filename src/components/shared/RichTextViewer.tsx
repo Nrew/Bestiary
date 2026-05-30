@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/components/ui/toast";
-import { useAppStore, useMemoizedNameLookup } from "@/store/appStore";
+import { useMemoizedNameLookup } from "@/store/appStore";
+import { useNavigationGuard } from "@/hooks/useNavigationGuard";
 import { useWikiLink } from "@/components/shared/wiki-link/WikiLinkProvider";
 import { cn } from "@/lib/utils";
 import type { ViewContext } from "@/types";
@@ -22,7 +23,7 @@ interface RichTextViewerProps {
  */
 export function RichTextViewer({ html, className }: RichTextViewerProps) {
   const nameLookup = useMemoizedNameLookup();
-  const navigateToEntry = useAppStore((s) => s.navigateToEntry);
+  const { navigateToEntry } = useNavigationGuard();
   const { showTooltip, hideTooltip } = useWikiLink();
   const toast = useToast();
 

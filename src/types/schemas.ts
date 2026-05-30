@@ -40,8 +40,10 @@ const STACKING_BEHAVIORS: [StackingBehavior, ...StackingBehavior[]] = ["no", "re
 const nullableNumber = z
   .union([z.string(), z.number(), z.null(), z.undefined()])
   .transform((val) => {
-    if (val === "" || val == null) return null;
-    const num = Number(val);
+    if (val == null) return null;
+    const trimmed = typeof val === "string" ? val.trim() : val;
+    if (trimmed === "") return null;
+    const num = Number(trimmed);
     return isNaN(num) ? null : num;
   });
 
@@ -112,8 +114,10 @@ const numberRecord = z
     if (!val || typeof val !== "object") return {};
     const result: Record<string, number> = {};
     for (const [key, value] of Object.entries(val)) {
-      if (value === "" || value == null) continue;
-      const num = Number(value);
+      if (value == null) continue;
+      const trimmed = typeof value === "string" ? value.trim() : value;
+      if (trimmed === "") continue;
+      const num = Number(trimmed);
       if (!isNaN(num)) result[key] = num;
     }
     return result;

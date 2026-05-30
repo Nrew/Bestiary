@@ -489,6 +489,11 @@ describe("getMonsterXP", () => {
     expect(getMonsterXP(null)).toBe(0);
     expect(getMonsterXP(99)).toBe(0);
   });
+
+  it("snaps off-table CRs within range to the nearest defined CR", () => {
+    expect(getMonsterXP(0.33)).toBe(getMonsterXP(0.25));
+    expect(getMonsterXP(7.5)).toBe(getMonsterXP(8));
+  });
 });
 
 describe("calculateXPThresholds", () => {

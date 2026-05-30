@@ -10,8 +10,14 @@ import type { EntityAbilities } from "@/hooks/useEntityAbilities";
 const abilityHtmlCache = new WeakMap<Ability, string>();
 
 export function buildAbilityHtml(name: string, description: string): string {
-  const content = description.replace(/^<p>/, "").replace(/<\/p>\s*$/, "");
-  return `<p><strong><em>${escapeHtml(name)}.</em></strong> ${content}</p>`;
+  const label = `<strong><em>${escapeHtml(name)}.</em></strong>`;
+  if (description.startsWith("<p>")) {
+    return description.replace(/^<p>/, `<p>${label} `);
+  }
+  if (description === "" || description.startsWith("<")) {
+    return `<p>${label}</p>${description}`;
+  }
+  return `<p>${label} ${description}</p>`;
 }
 
 function getAbilityHtml(ability: Ability): string {

@@ -472,11 +472,14 @@ export function estimateMonsterCR(defensiveCR: number, offensiveCR: number): num
 }
 
 
+const MAX_CR = (CR_OPTIONS as ReadonlyArray<number>)[CR_OPTIONS.length - 1];
+
 /** XP reward for a monster at the given CR. Uses the single authoritative CR_TO_XP table. */
 export function getMonsterXP(cr: number | null): number {
-  if (cr === null) return 0;
-  if (cr < 0)      return CR_TO_XP[0] ?? 0;
-  return CR_TO_XP[cr] ?? 0;
+  if (cr === null)  return 0;
+  if (cr < 0)       return CR_TO_XP[0] ?? 0;
+  if (cr > MAX_CR)  return 0;
+  return CR_TO_XP[snapToCR(cr)] ?? 0;
 }
 
 export type EncounterDifficulty = "trivial" | "easy" | "medium" | "hard" | "deadly";

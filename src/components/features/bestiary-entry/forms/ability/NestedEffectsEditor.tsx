@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus } from "lucide-react";
 import { useGameEnums } from "@/store/appStore";
-import { DAMAGE_TYPE_LABELS } from "@/lib/dnd/constants";
-import type { Ability, AbilityEffect, DamageType } from "@/types";
+import { DAMAGE_TYPE_LABELS, ABILITY_SCORE_LABELS } from "@/lib/dnd/constants";
+import { SingleEntryPicker } from "./SingleEntryPicker";
+import type { Ability, AbilityEffect, DamageType, Attribute } from "@/types";
 
 interface NestedEffectsEditorProps {
   parentIndex: number;
@@ -137,6 +138,73 @@ export function NestedEffectsEditor({ parentIndex }: NestedEffectsEditorProps) {
                 value={sub.formula}
                 onChange={(e) => updateNestedEffect(subIndex, { ...sub, formula: e.target.value })}
                 placeholder="e.g., 2d8 + 3" />
+            </div>
+          )}
+          {sub.type === "applyStatus" && (
+            <div className="space-y-2">
+              <SingleEntryPicker
+                label="Status Effect"
+                value={sub.statusId}
+                onChange={(id) => updateNestedEffect(subIndex, { ...sub, statusId: id })}
+                context="statuses"
+              />
+              <div className="space-y-1">
+                <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-status-duration`} className="text-xs">Duration</Label>
+                <Input
+                  id={`nested-effect-${parentIndex}-${subIndex}-status-duration`}
+                  name={`effects.${parentIndex}.effects.${subIndex}.duration`}
+                  className="h-8 text-xs"
+                  value={sub.duration}
+                  onChange={(e) => updateNestedEffect(subIndex, { ...sub, duration: e.target.value })}
+                  placeholder="e.g., 1 minute, 5 rounds" />
+              </div>
+            </div>
+          )}
+          {sub.type === "modifyStat" && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-modstat-attr`} className="text-xs">Attribute</Label>
+                  <Select
+                    name={`effects.${parentIndex}.effects.${subIndex}.attribute`}
+                    value={sub.attribute}
+                    onValueChange={(v: Attribute) => updateNestedEffect(subIndex, { ...sub, attribute: v })}>
+                    <SelectTrigger id={`nested-effect-${parentIndex}-${subIndex}-modstat-attr`} className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {gameEnums?.attributes.map((attr) => (
+                        <SelectItem key={attr} value={attr}>{ABILITY_SCORE_LABELS[attr]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-modstat-value`} className="text-xs">Value</Label>
+                  <Input
+                    id={`nested-effect-${parentIndex}-${subIndex}-modstat-value`}
+                    name={`effects.${parentIndex}.effects.${subIndex}.value.value`}
+                    className="h-8 text-xs"
+                    type="number"
+                    value={sub.value.value}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      updateNestedEffect(subIndex, { ...sub, value: { ...sub.value, value: Number.isFinite(v) ? v : 0 } });
+                    }} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor={`nested-effect-${parentIndex}-${subIndex}-modstat-duration`} className="text-xs">Duration (rounds)</Label>
+                <Input
+                  id={`nested-effect-${parentIndex}-${subIndex}-modstat-duration`}
+                  name={`effects.${parentIndex}.effects.${subIndex}.durationRounds`}
+                  className="h-8 text-xs"
+                  type="number"
+                  value={sub.durationRounds}
+                  min={1}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10);
+                    updateNestedEffect(subIndex, { ...sub, durationRounds: Number.isFinite(v) ? Math.max(1, v) : 1 });
+                  }} />
+              </div>
             </div>
           )}
           {sub.type === "custom" && (

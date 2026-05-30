@@ -52,9 +52,9 @@ const DIFFICULTY_STYLES: Record<EncounterDifficulty, DifficultyStyle> = {
   },
   medium: {
     label: "Medium",
-    text: "text-warning",
+    text: "text-warning-strong",
     bar: "bg-warning/25",
-    badge: "bg-warning/10 text-warning border-warning/30",
+    badge: "bg-warning/10 text-warning-strong border-warning/30",
   },
   hard: {
     label: "Hard",
@@ -161,7 +161,7 @@ function MonsterSearch({ onAdd }: MonsterSearchProps) {
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [results.length]);
+  }, [results]);
 
   const handleSelect = useCallback(
     (entity: Entity) => {
@@ -401,7 +401,7 @@ export function EncounterBuilder({ open, onOpenChange }: EncounterBuilderProps) 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-fade-in" />
+        <Dialog.Overlay className="fixed inset-0 bg-overlay-soft backdrop-blur-sm z-50 animate-fade-in" />
 
         <Dialog.Content
           className={cn(

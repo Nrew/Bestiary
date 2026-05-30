@@ -35,6 +35,18 @@ describe("buildAbilityHtml", () => {
     expect(result).not.toContain("<Ultra>");
   });
 
+  it("keeps the name label out of a leading non-paragraph block", () => {
+    const result = buildAbilityHtml("Forms", "<ul><li>Bear</li></ul>");
+    expect(result).toBe("<p><strong><em>Forms.</em></strong></p><ul><li>Bear</li></ul>");
+  });
+
+  it("does not emit a stray closing tag when a paragraph is followed by a list", () => {
+    const result = buildAbilityHtml("Tactics", "<p>Choose one.</p><ul><li>Charge</li></ul>");
+    expect(result).toBe(
+      "<p><strong><em>Tactics.</em></strong> Choose one.</p><ul><li>Charge</li></ul>"
+    );
+  });
+
   it("does not escape quotes in the name (text-only escape)", () => {
     // `escapeHtml` is for text content, not attribute values. Quotes in the
     // visible name should pass through; only attribute-bound rendering would

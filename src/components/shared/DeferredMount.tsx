@@ -41,7 +41,7 @@ export interface DeferredMountProps {
   /** Upper bound (ms) for requestIdleCallback when used. */
   idleTimeout?: number;
   className?: string;
-  /** React 19 ref-as-prop; forwarded to the wrapper div before mount and to the child after. */
+  /** React 19 ref-as-prop; forwarded to the child element once mounted. */
   ref?: Ref<HTMLDivElement>;
 }
 
@@ -69,16 +69,6 @@ export function DeferredMount({
       `DeferredMount requires exactly one child element (got ${Children.count(children)}).`,
     );
   }
-
-  const setWrapperRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      rootRef.current = node;
-      if (!mounted && node !== null) {
-        assignRef(forwardedRef, node);
-      }
-    },
-    [mounted, forwardedRef]
-  );
 
   useEffect(() => {
     if (mounted) return;
@@ -130,7 +120,7 @@ export function DeferredMount({
   })();
 
   return (
-    <div ref={setWrapperRef} className={className} aria-busy={!mounted ? "true" : "false"}>
+    <div ref={rootRef} className={className} aria-busy={!mounted ? "true" : "false"}>
       {renderedChild}
     </div>
   );

@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { RichTextViewer } from "@/components/shared/RichTextViewer";
-import { useAppStore } from "@/store/appStore";
+import { useNavigationGuard } from "@/hooks/useNavigationGuard";
 import { useWikiLink } from "@/components/shared/wiki-link/WikiLinkProvider";
 import {
   ABILITY_TIMING_LABELS,
@@ -289,7 +289,7 @@ export function AbilityDetailsSection({ data }: { data: Ability }) {
 }
 
 export function AbilityEffectsSection({ data }: { data: Ability }) {
-  const navigateToEntry = useAppStore((s) => s.navigateToEntry);
+  const { navigateToEntry } = useNavigationGuard();
 
   if (!data.effects || data.effects.length === 0) {
     return null;

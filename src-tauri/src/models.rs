@@ -239,12 +239,18 @@ impl StatBlock {
             "initiative_bonus",
         ];
 
+        let armor_preset = self.armor_note.is_some();
+
         for key in legacy_keys {
             if let Some(value) = self.custom.get(key).cloned() {
                 let consumed = match key {
                     "hitDice" | "hit_dice" => assign_string(&mut self.hit_dice, &value),
                     "armorType" | "armor_type" | "armorNote" | "armor_note" => {
-                        assign_string(&mut self.armor_note, &value)
+                        if armor_preset {
+                            assign_string(&mut self.armor_note, &value)
+                        } else {
+                            merge_string(&mut self.armor_note, &value)
+                        }
                     }
                     "burrowSpeed" | "burrow_speed" => assign_f32(&mut self.burrow_speed, &value),
                     "climbSpeed" | "climb_speed" => assign_f32(&mut self.climb_speed, &value),
@@ -278,6 +284,28 @@ fn assign_string(target: &mut Option<String>, value: &serde_json::Value) -> bool
         return true;
     }
     *target = Some(text);
+    true
+}
+
+fn merge_string(target: &mut Option<String>, value: &serde_json::Value) -> bool {
+    let text = match value {
+        serde_json::Value::String(s) => s.trim().to_string(),
+        serde_json::Value::Number(n) => n.to_string(),
+        serde_json::Value::Null => return true,
+        _ => return false,
+    };
+    if text.is_empty() {
+        return true;
+    }
+    match target {
+        Some(existing) => {
+            if !existing.split(", ").any(|part| part == text) {
+                existing.push_str(", ");
+                existing.push_str(&text);
+            }
+        }
+        None => *target = Some(text),
+    }
     true
 }
 
@@ -1027,6 +1055,23 @@ mod stat_block_normalize_tests {
         assert_eq!(sb.armor_note.as_deref(), Some("natural armor"));
         assert!(!sb.custom.contains_key("armorType"));
         assert_eq!(sb.custom.get("SpellPower"), Some(&json!(15)));
+    }
+
+    #[test]
+    fn merges_both_legacy_armor_keys_into_armor_note() {
+        let mut sb = empty_stat_block();
+        sb.custom
+            .insert("armorType".to_string(), json!("natural armor"));
+        sb.custom
+            .insert("armorNote".to_string(), json!("with shield"));
+
+        sb.normalize_legacy_custom_stats();
+
+        let note = sb.armor_note.as_deref().unwrap_or("");
+        assert!(note.contains("natural armor"), "lost armorType: {note}");
+        assert!(note.contains("with shield"), "lost armorNote: {note}");
+        assert!(!sb.custom.contains_key("armorType"));
+        assert!(!sb.custom.contains_key("armorNote"));
     }
 
     #[test]

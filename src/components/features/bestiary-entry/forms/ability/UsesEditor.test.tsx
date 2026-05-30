@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it, expect, vi } from "vitest";
 import { useForm, FormProvider } from "react-hook-form";
-import { UsesEditor } from "./UsesEditor";
+import { UsesEditor, rechargeWithField } from "./UsesEditor";
 import type { AbilityUses } from "@/types";
 
 vi.mock("@/store/appStore", () => ({
@@ -46,6 +46,20 @@ describe("UsesEditor", () => {
     expect(html).toContain('id="uses-perrest-count"');
     expect(html).toContain('value="2"');
     expect(html).toContain('id="uses-perrest-rest"');
+  });
+
+  it("clamps recharge min into 1-6 and pushes max up to keep min <= max", () => {
+    expect(rechargeWithField({ min: 5, max: 6 }, "min", 9)).toEqual({ min: 6, max: 6 });
+    expect(rechargeWithField({ min: 5, max: 6 }, "min", 0)).toEqual({ min: 1, max: 6 });
+  });
+
+  it("clamps recharge max into 1-6 and pulls min down to keep min <= max", () => {
+    expect(rechargeWithField({ min: 5, max: 6 }, "max", 2)).toEqual({ min: 2, max: 2 });
+    expect(rechargeWithField({ min: 1, max: 6 }, "max", 9)).toEqual({ min: 1, max: 6 });
+  });
+
+  it("rounds fractional recharge input to an integer", () => {
+    expect(rechargeWithField({ min: 1, max: 6 }, "min", 3.7)).toEqual({ min: 4, max: 6 });
   });
 
   it("renders nothing extra when uses is atWill or once", () => {
