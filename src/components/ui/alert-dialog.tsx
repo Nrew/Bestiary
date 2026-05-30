@@ -10,7 +10,7 @@ const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 const AlertDialogPortal = AlertDialogPrimitive.Portal;
 
 const alertDialogOverlayVariants = cva(
-  "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm radix-overlay-anim motion-reduce:animate-none motion-reduce:transition-none",
+  "fixed inset-0 z-50 bg-overlay backdrop-blur-sm radix-overlay-anim motion-reduce:animate-none motion-reduce:transition-none",
 );
 
 function AlertDialogOverlay({

@@ -20,7 +20,7 @@ export function NotesSection({ data }: { data: BestiaryEntry }) {
           backgroundColor: "hsl(45, 40%, 90%)", // Slightly darker parchment
           borderColor: "hsl(35, 30%, 75%)",
           boxShadow:
-            "inset 2px 2px 8px hsl(30, 20%, 10%, 0.1), 2px 2px 5px hsl(0,0%,0%,0.2)",
+            "inset 2px 2px 8px hsl(30, 20%, 10%, 0.1), 2px 2px 5px hsl(30, 20%, 10%, 0.2)",
         }}
       >
         <div className="max-w-none font-serif viewer-prose">
