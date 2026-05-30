@@ -5,13 +5,13 @@ import { cn } from "@/lib/utils";
 
 const buttonBase =
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md " +
-  "text-sm font-medium transition-colors " +
+  "text-sm font-medium transition active:scale-[0.97] " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 " +
   "disabled:pointer-events-none disabled:opacity-50";
 
 const leatherFilledSurface =
   "relative border-leather bg-linear-135 from-leather to-leather/85 text-parchment " +
-  "transition-all duration-[250ms] ease-medieval " +
+  "transition duration-[250ms] ease-medieval " +
   "hover:from-leather-lifted hover:to-leather-lifted/85 " +
   "contrast-more:border-[3px]";
 
@@ -39,7 +39,7 @@ const buttonVariants = cva(buttonBase, {
       medieval:
         "relative border-2 border-leather/60 bg-linear-135 from-rune to-rune/90 text-foreground " +
         "font-serif font-semibold tracking-wide rounded-sm shadow-button-medieval " +
-        "transition-all duration-300 ease-medieval " +
+        "transition duration-300 ease-medieval " +
         "hover:text-parchment hover:from-leather hover:to-leather/90 hover:shadow-button-medieval-hover " +
         "motion-safe:hover:-translate-y-0.5 motion-safe:lg:hover:-translate-y-1 motion-safe:lg:hover:scale-105 " +
         "active:translate-y-0 active:shadow-button-medieval " +

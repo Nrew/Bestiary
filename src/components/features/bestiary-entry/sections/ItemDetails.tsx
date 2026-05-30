@@ -69,7 +69,7 @@ export function ItemDetailsSection({ data }: { data: Item }) {
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div
-                className="bg-primary h-2 rounded-full transition-all"
+                className="bg-primary h-2 rounded-full transition-[width] duration-300"
                 style={{
                   width: `${data.durability.max > 0 ? (data.durability.current / data.durability.max) * 100 : 0}%`,
                 }}

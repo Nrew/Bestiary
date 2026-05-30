@@ -55,7 +55,7 @@ export function DiceTypePicker({
       onOpenChange={(next) => !isSubmitting && onOpenChange(next)}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-fade-in" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay-soft backdrop-blur-sm animate-fade-in" />
         <Dialog.Content
           className="fixed left-1/2 top-1/2 z-50 w-[min(calc(100vw-2rem),36rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl glass-panel p-8 shadow-2xl animate-slide-up focus:outline-none motion-reduce:animate-none"
           onOpenAutoFocus={(e) => {
@@ -151,7 +151,7 @@ export function DiceTypePicker({
                     onClick={() => snapTo(ctx)}
                     aria-pressed={isActive}
                     className={cn(
-                      "flex min-h-11 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all",
+                      "flex min-h-11 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition",
                       isActive
                         ? "border-rune/50 bg-card/80 text-foreground shadow-sm"
                         : "border-leather/20 bg-background/40 text-muted-foreground hover:border-leather/40 hover:text-foreground",

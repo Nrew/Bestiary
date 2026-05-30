@@ -49,11 +49,11 @@ export const staggerContainerVariants: Variants = {
 };
 
 export const contentVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
+  hidden: { opacity: 0, y: 8 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: DURATION.slow, ease: EASE_OUT },
+    transition: { duration: DURATION.base, ease: EASE_OUT },
   },
 };
 

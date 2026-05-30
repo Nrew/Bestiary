@@ -30,8 +30,8 @@ export const SidebarNav = React.memo(() => {
           void handleContextChange(context);
         }}
         className={cn(
-          "w-full h-20 flex-col gap-2 border rounded-lg transition-all duration-200 font-serif",
-          "hover:scale-105 focus-visible:scale-105 focus-visible:ring-2 focus-visible:ring-rune",
+          "w-full h-20 flex-col gap-2 border rounded-lg transition duration-200 font-serif",
+          "hover:scale-105 focus-visible:scale-105 focus-visible:ring-2 focus-visible:ring-rune motion-reduce:transform-none",
           isActive
             ? "border-rune/50 bg-rune/10 text-foreground font-semibold shadow-md"
             : "border-stone/30 hover:border-rune/40 hover:bg-rune/5 glass-panel"

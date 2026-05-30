@@ -70,7 +70,7 @@ export function DieFace({ ctx, faceIndex, qx, qy, qz, qw }: DieFaceProps) {
   const specularAlpha = useTransform(facing, (z) => SPECULAR_PEAK * Math.pow(z, SPECULAR_EXPONENT));
   const medallionShadow = useTransform(facing, (z) => {
     const g = z * z;
-    return `0 0 ${10 + g * 16}px ${g * 4}px ${ink}, inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,0,0,0.18)`;
+    return `0 0 ${10 + g * 16}px ${g * 4}px ${ink}, inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -1px 0 oklch(18% 0.01 45 / 0.18)`;
   });
 
   return (
@@ -86,7 +86,7 @@ export function DieFace({ ctx, faceIndex, qx, qy, qz, qw }: DieFaceProps) {
         transform: FACE_TRANSFORMS[faceIndex],
         backfaceVisibility: "hidden",
         background: FACE_GRADIENT[ctx],
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.12)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 oklch(18% 0.01 45 / 0.12)",
         filter,
       }}
     >
