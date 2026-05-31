@@ -9,6 +9,7 @@ import React, {
   useState,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { EASE_OUT } from "@/lib/animations";
 import { cn } from "@/lib/utils";
 import { useForm, FormProvider, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +33,7 @@ import {
   type Ability,
 } from "@/types";
 import { getContextConfig } from "@/lib/context-config";
-import { getErrorMessage } from "@/lib/errors";
+import { getLogger } from "@/lib/logger";
 import { normalizeEntityCombatBonuses } from "@/lib/dnd";
 import { useToast } from "@/components/ui/toast";
 import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
@@ -62,6 +63,8 @@ const SCHEMA_MAP = {
 } as const;
 
 type SchemaMap = typeof SCHEMA_MAP;
+
+const log = getLogger("BestiaryEntry");
 
 function FormSkeleton() {
   return (
@@ -170,7 +173,8 @@ export const BestiaryEntry = React.memo(({ entry, entryType }: BestiaryEntryProp
         setError(null);
       });
     } catch (error: unknown) {
-      const message = `Failed to save ${config.label.toLowerCase()}: ${getErrorMessage(error)}`;
+      log.error(`Failed to save ${entryType} entry`, error);
+      const message = `Couldn't save this ${config.label.toLowerCase()}. Your changes are still here. Try again.`;
       setError(message);
       toast.error(message);
     }
@@ -183,7 +187,10 @@ export const BestiaryEntry = React.memo(({ entry, entryType }: BestiaryEntryProp
           discardDraftEntry(entryType, baseline.id);
         }
       })
-      .catch((err: unknown) => setError(getErrorMessage(err)));
+      .catch((err: unknown) => {
+        log.error("Failed to discard edit", err);
+        setError("Couldn't discard your changes. Try again.");
+      });
   }, [confirmDiscardEdit, isDraft, discardDraftEntry, entryType, baseline.id, setError]);
 
   return (
@@ -254,7 +261,7 @@ function EditPane({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 12 }}
-      transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
+      transition={{ duration: 0.22, ease: EASE_OUT }}
       className="relative z-10 flex h-full min-h-0 min-w-0 flex-col bg-background"
     >
       <FormProvider {...form}>
