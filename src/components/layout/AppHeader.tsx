@@ -27,7 +27,14 @@ const NEW_ENTRY_TITLE = `Create new entry (${formatShortcutKey(APP_SHORTCUTS.NEW
 
 export function AppHeader({ onTocOpen }: { onTocOpen: () => void }) {
   const currentContext = useAppStore((s) => s.currentContext);
-  const { createEntry } = useNavigationGuard();
+  const setSelectedId = useAppStore((s) => s.setSelectedId);
+  const { createEntry, confirmNavigation } = useNavigationGuard();
+
+  const goHome = useCallback(() => {
+    void (async () => {
+      if (await confirmNavigation()) setSelectedId(null);
+    })();
+  }, [confirmNavigation, setSelectedId]);
   const [isDiceTypePickerOpen, setIsDiceTypePickerOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isEncounterOpen, setIsEncounterOpen] = useState(false);
@@ -58,7 +65,15 @@ export function AppHeader({ onTocOpen }: { onTocOpen: () => void }) {
     <header className="codex-header animate-fade-in-up">
       <div className="flex items-center gap-4 md:gap-8">
         <div className="flex items-center gap-3 text-leather">
-          <Crown className="w-8 h-8 flex-none text-rune-strong" />
+          <button
+            type="button"
+            onClick={goHome}
+            aria-label="Go to home"
+            title="Home"
+            className="flex-none rounded-md transition active:scale-[0.97] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <Crown className="w-8 h-8 flex-none text-rune-strong" />
+          </button>
           <div className="hidden sm:block">
             <h1 className="font-display text-2xl font-bold tracking-wide">
               Bestiary Codex
