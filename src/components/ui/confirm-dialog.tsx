@@ -38,7 +38,7 @@ export interface ConfirmDialogProps {
  *   exactly once, via the `onOpenChange(false)` path. We guard against firing
  *   `onCancel` after a confirm by tracking the most recent explicit action.
  */
-export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+export function ConfirmDialog({
   open,
   title,
   description,
@@ -53,7 +53,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   titleClassName,
   descriptionClassName,
   confirmClassName,
-}) => {
+}: ConfirmDialogProps) {
   // Tracks whether the current close was initiated by Confirm. Radix fires
   // onOpenChange(false) for every close path (Cancel, Escape, overlay, Confirm),
   // so without this flag onCancel would fire after a successful confirm.
@@ -107,12 +107,9 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button
-              variant={destructive ? "destructive" : "default"}
+              variant={destructive ? "destructive" : "medieval"}
               onClick={handleConfirm}
-              className={cn(
-                destructive ? "" : "btn-medieval",
-                confirmClassName
-              )}
+              className={confirmClassName}
             >
               {confirmIcon}
               {confirmLabel}
@@ -122,4 +119,4 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       </AlertDialogContent>
     </AlertDialog>
   );
-};
+}

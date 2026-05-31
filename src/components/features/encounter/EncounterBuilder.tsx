@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect, useId, startTransition } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Swords, Plus, X, Users, ChevronDown, Shield } from "lucide-react";
-import { slideUpVariants, staggerContainerVariants, contentVariants } from "@/lib/animations";
+import { contentVariants, slideUpVariants, staggerContainerVariants } from "@/lib/animations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -30,34 +30,50 @@ interface MonsterEntry {
 
 const MAX_PARTY_SIZE = 8;
 
-const DIFFICULTY_COLORS: Record<EncounterDifficulty, string> = {
-  trivial: "text-muted-foreground",
-  easy:    "text-jade",
-  medium:  "text-yellow-500",
-  hard:    "text-orange-500",
-  deadly:  "text-destructive",
-};
+interface DifficultyStyle {
+  label: string;
+  text: string;
+  bar: string;
+  badge: string;
+}
 
-const DIFFICULTY_LABELS: Record<EncounterDifficulty, string> = {
-  trivial: "Trivial",
-  easy:    "Easy",
-  medium:  "Medium",
-  hard:    "Hard",
-  deadly:  "Deadly",
-};
-
-const DIFFICULTY_BG: Record<EncounterDifficulty, string> = {
-  trivial: "bg-muted/60 text-muted-foreground border-border",
-  easy:    "bg-jade/10 text-jade border-jade/30",
-  medium:  "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
-  hard:    "bg-orange-500/10 text-orange-600 border-orange-500/30",
-  deadly:  "bg-destructive/10 text-destructive border-destructive/30",
+const DIFFICULTY_STYLES: Record<EncounterDifficulty, DifficultyStyle> = {
+  trivial: {
+    label: "Trivial",
+    text: "text-muted-foreground",
+    bar: "bg-muted",
+    badge: "bg-muted/60 text-muted-foreground border-border",
+  },
+  easy: {
+    label: "Easy",
+    text: "text-jade",
+    bar: "bg-jade/25",
+    badge: "bg-jade/10 text-jade border-jade/30",
+  },
+  medium: {
+    label: "Medium",
+    text: "text-warning-strong",
+    bar: "bg-warning/25",
+    badge: "bg-warning/10 text-warning-strong border-warning/30",
+  },
+  hard: {
+    label: "Hard",
+    text: "text-copper",
+    bar: "bg-copper/25",
+    badge: "bg-copper/10 text-copper border-copper/30",
+  },
+  deadly: {
+    label: "Deadly",
+    text: "text-destructive",
+    bar: "bg-destructive/25",
+    badge: "bg-destructive/10 text-destructive border-destructive/30",
+  },
 };
 
 const LEVEL_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
 
-const XpBar: React.FC<{ result: EncounterResult }> = ({ result }) => {
+function XpBar({ result }: { result: EncounterResult }) {
   const { adjustedXp, thresholds } = result;
   const max = Math.max(thresholds.deadly * 1.3, adjustedXp * 1.1, 1);
   const pct = (val: number) =>
@@ -66,22 +82,13 @@ const XpBar: React.FC<{ result: EncounterResult }> = ({ result }) => {
   return (
     <div className="space-y-1.5">
       <div className="relative h-3 w-full rounded-full bg-muted overflow-hidden">
-        <div
-          className="absolute inset-y-0 left-0 bg-jade/25"
-          style={{ width: pct(thresholds.easy) }}
-        />
-        <div
-          className="absolute inset-y-0 left-0 bg-yellow-500/25"
-          style={{ width: pct(thresholds.medium) }}
-        />
-        <div
-          className="absolute inset-y-0 left-0 bg-orange-500/25"
-          style={{ width: pct(thresholds.hard) }}
-        />
-        <div
-          className="absolute inset-y-0 left-0 bg-destructive/25"
-          style={{ width: pct(thresholds.deadly) }}
-        />
+        {(["easy", "medium", "hard", "deadly"] as const).map((tier) => (
+          <div
+            key={`bar-${tier}`}
+            className={cn("absolute inset-y-0 left-0", DIFFICULTY_STYLES[tier].bar)}
+            style={{ width: pct(thresholds[tier]) }}
+          />
+        ))}
 
         {(["easy", "medium", "hard", "deadly"] as const).map((tier) => (
           <div
@@ -99,22 +106,23 @@ const XpBar: React.FC<{ result: EncounterResult }> = ({ result }) => {
         )}
       </div>
 
-      <div className="flex justify-between text-[10px] text-muted-foreground font-serif">
-        <span className="text-jade">E</span>
-        <span className="text-yellow-500">M</span>
-        <span className="text-orange-500">H</span>
-        <span className="text-destructive">D</span>
+      <div className="flex justify-between text-xxs text-muted-foreground font-serif">
+        {(["easy", "medium", "hard", "deadly"] as const).map((tier) => (
+          <span key={`label-${tier}`} className={DIFFICULTY_STYLES[tier].text}>
+            {DIFFICULTY_STYLES[tier].label.charAt(0)}
+          </span>
+        ))}
       </div>
     </div>
   );
-};
+}
 
 
 interface MonsterSearchProps {
   onAdd: (entry: MonsterEntry) => void;
 }
 
-const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
+function MonsterSearch({ onAdd }: MonsterSearchProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<Entity[]>([]);
@@ -153,7 +161,7 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [results.length]);
+  }, [results]);
 
   const handleSelect = useCallback(
     (entity: Entity) => {
@@ -193,7 +201,6 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
     [activeIndex, results, handleSelect]
   );
 
-  // Close on outside click
   const wrapperRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -208,9 +215,13 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
   return (
     <div ref={wrapperRef} className="relative">
       <div className="relative">
+        <label htmlFor={`${listboxId}-input`} className="sr-only">
+          Search monsters
+        </label>
         <input
           ref={inputRef}
           id={`${listboxId}-input`}
+          name="entity-search"
           type="text"
           value={query}
           onChange={(e) => {
@@ -222,15 +233,15 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
           }}
           onKeyDown={handleKeyDown}
           placeholder="Search bestiary by name…"
-          aria-label="Search monsters"
           aria-autocomplete="list"
           aria-controls={open ? listboxId : undefined}
           aria-activedescendant={open && results.length > 0 ? `${listboxId}-${results[activeIndex]?.id}` : undefined}
           aria-expanded={open}
           role="combobox"
           className={cn(
+            // input-codex carries the stone border that matches party-level
+            // <select>s; don't add `border-input` (near-white parchment).
             "input-codex w-full px-3 py-2 text-sm pr-8",
-            "border border-input rounded-md bg-background",
             "placeholder:text-muted-foreground placeholder:font-serif placeholder:italic",
             "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
           )}
@@ -238,7 +249,7 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
       </div>
 
-      {open && results.length > 0 && (
+      {open && query.trim().length > 0 && (
         <ul
           id={listboxId}
           role="listbox"
@@ -249,7 +260,16 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
             "py-1"
           )}
         >
-          {results.map((entity, index) => {
+          {isSearching ? (
+            <li
+              role="option"
+              aria-disabled="true"
+              aria-selected={false}
+              className="px-3 py-3 text-sm text-muted-foreground font-serif italic text-center"
+            >
+              Searching...
+            </li>
+          ) : results.length > 0 ? results.map((entity, index) => {
             const cr = entity.challengeRating;
             const crLabel = cr !== null ? `CR ${formatChallengeRating(cr)}` : "CR —";
             const xp = cr !== null ? getMonsterXP(cr) : 0;
@@ -262,7 +282,6 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
                 aria-selected={isActive}
                 onMouseEnter={() => setActiveIndex(index)}
                 onMouseDown={(e) => {
-                  // mousedown prevents blur before click fires
                   e.preventDefault();
                   handleSelect(entity);
                 }}
@@ -280,27 +299,36 @@ const MonsterSearch: React.FC<MonsterSearchProps> = ({ onAdd }) => {
                 </span>
               </li>
             );
-          })}
+          }) : (
+            <li
+              role="option"
+              aria-disabled="true"
+              aria-selected={false}
+              className="px-3 py-3 text-sm text-muted-foreground font-serif italic text-center"
+            >
+              No creatures found for &ldquo;{query}&rdquo;
+            </li>
+          )}
         </ul>
-      )}
-
-      {open && query.trim().length > 0 && (isSearching || results.length === 0) && (
-        <div className={cn(
-          "absolute z-60 mt-1 w-full rounded-md border border-border bg-popover shadow-lg",
-          "px-3 py-3 text-sm text-muted-foreground font-serif italic text-center"
-        )}>
-          {isSearching ? "Searching..." : <>No creatures found for &ldquo;{query}&rdquo;</>}
-        </div>
       )}
     </div>
   );
-};
+}
 
 
-export const EncounterBuilder: React.FC = () => {
-  const [open, setOpen] = useState(false);
+/** Parent must unmount on `open === false`: local roster state is not reset on close. */
+interface EncounterBuilderProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 
-  const [partyLevels, setPartyLevels] = useState<number[]>([1, 1, 1, 1]);
+export function EncounterBuilder({ open, onOpenChange }: EncounterBuilderProps) {
+  const [partyLevels, setPartyLevels] = useState<{ id: string; level: number }[]>([
+    { id: crypto.randomUUID(), level: 1 },
+    { id: crypto.randomUUID(), level: 1 },
+    { id: crypto.randomUUID(), level: 1 },
+    { id: crypto.randomUUID(), level: 1 },
+  ]);
 
   const [monsters, setMonsters] = useState<MonsterEntry[]>([]);
 
@@ -308,20 +336,21 @@ export const EncounterBuilder: React.FC = () => {
 
 
   const addCharacter = useCallback(() => {
-    if (partyLevels.length >= MAX_PARTY_SIZE) return;
-    setPartyLevels((prev) => [...prev, 1]);
-  }, [partyLevels.length]);
-
-  const removeCharacter = useCallback((index: number) => {
-    setPartyLevels((prev) => prev.filter((_, i) => i !== index));
+    setPartyLevels((prev) =>
+      prev.length >= MAX_PARTY_SIZE
+        ? prev
+        : [...prev, { id: crypto.randomUUID(), level: 1 }]
+    );
   }, []);
 
-  const setCharacterLevel = useCallback((index: number, level: number) => {
-    setPartyLevels((prev) => {
-      const next = [...prev];
-      next[index] = level;
-      return next;
-    });
+  const removeCharacter = useCallback((id: string) => {
+    setPartyLevels((prev) => prev.filter((m) => m.id !== id));
+  }, []);
+
+  const setCharacterLevel = useCallback((id: string, level: number) => {
+    setPartyLevels((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, level } : m))
+    );
   }, []);
 
 
@@ -337,72 +366,52 @@ export const EncounterBuilder: React.FC = () => {
   const encounterResult = useMemo<EncounterResult | null>(() => {
     if (partyLevels.length === 0) return null;
     const monsterCRs = monsters.map((m) => m.cr);
-    return calculateEncounterDifficulty(partyLevels, monsterCRs);
+    return calculateEncounterDifficulty(partyLevels.map((m) => m.level), monsterCRs);
   }, [partyLevels, monsters]);
 
 
-  const resetEncounter = useCallback(() => {
-    setPartyLevels([1, 1, 1, 1]);
-    setMonsters([]);
-  }, []);
-
+  // Confirms before discarding an in-progress roster.
   const handleOpenChange = useCallback(
     (o: boolean) => {
-      // Use ConfirmDialog instead of window.confirm for proper a11y focus trapping.
-      if (!o && monsters.length > 0) {
-        void confirm({
-          title: "Close the encounter builder?",
-          description: "Your current encounter will be lost.",
-          confirmLabel: "Discard & close",
-          cancelLabel: "Keep editing",
-          destructive: true,
-        }).then((confirmed) => {
-          if (!confirmed) return;
-          setOpen(false);
-          startTransition(resetEncounter);
-        });
+      if (o) {
+        onOpenChange(true);
         return;
       }
-      if (o) {
-        // Mount the dialog content as a transition so the toolbar button press
-        // registers instantly and the heavy portal render happens in the background.
-        startTransition(() => { setOpen(true); });
-      } else {
-        setOpen(false);
-        startTransition(resetEncounter);
+      if (monsters.length === 0) {
+        onOpenChange(false);
+        return;
       }
+      if (confirmState.open) return;
+      void confirm({
+        title: "Close the encounter builder?",
+        description: "Your current encounter will be lost.",
+        confirmLabel: "Discard & close",
+        cancelLabel: "Keep editing",
+        destructive: true,
+      })
+        .then((confirmed) => {
+          if (confirmed) onOpenChange(false);
+        })
+        .catch(() => {});
     },
-    [monsters.length, confirm, resetEncounter]
+    [monsters.length, confirm, confirmState.open, onOpenChange]
   );
 
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Trigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Encounter Builder"
-          title="Encounter Builder"
-          className="text-leather hover:text-leather hover:bg-leather/10"
-        >
-          <Swords className="w-5 h-5" />
-        </Button>
-      </Dialog.Trigger>
-
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-fade-in" />
+        <Dialog.Overlay className="fixed inset-0 bg-overlay-soft backdrop-blur-sm z-50 animate-fade-only motion-reduce:animate-none" />
 
         <Dialog.Content
           className={cn(
             "fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-            "w-full max-w-3xl",
-            "max-h-[85vh] overflow-y-auto",
-            "glass-panel rounded-xl shadow-2xl animate-slide-up focus:outline-none",
+            "w-full max-w-3xl h-176 max-h-(--dialog-max-h-workspace) flex flex-col",
+            "glass-panel rounded-xl shadow-2xl animate-scale-in focus:outline-none motion-reduce:animate-none",
             "p-0"
           )}
         >
-          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-rune/20">
+          <div className="shrink-0 flex items-center justify-between px-6 pt-6 pb-4 border-b border-rune/20">
             <div className="flex items-center gap-3">
               <Swords className="w-5 h-5 text-leather shrink-0" />
               <Dialog.Title className="font-display text-xl font-bold text-foreground tracking-wide">
@@ -420,17 +429,17 @@ export const EncounterBuilder: React.FC = () => {
             </Dialog.Close>
           </div>
 
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="p-6 flex flex-col gap-6 flex-1 min-h-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 flex-1 min-h-0">
 
               <section
                 aria-labelledby="party-heading"
-                className="rounded-lg border border-leather/20 p-4 space-y-3 bg-card/40"
+                className="rounded-lg border border-leather/20 p-4 bg-card/40 flex flex-col gap-3 min-h-0"
               >
-                <div className="flex items-center justify-between">
+                <div className="shrink-0 flex items-center justify-between">
                   <h2
                     id="party-heading"
-                    className="font-display text-sm font-semibold text-leather tracking-wider uppercase flex items-center gap-1.5"
+                    className="codex-section-heading text-sm font-semibold tracking-wider flex items-center gap-1.5"
                   >
                     <Users className="w-4 h-4" />
                     Party
@@ -439,11 +448,11 @@ export const EncounterBuilder: React.FC = () => {
                     </span>
                   </h2>
                   <Button
-                    variant="outline"
+                    variant="outlineLeather"
                     size="sm"
                     onClick={addCharacter}
                     disabled={partyLevels.length >= MAX_PARTY_SIZE}
-                    className="h-7 px-2 text-xs gap-1 border-leather/30 hover:border-leather font-serif"
+                    className="h-7 px-2 text-xs gap-1 font-serif"
                   >
                     <Plus className="w-3 h-3" />
                     Add
@@ -451,24 +460,31 @@ export const EncounterBuilder: React.FC = () => {
                 </div>
 
                 {partyLevels.length === 0 ? (
-                  <p className="text-sm text-muted-foreground font-serif italic text-center py-4">
+                  <p className="flex-1 flex items-center justify-center text-sm text-muted-foreground font-serif italic">
                     No adventurers yet.
                   </p>
                 ) : (
-                  <ul className="space-y-2" aria-label="Party members">
-                    {partyLevels.map((level, idx) => (
+                  <ul
+                    className="flex-1 min-h-0 space-y-2 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    aria-label="Party members"
+                  >
+                    {partyLevels.map((member, idx) => (
                       <li
-                        key={idx}
+                        key={member.id}
                         className="flex items-center gap-2"
                       >
                         <span className="text-xs text-muted-foreground font-serif w-5 text-right shrink-0">
                           {idx + 1}.
                         </span>
+                        <label htmlFor={`character-${member.id}-level`} className="sr-only">
+                          Character {idx + 1} level
+                        </label>
                         <select
-                          value={level}
-                          onChange={(e) => setCharacterLevel(idx, parseInt(e.target.value, 10))}
-                          aria-label={`Character ${idx + 1} level`}
-                          className="flex-1 h-8 px-2 text-sm font-serif rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                          id={`character-${member.id}-level`}
+                          name={`character-${member.id}-level`}
+                          value={member.level}
+                          onChange={(e) => setCharacterLevel(member.id, parseInt(e.target.value, 10))}
+                          className="input-codex flex-1 h-8 px-2 text-sm focus-ring"
                         >
                           {LEVEL_OPTIONS.map((lvl) => (
                             <option key={lvl} value={lvl}>Level {lvl}</option>
@@ -477,7 +493,7 @@ export const EncounterBuilder: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => removeCharacter(idx)}
+                          onClick={() => removeCharacter(member.id)}
                           aria-label={`Remove character ${idx + 1}`}
                           className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
                         >
@@ -491,12 +507,12 @@ export const EncounterBuilder: React.FC = () => {
 
               <section
                 aria-labelledby="monsters-heading"
-                className="rounded-lg border border-leather/20 p-4 space-y-3 bg-card/40"
+                className="rounded-lg border border-leather/20 p-4 bg-card/40 flex flex-col gap-3 min-h-0"
               >
-                <div className="flex items-center justify-between">
+                <div className="shrink-0 flex items-center justify-between">
                   <h2
                     id="monsters-heading"
-                    className="font-display text-sm font-semibold text-leather tracking-wider uppercase flex items-center gap-1.5"
+                    className="codex-section-heading text-sm font-semibold tracking-wider flex items-center gap-1.5"
                   >
                     <Shield className="w-4 h-4" />
                     Monsters
@@ -508,14 +524,19 @@ export const EncounterBuilder: React.FC = () => {
                   </h2>
                 </div>
 
-                <MonsterSearch onAdd={addMonster} />
+                <div className="shrink-0">
+                  <MonsterSearch onAdd={addMonster} />
+                </div>
 
                 {monsters.length === 0 ? (
-                  <p className="text-sm text-muted-foreground font-serif italic text-center py-3">
+                  <p className="flex-1 flex items-center justify-center text-sm text-muted-foreground font-serif italic">
                     Search and add creatures above.
                   </p>
                 ) : (
-                  <ul className="space-y-1.5 max-h-48 overflow-y-auto pr-1" aria-label="Monster roster">
+                  <ul
+                    className="flex-1 min-h-0 space-y-1.5 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    aria-label="Monster roster"
+                  >
                     {monsters.map((monster) => {
                       const crLabel =
                         monster.cr !== null
@@ -563,7 +584,7 @@ export const EncounterBuilder: React.FC = () => {
               <motion.section
                 key="result"
                 aria-labelledby="results-heading"
-                className="rounded-lg border border-rune/30 p-4 space-y-4 bg-card/30"
+                className="shrink-0 rounded-lg border border-rune/30 p-4 space-y-4 bg-card/30"
                 variants={slideUpVariants}
                 initial="hidden"
                 animate="visible"
@@ -572,7 +593,7 @@ export const EncounterBuilder: React.FC = () => {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <h2
                     id="results-heading"
-                    className="font-display text-sm font-semibold text-leather tracking-wider uppercase"
+                    className="codex-section-heading text-sm font-semibold tracking-wider"
                   >
                     Encounter Result
                   </h2>
@@ -580,10 +601,10 @@ export const EncounterBuilder: React.FC = () => {
                   <Badge
                     className={cn(
                       "font-display text-xs tracking-wider px-3 py-0.5 border",
-                      DIFFICULTY_BG[encounterResult.difficulty]
+                      DIFFICULTY_STYLES[encounterResult.difficulty].badge
                     )}
                   >
-                    {DIFFICULTY_LABELS[encounterResult.difficulty]}
+                    {DIFFICULTY_STYLES[encounterResult.difficulty].label}
                   </Badge>
                 </div>
 
@@ -623,7 +644,7 @@ export const EncounterBuilder: React.FC = () => {
                 </motion.div>
 
                 <div>
-                  <h3 className="font-display text-xs text-muted-foreground tracking-widest uppercase mb-2">
+                  <h3 className="codex-section-heading text-xs text-muted-foreground tracking-widest mb-2">
                     Party Thresholds
                   </h3>
                   <div className="grid grid-cols-4 gap-2">
@@ -636,13 +657,13 @@ export const EncounterBuilder: React.FC = () => {
                     <ThresholdCell
                       label="Medium"
                       xp={encounterResult.thresholds.medium}
-                      colorClass="text-yellow-500"
+                      colorClass={DIFFICULTY_STYLES.medium.text}
                       active={encounterResult.difficulty === "medium"}
                     />
                     <ThresholdCell
                       label="Hard"
                       xp={encounterResult.thresholds.hard}
-                      colorClass="text-orange-500"
+                      colorClass={DIFFICULTY_STYLES.hard.text}
                       active={encounterResult.difficulty === "hard"}
                     />
                     <ThresholdCell
@@ -658,12 +679,12 @@ export const EncounterBuilder: React.FC = () => {
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-muted-foreground font-serif">
                       Adjusted XP:{" "}
-                      <strong className={cn("font-semibold", DIFFICULTY_COLORS[encounterResult.difficulty])}>
+                      <strong className={cn("font-semibold", DIFFICULTY_STYLES[encounterResult.difficulty].text)}>
                         {encounterResult.adjustedXp.toLocaleString()}
                       </strong>
                     </span>
-                    <span className={cn("text-xs font-display font-semibold tracking-wider", DIFFICULTY_COLORS[encounterResult.difficulty])}>
-                      {DIFFICULTY_LABELS[encounterResult.difficulty].toUpperCase()}
+                    <span className={cn("text-xs font-display font-semibold tracking-wider", DIFFICULTY_STYLES[encounterResult.difficulty].text)}>
+                      {DIFFICULTY_STYLES[encounterResult.difficulty].label.toUpperCase()}
                     </span>
                   </div>
                   <XpBar result={encounterResult} />
@@ -676,7 +697,7 @@ export const EncounterBuilder: React.FC = () => {
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="rounded-lg border border-dashed border-border p-6 text-center"
+                className="shrink-0 rounded-lg border border-dashed border-border p-6 text-center"
               >
                 <Swords className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground font-serif italic">
@@ -700,7 +721,7 @@ export const EncounterBuilder: React.FC = () => {
       />
     </Dialog.Root>
   );
-};
+}
 
 
 interface XpStatProps {
@@ -711,29 +732,31 @@ interface XpStatProps {
   difficulty?: EncounterDifficulty;
 }
 
-const XpStat: React.FC<XpStatProps> = ({ label, value, sub, highlight, difficulty }) => (
-  <div className={cn(
-    "rounded-md px-3 py-2 text-center space-y-0.5",
-    highlight ? "bg-card/60 border border-rune/20" : "bg-card/30"
-  )}>
+function XpStat({ label, value, sub, highlight, difficulty }: XpStatProps) {
+  return (
     <div className={cn(
-      "text-lg font-display font-bold leading-tight",
-      highlight && difficulty
-        ? DIFFICULTY_COLORS[difficulty]
-        : "text-foreground"
+      "rounded-md px-3 py-2 text-center space-y-0.5",
+      highlight ? "bg-card/60 border border-rune/20" : "bg-card/30"
     )}>
-      {value}
-    </div>
-    <div className="text-[11px] font-display tracking-wider text-muted-foreground uppercase leading-tight">
-      {label}
-    </div>
-    {sub && (
-      <div className="text-[10px] font-serif text-muted-foreground/70 italic">
-        {sub}
+      <div className={cn(
+        "text-lg font-display font-bold leading-tight",
+        highlight && difficulty
+          ? DIFFICULTY_STYLES[difficulty].text
+          : "text-foreground"
+      )}>
+        {value}
       </div>
-    )}
-  </div>
-);
+      <div className="codex-section-heading text-2xs tracking-wider text-muted-foreground leading-tight">
+        {label}
+      </div>
+      {sub && (
+        <div className="text-xxs font-serif text-muted-foreground/70 italic">
+          {sub}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface ThresholdCellProps {
   label: string;
@@ -742,18 +765,20 @@ interface ThresholdCellProps {
   active: boolean;
 }
 
-const ThresholdCell: React.FC<ThresholdCellProps> = ({ label, xp, colorClass, active }) => (
-  <div className={cn(
-    "rounded-md px-2 py-1.5 text-center border transition-colors",
-    active
-      ? cn("border-current/30 bg-current/5", colorClass)
-      : "border-border/50 bg-card/20"
-  )}>
-    <div className={cn("text-[11px] font-display tracking-wider uppercase", active ? colorClass : "text-muted-foreground")}>
-      {label}
+function ThresholdCell({ label, xp, colorClass, active }: ThresholdCellProps) {
+  return (
+    <div className={cn(
+      "rounded-md px-2 py-1.5 text-center border transition-colors",
+      active
+        ? cn("border-current/30 bg-current/5", colorClass)
+        : "border-border/50 bg-card/20"
+    )}>
+      <div className={cn("codex-section-heading text-2xs tracking-wider", active ? colorClass : "text-muted-foreground")}>
+        {label}
+      </div>
+      <div className={cn("text-sm font-semibold font-serif", active ? colorClass : "text-foreground/80")}>
+        {xp.toLocaleString()}
+      </div>
     </div>
-    <div className={cn("text-sm font-semibold font-serif", active ? colorClass : "text-foreground/80")}>
-      {xp.toLocaleString()}
-    </div>
-  </div>
-);
+  );
+}

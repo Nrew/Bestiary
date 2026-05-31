@@ -1,7 +1,7 @@
 {
   "name": "bestiary",
   "private": false,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "An offline bestiary, item, and ability compendium for tabletop RPGs.",
   "author": "Nrew",
   "license": "MIT",
@@ -23,7 +23,7 @@
     "audit:rust": "cd src-tauri && cargo audit --ignore RUSTSEC-2023-0071",
     "verify": "npm run lint && npm run build && npm test -- --run && cd src-tauri && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test --locked",
     "verify:release": "npm run verify && npm run audit:npm && npm run audit:rust && npm run tauri:build",
-    "format": "prettier --write .",
+    "analyze": "vite build --mode analyze",
     "types:generate": "cd src-tauri && cargo test export_bindings --features ts-bindings",
     "types:check": "tsc --noEmit"
   },
@@ -77,8 +77,5 @@
     "typescript-eslint": "^8.59.0",
     "vite": "^7.1.9",
     "vitest": "^3.2.4"
-  },
-  "overrides": {
-    "serialize-javascript": "^7.0.5"
   }
 }

@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/components/ui/toast";
-import { useAppStore, useMemoizedNameLookup } from "@/store/appStore";
+import { useMemoizedNameLookup } from "@/store/appStore";
+import { useNavigationGuard } from "@/hooks/useNavigationGuard";
 import { useWikiLink } from "@/components/shared/wiki-link/WikiLinkProvider";
 import { cn } from "@/lib/utils";
 import type { ViewContext } from "@/types";
@@ -20,9 +21,9 @@ interface RichTextViewerProps {
  * The viewer only sanitizes HTML and rewrites `[[wiki-link]]` markers into
  * navigable spans; it never instantiates an editor.
  */
-export const RichTextViewer: React.FC<RichTextViewerProps> = ({ html, className }) => {
+export function RichTextViewer({ html, className }: RichTextViewerProps) {
   const nameLookup = useMemoizedNameLookup();
-  const navigateToEntry = useAppStore((s) => s.navigateToEntry);
+  const { navigateToEntry } = useNavigationGuard();
   const { showTooltip, hideTooltip } = useWikiLink();
   const toast = useToast();
 
@@ -131,7 +132,7 @@ export const RichTextViewer: React.FC<RichTextViewerProps> = ({ html, className 
 
   return (
     <div
-      className={cn("prose dark:prose-invert max-w-none font-serif viewer-prose", className)}
+      className={cn("max-w-none font-serif viewer-prose", className)}
       dangerouslySetInnerHTML={{ __html: processedHtml }}
       onClick={handleClick}
       onMouseOver={handleMouseOver}
@@ -141,4 +142,4 @@ export const RichTextViewer: React.FC<RichTextViewerProps> = ({ html, className 
       onKeyDown={handleKeyDown}
     />
   );
-};
+}

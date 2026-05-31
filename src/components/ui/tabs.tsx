@@ -21,7 +21,7 @@ const tabsListVariants = cva(
 );
 
 const tabsTriggerVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap font-medium transition focus-ring disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -37,7 +37,7 @@ const tabsTriggerVariants = cva(
 );
 
 const tabsContentVariants = cva(
-  "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+  "ring-offset-background focus-ring",
   {
     variants: {
       variant: {
@@ -64,37 +64,40 @@ const TabsContext = React.createContext<TabsContextValue>({
   size: "default",
 });
 
-const useTabsContext = () => React.useContext(TabsContext);
+const useTabsContext = () => React.use(TabsContext);
 
 
 interface TabsProps extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root> {
   variant?: TabsVariant;
   size?: TabsSize;
+  ref?: React.Ref<React.ComponentRef<typeof TabsPrimitive.Root>>;
 }
 
-const Tabs = React.forwardRef<
-  React.ComponentRef<typeof TabsPrimitive.Root>,
-  TabsProps
->(({ variant = "default", size = "default", children, ...props }, ref) => (
-  <TabsContext.Provider value={{ variant, size }}>
-    <TabsPrimitive.Root ref={ref} {...props}>
-      {children}
-    </TabsPrimitive.Root>
-  </TabsContext.Provider>
-));
-Tabs.displayName = TabsPrimitive.Root.displayName;
+function Tabs({
+  variant = "default",
+  size = "default",
+  children,
+  ref,
+  ...props
+}: TabsProps) {
+  return (
+    <TabsContext value={{ variant, size }}>
+      <TabsPrimitive.Root ref={ref} {...props}>
+        {children}
+      </TabsPrimitive.Root>
+    </TabsContext>
+  );
+}
 
 
 interface TabsListProps
   extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> {
   variant?: TabsVariant;
   size?: TabsSize;
+  ref?: React.Ref<React.ComponentRef<typeof TabsPrimitive.List>>;
 }
 
-const TabsList = React.forwardRef<
-  React.ComponentRef<typeof TabsPrimitive.List>,
-  TabsListProps
->(({ className, variant, size, ...props }, ref) => {
+function TabsList({ className, variant, size, ref, ...props }: TabsListProps) {
   const ctx = useTabsContext();
   return (
     <TabsPrimitive.List
@@ -103,19 +106,16 @@ const TabsList = React.forwardRef<
       {...props}
     />
   );
-});
-TabsList.displayName = TabsPrimitive.List.displayName;
+}
 
 interface TabsTriggerProps
   extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> {
   variant?: TabsVariant;
   size?: TabsSize;
+  ref?: React.Ref<React.ComponentRef<typeof TabsPrimitive.Trigger>>;
 }
 
-const TabsTrigger = React.forwardRef<
-  React.ComponentRef<typeof TabsPrimitive.Trigger>,
-  TabsTriggerProps
->(({ className, variant, size, ...props }, ref) => {
+function TabsTrigger({ className, variant, size, ref, ...props }: TabsTriggerProps) {
   const ctx = useTabsContext();
   return (
     <TabsPrimitive.Trigger
@@ -124,18 +124,15 @@ const TabsTrigger = React.forwardRef<
       {...props}
     />
   );
-});
-TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
+}
 
 interface TabsContentProps
   extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content> {
   variant?: TabsVariant;
+  ref?: React.Ref<React.ComponentRef<typeof TabsPrimitive.Content>>;
 }
 
-const TabsContent = React.forwardRef<
-  React.ComponentRef<typeof TabsPrimitive.Content>,
-  TabsContentProps
->(({ className, variant, ...props }, ref) => {
+function TabsContent({ className, variant, ref, ...props }: TabsContentProps) {
   const ctx = useTabsContext();
   return (
     <TabsPrimitive.Content
@@ -144,7 +141,6 @@ const TabsContent = React.forwardRef<
       {...props}
     />
   );
-});
-TabsContent.displayName = TabsPrimitive.Content.displayName;
+}
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };

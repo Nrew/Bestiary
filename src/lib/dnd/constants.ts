@@ -1,4 +1,20 @@
-import type { ItemType, Rarity, AbilityType, AoeShape, DamageType, EntitySize, ThreatLevel, Attribute, ResistanceLevel } from "@/types";
+import type { ItemType, Rarity, AbilityTiming, AbilityCategory, AoeShape, DamageType, EntitySize, ThreatLevel, Attribute, ResistanceLevel, MagicSchool, RestType } from "@/types";
+
+/** SRD base modifier added to all spell/ability save DCs (PHB p. 205). */
+export const SAVE_DC_BASE = 8;
+
+/** SRD passive check base; passive score = this + skill modifier (PHB p. 175). */
+export const PASSIVE_CHECK_BASE = 10;
+
+/** SRD flat AC bonus granted by a shield (PHB p. 144). */
+export const SHIELD_AC_BONUS = 2;
+
+/** Human-readable strings for the three fractional CRs (SRD). */
+export const CR_FRACTION_DISPLAY: Readonly<Record<number, string>> = {
+  0.125: "1/8",
+  0.25:  "1/4",
+  0.5:   "1/2",
+} as const;
 
 export const PAGE_SIZE = 50;
 
@@ -29,47 +45,51 @@ export const ABILITY_SCORE_SHORT: Record<Attribute, string> = {
   charisma: "CHA",
 };
 
-export const COMMON_SKILLS = [
-  "acrobatics",
-  "animalHandling",
-  "arcana",
-  "athletics",
-  "deception",
-  "history",
-  "insight",
-  "intimidation",
-  "investigation",
-  "medicine",
-  "nature",
-  "perception",
-  "performance",
-  "persuasion",
-  "religion",
-  "sleightOfHand",
-  "stealth",
-  "survival",
-] as const;
-
-export const SKILL_LABELS: Record<string, string> = {
-  acrobatics: "Acrobatics (Dex)",
-  animalHandling: "Animal Handling (Wis)",
-  arcana: "Arcana (Int)",
-  athletics: "Athletics (Str)",
-  deception: "Deception (Cha)",
-  history: "History (Int)",
-  insight: "Insight (Wis)",
-  intimidation: "Intimidation (Cha)",
-  investigation: "Investigation (Int)",
-  medicine: "Medicine (Wis)",
-  nature: "Nature (Int)",
-  perception: "Perception (Wis)",
-  performance: "Performance (Cha)",
-  persuasion: "Persuasion (Cha)",
-  religion: "Religion (Int)",
-  sleightOfHand: "Sleight of Hand (Dex)",
-  stealth: "Stealth (Dex)",
-  survival: "Survival (Wis)",
+/**
+ * Single source of truth for all 18 D&D 5e skills.
+ * SKILL_ABILITIES, SKILL_LABELS, and COMMON_SKILLS are all derived from this.
+ */
+const SKILL_DATA = {
+  acrobatics:    { ability: "dexterity"    as Attribute, name: "Acrobatics"     },
+  animalHandling:{ ability: "wisdom"       as Attribute, name: "Animal Handling" },
+  arcana:        { ability: "intelligence" as Attribute, name: "Arcana"          },
+  athletics:     { ability: "strength"     as Attribute, name: "Athletics"       },
+  deception:     { ability: "charisma"     as Attribute, name: "Deception"       },
+  history:       { ability: "intelligence" as Attribute, name: "History"         },
+  insight:       { ability: "wisdom"       as Attribute, name: "Insight"         },
+  intimidation:  { ability: "charisma"     as Attribute, name: "Intimidation"    },
+  investigation: { ability: "intelligence" as Attribute, name: "Investigation"   },
+  medicine:      { ability: "wisdom"       as Attribute, name: "Medicine"        },
+  nature:        { ability: "intelligence" as Attribute, name: "Nature"          },
+  perception:    { ability: "wisdom"       as Attribute, name: "Perception"      },
+  performance:   { ability: "charisma"     as Attribute, name: "Performance"     },
+  persuasion:    { ability: "charisma"     as Attribute, name: "Persuasion"      },
+  religion:      { ability: "intelligence" as Attribute, name: "Religion"        },
+  sleightOfHand: { ability: "dexterity"    as Attribute, name: "Sleight of Hand" },
+  stealth:       { ability: "dexterity"    as Attribute, name: "Stealth"         },
+  survival:      { ability: "wisdom"       as Attribute, name: "Survival"        },
 };
+
+export type SkillKey = keyof typeof SKILL_DATA;
+
+/** Maps each skill to its governing ability score. Derived from SKILL_DATA. */
+export const SKILL_ABILITIES: Readonly<Record<SkillKey, Attribute>> =
+  Object.fromEntries(
+    Object.entries(SKILL_DATA).map(([k, v]) => [k, v.ability])
+  ) as Record<SkillKey, Attribute>;
+
+/** All 18 skills in alphabetical order. Derived from SKILL_DATA. */
+export const COMMON_SKILLS = Object.keys(SKILL_DATA).sort() as SkillKey[];
+
+/** Display labels derived from SKILL_DATA. Format: "Skill Name (Abi)" */
+export const SKILL_LABELS: Readonly<Record<SkillKey, string>> =
+  Object.fromEntries(
+    Object.entries(SKILL_DATA).map(([k, v]) => {
+      const short = ABILITY_SCORE_SHORT[v.ability]; // e.g. "DEX"
+      const abbr = short.charAt(0) + short.slice(1).toLowerCase(); // "Dex"
+      return [k, `${v.name} (${abbr})`];
+    })
+  ) as Record<SkillKey, string>;
 
 export const ITEM_TYPE_LABELS: Record<ItemType, string> = {
   weapon: "Weapon",
@@ -110,7 +130,7 @@ export const ALIGNMENT_OPTIONS: ReadonlyArray<string> = [
   "Any Alignment",
 ];
 
-export const ABILITY_TYPE_LABELS: Record<AbilityType, string> = {
+export const ABILITY_TIMING_LABELS: Record<AbilityTiming, string> = {
   action: "Action",
   bonusAction: "Bonus Action",
   reaction: "Reaction",
@@ -118,6 +138,12 @@ export const ABILITY_TYPE_LABELS: Record<AbilityType, string> = {
   legendary: "Legendary",
   mythic: "Mythic",
   lair: "Lair Action",
+};
+
+export const ABILITY_CATEGORY_LABELS: Record<AbilityCategory, string> = {
+  none: "Standard",
+  multiattack: "Multiattack",
+  regionalEffect: "Regional Effect",
 };
 
 export const AOE_SHAPE_LABELS: Record<AoeShape, string> = {
@@ -308,3 +334,17 @@ export const RETRY = {
   /** Maximum backoff delay (ms) */
   MAX_BACKOFF: 30000,
 } as const;
+
+export const MAGIC_SCHOOL_LABELS: Record<MagicSchool, string> = {
+  abjuration: "Abjuration", conjuration: "Conjuration",
+  divination: "Divination", enchantment: "Enchantment",
+  evocation: "Evocation", illusion: "Illusion",
+  necromancy: "Necromancy", transmutation: "Transmutation",
+};
+
+export const REST_TYPE_LABELS: Record<RestType, string> = {
+  short: "Short Rest", long: "Long Rest", dawn: "Dawn",
+};
+
+export const MAGIC_SCHOOLS = Object.keys(MAGIC_SCHOOL_LABELS) as [MagicSchool, ...MagicSchool[]];
+export const REST_TYPES = Object.keys(REST_TYPE_LABELS) as [RestType, ...RestType[]];

@@ -25,7 +25,30 @@ function checkEffects(effects: unknown[], path: string): void {
   }
 }
 
+interface SeedAbility {
+  timing: string;
+  category: string;
+  spellLevel?: number | null;
+  school?: string | null;
+}
+
 describe("bundled seed data", () => {
+  it("seed includes each timing variant and at least one of each non-default category", () => {
+    const abilities = seed.data.abilities as SeedAbility[];
+    const seenCategories = new Set(abilities.map((a) => a.category));
+    for (const c of ["multiattack", "regionalEffect"]) {
+      expect(seenCategories.has(c), `seed should contain an ability of category "${c}"`).toBe(true);
+    }
+  });
+
+  it("at least one seeded ability is a spell (has structured spell fields)", () => {
+    const abilities = seed.data.abilities as SeedAbility[];
+    const spell = abilities.find((a) => a.spellLevel != null && a.category === "none");
+    expect(spell).toBeDefined();
+    expect(spell?.spellLevel).toBeTypeOf("number");
+    expect(spell?.school).toBeTypeOf("string");
+  });
+
   it("uses UUIDs for IDs and cross references consumed by frontend schemas", () => {
     seed.data.statuses.forEach((status, index) => {
       expectUuid(status.id, `statuses.${index}.id`);

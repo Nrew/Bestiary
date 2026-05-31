@@ -1,107 +1,107 @@
-import React, { useEffect, useMemo } from "react";
-import { useAbilitiesMap, useAppStore } from "@/store/appStore";
-import { sanitizeInlineHtml } from "@/lib/sanitize";
+import { escapeHtml } from "@/lib/sanitize";
+import { RichTextViewer } from "@/components/shared/RichTextViewer";
+import { AlertTriangle } from "lucide-react";
 import type { Entity, Ability } from "@/types";
+import type { EntityAbilities } from "@/hooks/useEntityAbilities";
 
-const AbilityText: React.FC<{ ability: Ability }> = ({ ability }) => {
-  const sanitizedHtml = useMemo(
-    () => sanitizeInlineHtml(ability.description),
-    [ability.description]
-  );
+// WeakMap keyed on ability identity: the store creates new ability objects
+// when content changes, so stale entries are GC-collected automatically.
+// Survives navigation, no manual invalidation, no test reset needed.
+const abilityHtmlCache = new WeakMap<Ability, string>();
 
+export function buildAbilityHtml(name: string, description: string): string {
+  const label = `<strong><em>${escapeHtml(name)}.</em></strong>`;
+  if (description.startsWith("<p>")) {
+    return description.replace(/^<p>/, `<p>${label} `);
+  }
+  if (description === "" || description.startsWith("<")) {
+    return `<p>${label}</p>${description}`;
+  }
+  return `<p>${label} ${description}</p>`;
+}
+
+function getAbilityHtml(ability: Ability): string {
+  let html = abilityHtmlCache.get(ability);
+  if (html === undefined) {
+    html = buildAbilityHtml(ability.name, ability.description);
+    abilityHtmlCache.set(ability, html);
+  }
+  return html;
+}
+
+function AbilityGroup({ abilities, header }: { abilities: Ability[]; header?: string }) {
+  if (abilities.length === 0) return null;
   return (
-    <div className="viewer-prose text-[16px]">
-      <p>
-        <strong className="font-bold italic text-ink">{ability.name}.</strong>
-        <span
-          className="text-ink/90"
-          dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-        />
-      </p>
+    <div className="space-y-2">
+      {header && <h3 className="codex-section-heading text-base tracking-widest mt-2">{header}</h3>}
+      {abilities.map((ability) => (
+        <AbilityText key={ability.id} ability={ability} />
+      ))}
     </div>
   );
-};
+}
 
-export const AbilitiesSection: React.FC<{ data: Entity }> = ({ data }) => {
-  const abilities = useAbilitiesMap();
-  const ensureAbilitiesLoaded = useAppStore((s) => s.ensureAbilitiesLoaded);
-  const abilityIds = useMemo(() => data.abilityIds ?? [], [data.abilityIds]);
-
-  useEffect(() => {
-    if (abilityIds.length > 0) {
-      void ensureAbilitiesLoaded(abilityIds);
-    }
-  }, [abilityIds, ensureAbilitiesLoaded]);
-
-  const entityAbilities = React.useMemo((): Ability[] => {
-    return abilityIds
-      .map((id) => abilities.get(id))
-      .filter((a): a is Ability => a !== undefined);
-  }, [abilityIds, abilities]);
-
-  const missingAbilityIds = React.useMemo(
-    () => abilityIds.filter((id) => !abilities.has(id)),
-    [abilityIds, abilities]
-  );
-
-  if (abilityIds.length === 0) {
-    return null;
-  }
-
-  type AbilityGroup = {
-    traits: Ability[];
-    actions: Ability[];
-    bonusActions: Ability[];
-    reactions: Ability[];
-    legendaryActions: Ability[];
-    mythicActions: Ability[];
-    lairActions: Ability[];
-  };
-
-  const groupedAbilities = entityAbilities.reduce<AbilityGroup>(
-    (acc, ability) => {
-      switch (ability.type) {
-        case "action": acc.actions.push(ability); break;
-        case "bonusAction": acc.bonusActions.push(ability); break;
-        case "reaction": acc.reactions.push(ability); break;
-        case "legendary": acc.legendaryActions.push(ability); break;
-        case "mythic": acc.mythicActions.push(ability); break;
-        case "lair": acc.lairActions.push(ability); break;
-        case "passive": acc.traits.push(ability); break;
-      }
-      return acc;
-    },
-    { traits: [], actions: [], bonusActions: [], reactions: [], legendaryActions: [], mythicActions: [], lairActions: [] }
-  );
-
-  const renderGroup = (abilities: Ability[], header?: string) => {
-    if (abilities.length === 0) return null;
-    return (
+function SpecialAbilityGroup({ abilities, header, badge }: { abilities: Ability[]; header: string; badge?: string }) {
+  if (abilities.length === 0) return null;
+  return (
+    <div className="space-y-3">
+      <hr className="stat-block-divider" />
+      <div className="flex flex-col items-center gap-0.5">
+        <h3 className="codex-section-heading text-base tracking-widest">{header}</h3>
+        {badge && (
+          <span className="text-2xs font-serif uppercase tracking-widest text-ink/40">{badge}</span>
+        )}
+      </div>
       <div className="space-y-2">
-        {header && <h3 className="stat-block-actions-header">{header}</h3>}
         {abilities.map((ability) => (
           <AbilityText key={ability.id} ability={ability} />
         ))}
       </div>
-    );
-  };
+    </div>
+  );
+}
+
+export function AbilityText({ ability }: { ability: Ability }) {
+  return <RichTextViewer html={getAbilityHtml(ability)} className="text-base" />;
+}
+
+export function AbilitiesSection({ data, abilities }: { data: Entity; abilities: EntityAbilities }) {
+  if (!data.abilityIds?.length) {
+    return null;
+  }
 
   return (
     <div className="space-y-4">
-      {renderGroup(groupedAbilities.traits)}
-      {renderGroup(groupedAbilities.actions, "Actions")}
-      {renderGroup(groupedAbilities.bonusActions, "Bonus Actions")}
-      {renderGroup(groupedAbilities.reactions, "Reactions")}
-      {renderGroup(groupedAbilities.legendaryActions, "Legendary Actions")}
-      {renderGroup(groupedAbilities.mythicActions, "Mythic Actions")}
-      {renderGroup(groupedAbilities.lairActions, "Lair Actions")}
-      {missingAbilityIds.length > 0 && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-          {missingAbilityIds.length === 1
+      <AbilityGroup abilities={abilities.traits} />
+      <AbilityGroup abilities={abilities.multiattacks} header="Multiattack" />
+      <AbilityGroup abilities={abilities.actions} header="Actions" />
+      <AbilityGroup abilities={abilities.bonusActions} header="Bonus Actions" />
+      <AbilityGroup abilities={abilities.reactions} header="Reactions" />
+      <SpecialAbilityGroup
+        abilities={abilities.legendaryActions}
+        header="Legendary Actions"
+        badge={
+          data.legendaryActionsPerRound != null && data.legendaryActionsPerRound > 0
+            ? `${data.legendaryActionsPerRound} per round`
+            : undefined
+        }
+      />
+      <SpecialAbilityGroup
+        abilities={abilities.mythicActions}
+        header="Mythic Actions"
+      />
+      <SpecialAbilityGroup
+        abilities={abilities.regionalEffects}
+        header="Regional Effects"
+      />
+      {abilities.missingIds.length > 0 && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-destructive/60" aria-hidden />
+          {abilities.missingIds.length === 1
             ? "One linked ability could not be loaded."
-            : `${missingAbilityIds.length} linked abilities could not be loaded.`}
+            : `${abilities.missingIds.length} linked abilities could not be loaded.`}
         </div>
       )}
     </div>
   );
-};
+}

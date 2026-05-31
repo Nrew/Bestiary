@@ -1,9 +1,7 @@
 import React, { useCallback } from "react";
-import { motion } from "framer-motion";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { burnVariants } from "@/lib/animations";
 import {
   MoreVertical,
   Trash2,
@@ -37,7 +35,7 @@ import type { BestiaryEntry } from "@/types";
 const sidebarItemVariants = cva(
   [
     "group relative flex items-center gap-3 p-4 pr-12 overflow-hidden rounded-lg border cursor-pointer",
-    "transition-all duration-200 hover:translate-x-1",
+    "transition duration-200 hover:translate-x-1",
     // Respect prefers-reduced-motion: strip transforms + transitions.
     "motion-reduce:transform-none motion-reduce:transition-none",
   ],
@@ -115,6 +113,12 @@ const SidebarItemActions = React.memo<{
             isSelected && "opacity-100"
           )}
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
           aria-label="Item actions"
         >
           <MoreVertical className="h-4 w-4" />
@@ -180,11 +184,12 @@ export const SidebarItem = React.memo<SidebarItemProps>(({
   }, [onDeleteRequest, item.id, item.name]);
 
   return (
-    <motion.div
-      variants={burnVariants}
-      initial="hidden"
-      animate="visible"
+    // Plain div + CSS animate-content-fade-in: a per-row motion.div with a
+    // filter-based enter variant rebuilt GPU shaders on every virtualizer
+    // recycle during scroll. Pure CSS opacity/translate is far cheaper.
+    <div
       className={cn(
+        "animate-content-fade-in",
         sidebarItemVariants({ variant, isSelected, className })
       )}
       onClick={handleClick}
@@ -192,8 +197,10 @@ export const SidebarItem = React.memo<SidebarItemProps>(({
       tabIndex={0}
       aria-label={`${displayName} - ${contextConfig.label.slice(0, -1)}`}
       onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
+          e.stopPropagation();
           handleClick();
         }
       }}
@@ -210,7 +217,7 @@ export const SidebarItem = React.memo<SidebarItemProps>(({
 
       <div
         className={cn(
-          "relative shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+          "relative shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition",
           isSelected ? styling.bg : "bg-secondary/50 group-hover:bg-brass/10"
         )}
       >
@@ -219,7 +226,7 @@ export const SidebarItem = React.memo<SidebarItemProps>(({
             "w-5 h-5 transition-colors",
             isSelected
               ? styling.color
-              : "text-muted-foreground group-hover:text-brass"
+              : "text-muted-foreground group-hover:text-brass-strong"
           )}
           aria-hidden="true"
         />
@@ -256,7 +263,7 @@ export const SidebarItem = React.memo<SidebarItemProps>(({
         onDelete={handleDelete}
         isSelected={isSelected}
       />
-    </motion.div>
+    </div>
   );
 });
 

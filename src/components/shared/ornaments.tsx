@@ -1,4 +1,3 @@
-import React from "react";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
 
@@ -6,8 +5,9 @@ interface DecorativeFlourishProps {
   className?: string;
 }
 
-export const DecorativeFlourish: React.FC<DecorativeFlourishProps> = ({ className = "" }) => (
-  <svg className={className} viewBox="0 0 240 44" fill="none" aria-hidden="true">
+export function DecorativeFlourish({ className = "" }: DecorativeFlourishProps) {
+  return (
+    <svg className={className} viewBox="0 0 240 44" fill="none" aria-hidden="true">
     {/* Left terminal spiral */}
     <path
       d="M8 22 C8 12, 18 7, 26 12 C31 15, 30 21, 25 22 C20 23, 18 19, 21 17"
@@ -49,21 +49,24 @@ export const DecorativeFlourish: React.FC<DecorativeFlourishProps> = ({ classNam
       stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.45"
     />
   </svg>
-);
+  );
+}
 
 interface IlluminatedLetterProps {
   letter: string;
   className?: string;
 }
 
-export const IlluminatedLetter: React.FC<IlluminatedLetterProps> = ({ letter, className }) => (
-  <div className={clsx("relative inline-block", className)}>
-    <div className="absolute inset-0 bg-linear-to-br from-rune/20 via-leather/15 to-rune/20 rounded-lg blur-sm" />
-    <div className="relative bg-linear-to-br from-rune/10 to-leather/5 border-2 border-rune/40 rounded-lg p-4 shadow-lg">
-      <span className="font-display text-6xl font-bold text-leather relative z-10">{letter}</span>
+export function IlluminatedLetter({ letter, className }: IlluminatedLetterProps) {
+  return (
+    <div className={clsx("relative inline-block", className)}>
+      <div className="absolute inset-0 bg-linear-to-br from-rune/20 via-leather/15 to-rune/20 rounded-lg blur-sm" />
+      <div className="relative bg-linear-to-br from-rune/10 to-leather/5 border-2 border-rune/40 rounded-lg p-4 shadow-lg">
+        <span className="font-display text-6xl font-bold text-leather relative z-10">{letter}</span>
+      </div>
     </div>
-  </div>
-);
+  );
+}
 
 interface OrnamentalDividerProps {
   className?: string;
@@ -71,10 +74,10 @@ interface OrnamentalDividerProps {
   variant?: "ornamental" | "medieval";
 }
 
-export const OrnamentalDivider: React.FC<OrnamentalDividerProps> = ({
+export function OrnamentalDivider({
   className,
   variant = "ornamental",
-}) => {
+}: OrnamentalDividerProps) {
   if (variant === "medieval") {
     return (
       <div className={cn("flex items-center justify-center py-3", className)} aria-hidden="true">
@@ -106,4 +109,4 @@ export const OrnamentalDivider: React.FC<OrnamentalDividerProps> = ({
       <div className="grow h-px bg-primary/30 origin-left" />
     </div>
   );
-};
+}

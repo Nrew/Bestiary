@@ -1,4 +1,4 @@
-/** Type-safe Object.keys — returns `Array<keyof T>` instead of `string[]`. */
+/** Type-safe Object.keys: returns `Array<keyof T>` instead of `string[]`. */
 export const typedKeys = <T extends object>(obj: T): Array<keyof T> => {
   return Object.keys(obj) as Array<keyof T>;
 };

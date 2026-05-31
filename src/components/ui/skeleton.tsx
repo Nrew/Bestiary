@@ -10,8 +10,8 @@ const skeletonVariants = cva("bg-muted", {
       default: "animate-pulse bg-muted",
       shimmer:
         "relative overflow-hidden bg-muted " +
-        "before:absolute before:inset-0 before:-translate-x-full before:animate-[skeleton-shimmer_1.5s_ease-in-out_infinite] " +
-        "before:bg-gradient-to-r before:from-transparent before:via-muted/50 before:to-transparent",
+        "before:absolute before:inset-0 before:animate-skeleton " +
+        "before:bg-linear-to-r before:from-transparent before:via-muted/50 before:to-transparent",
     },
     rounded: {
       none: "rounded-none",
@@ -29,26 +29,34 @@ const skeletonVariants = cva("bg-muted", {
 
 export interface SkeletonProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof skeletonVariants> {}
+    VariantProps<typeof skeletonVariants> {
+  ref?: React.Ref<HTMLDivElement>;
+}
 
-const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  ({ className, variant, rounded, ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={cn(skeletonVariants({ variant, rounded, className }))}
-        {...props}
-      />
-    );
-  }
-);
-Skeleton.displayName = "Skeleton";
+function Skeleton({
+  className,
+  variant,
+  rounded,
+  ref,
+  ...props
+}: SkeletonProps) {
+  return (
+    <div
+      ref={ref}
+      className={cn(skeletonVariants({ variant, rounded, className }))}
+      {...props}
+    />
+  );
+}
 
-const SkeletonText = React.forwardRef<
-  HTMLDivElement,
-  SkeletonProps & { lines?: number; lastLineWidth?: string }
->(
-  ({ lines = 3, lastLineWidth = "60%", className, ...props }, ref) => (
+function SkeletonText({
+  lines = 3,
+  lastLineWidth = "60%",
+  className,
+  ref,
+  ...props
+}: SkeletonProps & { lines?: number; lastLineWidth?: string }) {
+  return (
     <div ref={ref} className={cn("space-y-2", className)}>
       {Array.from({ length: lines }).map((_, index) => (
         <Skeleton
@@ -59,8 +67,7 @@ const SkeletonText = React.forwardRef<
         />
       ))}
     </div>
-  )
-);
-SkeletonText.displayName = "SkeletonText";
+  );
+}
 
-export { Skeleton, SkeletonText, skeletonVariants };
+export { Skeleton, SkeletonText };

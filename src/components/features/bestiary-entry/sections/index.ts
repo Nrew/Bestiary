@@ -1,6 +1,7 @@
 export { AbilitiesSection } from "./Abilities";
 export { ConditionsSection } from "./Conditions";
 export { GallerySection, PortraitSection } from "./Gallery";
+export { LairActionsPanel } from "./LairActionsPanel";
 export { LootSection } from "./Loot";
 export { NotesSection } from "./Notes";
 export { OverviewSection } from "./Overview";

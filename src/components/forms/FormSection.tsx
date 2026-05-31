@@ -12,22 +12,24 @@ interface FormSectionProps {
   className?: string;
 }
 
-export const FormSection: React.FC<FormSectionProps> = ({
+export function FormSection({
   title,
   iconCategory,
   iconName,
   children,
   className,
-}) => (
-  <Card className={cn("bg-card border-border/50", className)}>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-3 font-display text-xl">
-        <Icon category={iconCategory} name={iconName} size="md" />
-        {title}
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {children}
-    </CardContent>
-  </Card>
-);
+}: FormSectionProps) {
+  return (
+    <Card className={cn("bg-card border-border/50", className)}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-3 font-display text-xl">
+          <Icon category={iconCategory} name={iconName} size="md" />
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {children}
+      </CardContent>
+    </Card>
+  );
+}

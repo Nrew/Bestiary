@@ -6,6 +6,8 @@ export interface KeyboardShortcut {
   preventDefault?: boolean;
   /** Only active when this element/selector is focused */
   scope?: string;
+  /** Fire even when an input, textarea, or contentEditable has focus. */
+  allowInEditable?: boolean;
   enabled?: boolean;
 }
 
@@ -17,7 +19,18 @@ interface ParsedShortcut {
   key: string;
 }
 
-function parseShortcut(shortcut: string): ParsedShortcut {
+interface NavigatorUAData {
+  platform: string;
+}
+
+function isMacPlatform(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const uaData = (navigator as Navigator & { userAgentData?: NavigatorUAData }).userAgentData;
+  const platform = uaData?.platform ?? navigator.platform ?? '';
+  return platform.toUpperCase().includes('MAC');
+}
+
+export function parseShortcut(shortcut: string): ParsedShortcut {
   const parts = shortcut.toLowerCase().split('+');
   const key = parts.pop() || '';
 
@@ -30,16 +43,29 @@ function parseShortcut(shortcut: string): ParsedShortcut {
   };
 }
 
-function matchesShortcut(e: KeyboardEvent, parsed: ParsedShortcut): boolean {
+type ShortcutEventLike = Pick<KeyboardEvent, 'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey' | 'key'>;
+
+export function eventMatchesShortcut(
+  e: ShortcutEventLike,
+  parsed: ParsedShortcut,
+  isMac: boolean,
+): boolean {
   const eventKey = e.key.toLowerCase();
+  const wantsPrimary = parsed.ctrl || parsed.meta;
+  const primaryActive = isMac ? e.metaKey : e.ctrlKey;
+  const otherModifier = isMac ? e.ctrlKey : e.metaKey;
 
   return (
-    e.ctrlKey === parsed.ctrl &&
+    primaryActive === wantsPrimary &&
+    !otherModifier &&
     e.altKey === parsed.alt &&
     e.shiftKey === parsed.shift &&
-    e.metaKey === parsed.meta &&
     eventKey === parsed.key
   );
+}
+
+function matchesShortcut(e: KeyboardEvent, parsed: ParsedShortcut): boolean {
+  return eventMatchesShortcut(e, parsed, isMacPlatform());
 }
 
 class KeyboardShortcutsManager {
@@ -107,10 +133,15 @@ class KeyboardShortcutsManager {
         if (!scopeElement?.contains(target)) continue;
       }
 
-      // For most shortcuts, skip if input is focused (unless it's Escape)
+      // For most shortcuts, skip if input is focused (unless it's Escape).
+      // Ctrl/Cmd shortcuts pass through; `allowInEditable` is an explicit opt-in
+      // for non-modifier shortcuts like nav history traversal.
       if (isInputFocused && shortcut.parsed.key !== 'escape') {
-        // Allow Ctrl/Cmd shortcuts even in inputs
-        if (!shortcut.parsed.ctrl && !shortcut.parsed.meta) continue;
+        if (
+          !shortcut.allowInEditable &&
+          !shortcut.parsed.ctrl &&
+          !shortcut.parsed.meta
+        ) continue;
       }
 
       if (matchesShortcut(e, shortcut.parsed)) {
@@ -146,7 +177,7 @@ export function useKeyboardShortcut(
   handler: (e: KeyboardEvent) => void,
   options: Omit<KeyboardShortcut, 'key' | 'handler'> = {}
 ): void {
-  const { description, preventDefault, scope, enabled = true } = options;
+  const { description, preventDefault, scope, allowInEditable, enabled = true } = options;
 
   // Stable ID that persists across re-renders
   const idRef = useRef<string | null>(null);
@@ -154,19 +185,25 @@ export function useKeyboardShortcut(
     idRef.current = `shortcut-${key}-${Math.random().toString(36).slice(2)}`;
   }
 
+  const handlerRef = useRef(handler);
+  useEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
+
   useEffect(() => {
     const id = idRef.current;
     if (!id) return undefined;
     const unregister = keyboardManager.register(id, {
       key,
-      handler,
+      handler: (e) => handlerRef.current(e),
       description,
       preventDefault,
       scope,
+      allowInEditable,
       enabled,
     });
     return unregister;
-  }, [key, handler, description, preventDefault, scope, enabled]);
+  }, [key, description, preventDefault, scope, allowInEditable, enabled]);
 }
 
 export function useKeyboardShortcuts(
@@ -192,13 +229,15 @@ export const APP_SHORTCUTS = {
   NEW: 'ctrl+n',
   SEARCH: 'ctrl+k',
   ESCAPE: 'escape',
+  NAV_BACK: 'alt+arrowleft',
+  NAV_FORWARD: 'alt+arrowright',
 } as const;
 
 export function formatShortcutKey(key: string): string {
-  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const isMac = isMacPlatform();
 
   return key
-    .replace(/ctrl\+/gi, isMac ? '⌃' : 'Ctrl+')
+    .replace(/ctrl\+/gi, isMac ? '⌘' : 'Ctrl+')
     .replace(/cmd\+/gi, isMac ? '⌘' : 'Ctrl+')
     .replace(/meta\+/gi, isMac ? '⌘' : 'Win+')
     .replace(/alt\+/gi, isMac ? '⌥' : 'Alt+')

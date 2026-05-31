@@ -1,9 +1,9 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getThreatClassName } from "@/lib/theme";
 import { ENTITY_SIZE_LABELS, THREAT_LEVEL_LABELS } from "@/lib/dnd/constants";
-import { motion } from "framer-motion";
 import { contentVariants } from "@/lib/animations";
 import { isEntity } from "@/lib/type-guards";
 import type { BestiaryEntry, Entity, ViewContext } from "@/types";
@@ -13,7 +13,7 @@ interface EntryHeaderProps {
   entryType: ViewContext;
 }
 
-export const EntryHeader: React.FC<EntryHeaderProps> = React.memo(({ entry, entryType }) => {
+export const EntryHeader = React.memo(({ entry, entryType }: EntryHeaderProps) => {
 
   const getSubtitle = () => {
     if (entryType === "entities" && isEntity(entry)) {

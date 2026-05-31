@@ -10,12 +10,13 @@ export type ContextEntryType<T extends ViewContext> =
   T extends 'abilities' ? Ability :
   never;
 
+export type ContextIconName = 'crown' | 'gem' | 'shield' | 'sparkles';
 
 export interface ContextUIConfig {
   /** Display label (e.g., "Creatures") */
   readonly displayLabel: string;
   /** Lucide icon name (resolved to component in UI layer) */
-  readonly iconName: 'crown' | 'gem' | 'shield' | 'sparkles';
+  readonly iconName: ContextIconName;
   readonly colorClass: string;
   readonly description: string;
   readonly variant: 'entity' | 'item' | 'status' | 'ability';
@@ -92,7 +93,7 @@ export const CONTEXT_REGISTRY: Record<ViewContext, ContextConfig> = {
   items: createConfig('items', 'Item', 'Items', 'package', {
     displayLabel: 'Artifacts',
     iconName: 'gem',
-    colorClass: 'text-brass',
+    colorClass: 'text-brass-strong',
     description: 'Weapons, armor, and treasures',
     variant: 'item',
     accentColor: 'var(--color-moss)',
@@ -108,7 +109,7 @@ export const CONTEXT_REGISTRY: Record<ViewContext, ContextConfig> = {
   }, createApiWrapper(statusApi)),
 
   abilities: createConfig('abilities', 'Ability', 'Abilities', 'zap', {
-    displayLabel: 'Powers',
+    displayLabel: 'Abilities',
     iconName: 'sparkles',
     colorClass: 'text-bloodstone',
     description: 'Spells and techniques',

@@ -3,9 +3,9 @@ use crate::db::queries::{AbilityRepository, EntityRepository, ItemRepository, St
 use crate::db::Repository;
 use crate::error::AppError;
 use crate::models::{
-    AbilityExport, AbilityType, AoeShape, Attribute, DamageType, EntityExport, EntitySize,
-    GameEnums, ItemExport, ItemType, Rarity, ResistanceLevel, StatusExport, ThreatLevel,
-    Validatable,
+    AbilityCategory, AbilityExport, AbilityTiming, AoeShape, Attribute, DamageType, EntityExport,
+    EntitySize, GameEnums, ItemExport, ItemType, MagicSchool, Rarity, ResistanceLevel, RestType,
+    StatusExport, ThreatLevel, Validatable,
 };
 use crate::util;
 use serde::{Deserialize, Serialize};
@@ -453,6 +453,7 @@ mod tests {
         parse_required_collection_array, read_backup_schema_version,
     };
     use crate::error::AppError;
+    use crate::models::{AbilityCategory, AbilityTiming};
     use serde_json::json;
 
     #[test]
@@ -572,6 +573,21 @@ mod tests {
             }
             _ => panic!("expected validation error"),
         }
+    }
+
+    #[test]
+    fn game_enums_includes_all_ability_axes() {
+        let enums = super::build_game_enums();
+        assert!(enums.ability_timings.contains(&AbilityTiming::Action));
+        assert!(enums.ability_timings.contains(&AbilityTiming::Reaction));
+        assert!(enums.ability_timings.contains(&AbilityTiming::Passive));
+        assert!(enums.ability_categories.contains(&AbilityCategory::None));
+        assert!(enums
+            .ability_categories
+            .contains(&AbilityCategory::Multiattack));
+        assert!(enums
+            .ability_categories
+            .contains(&AbilityCategory::RegionalEffect));
     }
 }
 
@@ -1197,14 +1213,19 @@ fn build_game_enums() -> GameEnums {
             Rarity::Mythic,
             Rarity::Unique,
         ],
-        ability_types: vec![
-            AbilityType::Action,
-            AbilityType::BonusAction,
-            AbilityType::Reaction,
-            AbilityType::Passive,
-            AbilityType::Legendary,
-            AbilityType::Lair,
-            AbilityType::Mythic,
+        ability_timings: vec![
+            AbilityTiming::Action,
+            AbilityTiming::BonusAction,
+            AbilityTiming::Reaction,
+            AbilityTiming::Passive,
+            AbilityTiming::Legendary,
+            AbilityTiming::Lair,
+            AbilityTiming::Mythic,
+        ],
+        ability_categories: vec![
+            AbilityCategory::None,
+            AbilityCategory::Multiattack,
+            AbilityCategory::RegionalEffect,
         ],
         aoe_shapes: vec![
             AoeShape::Sphere,
@@ -1213,6 +1234,17 @@ fn build_game_enums() -> GameEnums {
             AoeShape::Line,
             AoeShape::Cylinder,
         ],
+        magic_schools: vec![
+            MagicSchool::Abjuration,
+            MagicSchool::Conjuration,
+            MagicSchool::Divination,
+            MagicSchool::Enchantment,
+            MagicSchool::Evocation,
+            MagicSchool::Illusion,
+            MagicSchool::Necromancy,
+            MagicSchool::Transmutation,
+        ],
+        rest_types: vec![RestType::Short, RestType::Long, RestType::Dawn],
         damage_types: vec![
             DamageType::Acid,
             DamageType::Bludgeoning,

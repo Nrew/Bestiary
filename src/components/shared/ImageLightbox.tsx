@@ -10,11 +10,11 @@ interface ImageLightboxProps {
   onClose: () => void;
 }
 
-export const ImageLightbox: React.FC<ImageLightboxProps> = ({
+export function ImageLightbox({
   images,
   initialIndex,
   onClose,
-}) => {
+}: ImageLightboxProps) {
   const [currentIndex, setCurrentIndex] = React.useState(initialIndex);
   const [isImageLoaded, setIsImageLoaded] = React.useState(false);
   const imageRef = React.useRef<HTMLImageElement | null>(null);
@@ -39,11 +39,10 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
 
   const handleKeyDown = React.useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") handlePrev();
-      if (e.key === "ArrowRight") handleNext();
+      if (e.key === "ArrowLeft") { e.preventDefault(); handlePrev(); }
+      if (e.key === "ArrowRight") { e.preventDefault(); handleNext(); }
     },
-    [onClose, handlePrev, handleNext]
+    [handlePrev, handleNext]
   );
 
   React.useEffect(() => {
@@ -77,10 +76,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay
-          className="fixed inset-0 z-100"
-          style={{ background: "oklch(10% 0.01 30 / 0.85)" }}
-        />
+        <Dialog.Overlay className="fixed inset-0 z-100 bg-overlay" />
         <Dialog.Content
           className="fixed inset-0 z-101 flex items-center justify-center focus:outline-none"
           aria-describedby="image-lightbox-description"
@@ -146,7 +142,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
             ref={imageRef}
             src={resolvedUrl}
             alt={`Image ${currentIndex + 1}`}
-            className={`max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl transition-opacity duration-200 ${
+            className={`max-h-(--dialog-max-h) max-w-[90vw] object-contain rounded-lg shadow-2xl transition-opacity duration-200 ${
               isImageLoaded ? "opacity-100" : "opacity-0"
             }`}
             loading="eager"
@@ -179,4 +175,4 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
       </Dialog.Portal>
     </Dialog.Root>
   );
-};
+}

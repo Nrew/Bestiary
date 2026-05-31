@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { useFormContext, Controller, FieldValues, Path } from "react-hook-form";
+import React, { useState, useCallback, useDeferredValue, useEffect } from "react";
+import { useFormContext, useFormState, useController, Controller, FieldValues, Path } from "react-hook-form";
 import { Input, InputProps } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -29,91 +29,42 @@ interface FormInputProps<T extends FieldValues>
   name: Path<T>;
   label: string;
   description?: string;
-  asJson?: boolean;
-  asCommaString?: boolean;
-  onChange?: (
-    event: React.ChangeEvent<HTMLInputElement>,
-    originalOnChange: (event: React.ChangeEvent<HTMLInputElement>) => void
-  ) => void;
 }
 
+// Uncontrolled: uses `register()` so RHF stores the raw string and the Zod
+// schema's nullableNumber transform handles "" → null. Subscribes to errors
+// via the field-scoped `useFormState`, so unrelated form-state churn does
+// not re-render this input.
 export function FormInput<T extends FieldValues>({
   name,
   label,
   description,
-  asJson,
-  asCommaString,
-  onChange,
   ...props
 }: FormInputProps<T>) {
-  const { control } = useFormContext<T>();
+  const { register, control, getFieldState } = useFormContext<T>();
+  const formState = useFormState({ control, name });
+  const { error } = getFieldState(name, formState);
+  const hasError = Boolean(error);
+
   return (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field, fieldState: { error } }) => {
-        const fieldValue: unknown = field.value;
-        let displayValue: string | number | readonly string[] = "";
-        if (asJson && fieldValue && typeof fieldValue === 'object') {
-          try {
-            displayValue = JSON.stringify(fieldValue, null, 2);
-            if (displayValue === '{}') displayValue = '';
-          } catch {
-            displayValue = "Invalid JSON object in form state";
-          }
-        } else if (asCommaString && Array.isArray(fieldValue)) {
-          displayValue = fieldValue.join(", ");
-        } else if (typeof fieldValue === "string" || typeof fieldValue === "number") {
-          displayValue = fieldValue;
-        }
-
-        const hasError = Boolean(error);
-
-        return (
-          <div className="space-y-2">
-            <Label id={labelId(name)} htmlFor={fieldId(name)}>{label}</Label>
-            <Input
-              {...field}
-              {...props}
-              id={fieldId(name)}
-              value={displayValue}
-              aria-invalid={hasError || undefined}
-              aria-describedby={describedBy(name, description, hasError)}
-              onChange={(e) => {
-                const updateValue = (event: React.ChangeEvent<HTMLInputElement>) => {
-                if (asJson) {
-                  try {
-                    const parsed: unknown = event.target.value.trim() === '' ? {} : JSON.parse(event.target.value);
-                    field.onChange(parsed);
-                  } catch {
-                    field.onChange(event.target.value);
-                  }
-                } else if (asCommaString) {
-                    const arr = event.target.value.split(',').map(s => s.trim()).filter(Boolean);
-                    field.onChange(arr);
-                } else {
-                  field.onChange(event.target.value);
-                }
-                };
-                if (onChange) {
-                  onChange(e, updateValue);
-                } else {
-                  updateValue(e);
-                }
-              }}
-            />
-            {description && (
-              <p id={descriptionId(name)} className="text-sm text-muted-foreground">{description}</p>
-            )}
-            {error && (
-              <p id={errorId(name)} className="text-sm font-medium text-destructive">
-                {error.message}
-              </p>
-            )}
-          </div>
-        );
-      }}
-    />
+    <div className="space-y-2">
+      <Label id={labelId(name)} htmlFor={fieldId(name)}>{label}</Label>
+      <Input
+        {...register(name)}
+        {...props}
+        id={fieldId(name)}
+        aria-invalid={hasError || undefined}
+        aria-describedby={describedBy(name, description, hasError)}
+      />
+      {description && (
+        <p id={descriptionId(name)} className="text-sm text-muted-foreground">{description}</p>
+      )}
+      {error && (
+        <p id={errorId(name)} className="text-sm font-medium text-destructive">
+          {error.message}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -126,6 +77,13 @@ interface FormSelectProps<T extends FieldValues> {
   description?: string;
 }
 
+// Uses `useController` for narrow per-field RHF subscription: no Controller
+// render-prop wrapping so unrelated form-state churn won't re-render this select.
+// The SelectItem list is gated on `itemsReady` (initially false, then true on
+// React's transition-priority deferred render) so the hidden option tree is
+// not built during the initial form-mount commit. Children passed to
+// SelectValue derive the label from `options` directly so the trigger still
+// shows the correct label on first paint without depending on item mounting.
 export function FormSelect<T extends FieldValues>({
   name,
   label,
@@ -134,52 +92,62 @@ export function FormSelect<T extends FieldValues>({
   description,
 }: FormSelectProps<T>) {
   const { control } = useFormContext<T>();
+  const {
+    field,
+    fieldState: { error },
+  } = useController({ name, control });
+  const itemsReady = useDeferredValue(true, false);
   const helpId = description ? descriptionId(name) : undefined;
   const messageId = errorId(name);
+  const hasError = Boolean(error);
+  const fieldValue: unknown = field.value;
+  const stringValue: string =
+    typeof fieldValue === "string" || typeof fieldValue === "number"
+      ? String(fieldValue)
+      : "";
+  const selectedLabel = options.find((opt) => opt.value === stringValue)?.label;
+
   return (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field, fieldState: { error } }) => (
-        <div className="space-y-2">
-          <Label id={labelId(name)} htmlFor={fieldId(name)}>{label}</Label>
-          <Select
-            onValueChange={field.onChange}
-            value={field.value ?? ""}
-            onOpenChange={(isOpen) => {
-              if (!isOpen) field.onBlur();
-            }}
-          >
-            <SelectTrigger
-              id={fieldId(name)}
-              ref={field.ref}
-              aria-labelledby={labelId(name)}
-              aria-invalid={Boolean(error)}
-              aria-describedby={[helpId, error ? messageId : undefined]
-                .filter(Boolean)
-                .join(" ") || undefined}
-            >
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {description && (
-            <p id={helpId} className="text-sm text-muted-foreground">{description}</p>
-          )}
-          {error && (
-            <p id={messageId} className="text-sm font-medium text-destructive">
-              {error.message}
-            </p>
-          )}
-        </div>
+    <div className="space-y-2">
+      <Label id={labelId(name)} htmlFor={fieldId(name)}>{label}</Label>
+      <Select
+        name={field.name}
+        value={stringValue}
+        onValueChange={field.onChange}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) field.onBlur();
+        }}
+      >
+        <SelectTrigger
+          id={fieldId(name)}
+          ref={field.ref}
+          aria-labelledby={labelId(name)}
+          aria-invalid={hasError || undefined}
+          aria-describedby={[helpId, hasError ? messageId : undefined]
+            .filter(Boolean)
+            .join(" ") || undefined}
+        >
+          <SelectValue placeholder={placeholder}>
+            {selectedLabel}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {itemsReady && options.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {description && (
+        <p id={helpId} className="text-sm text-muted-foreground">{description}</p>
       )}
-    />
+      {error && (
+        <p id={messageId} className="text-sm font-medium text-destructive">
+          {error.message}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -445,6 +413,7 @@ function ColorPickerInner({
         />
         <Input
           id={name}
+          name={name}
           value={localColor}
           onChange={handleTextChange}
           onBlur={handleTextBlur}

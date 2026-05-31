@@ -26,33 +26,59 @@ export const slideDownVariants: Variants = {
   exit: { opacity: 0, y: -8, transition: { duration: DURATION.fast } },
 };
 
-export const staggerContainerVariants: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
-};
-
-export const contentVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  visible: { opacity: 1, y: 0, transition: { duration: DURATION.slow, ease: EASE_OUT } },
-};
-
-export const burnVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.92, filter: "brightness(1.8) sepia(1) saturate(4) blur(2px)" },
-  visible: { opacity: 1, scale: 1, filter: "brightness(1) sepia(0) saturate(1) blur(0px)", transition: { duration: DURATION.fast, ease: EASE_OUT } },
-};
-
 export const sidebarPanelVariants: Variants = {
   hidden: { x: "-100%" },
   visible: { x: 0, transition: { duration: DURATION.base, ease: EASE_OUT } },
   exit: { x: "-100%", transition: { duration: DURATION.base, ease: EASE_OUT } },
 };
 
-export const headerSlideLeft: Variants = {
-  hidden: { opacity: 0, x: -16 },
-  visible: { opacity: 1, x: 0, transition: { duration: DURATION.slow, ease: EASE_OUT } },
+export const staggerContainerVariants: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      delayChildren: 0,
+      staggerChildren: 0.035,
+    },
+  },
+  exit: {
+    transition: {
+      staggerChildren: 0.02,
+      staggerDirection: -1,
+    },
+  },
 };
 
-export const headerSlideRight: Variants = {
-  hidden: { opacity: 0, x: 16 },
-  visible: { opacity: 1, x: 0, transition: { duration: DURATION.slow, ease: EASE_OUT, delay: 0.05 } },
+export const contentVariants: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: DURATION.base, ease: EASE_OUT },
+  },
 };
+
+export type PageFlipDirection = "back" | "forward" | "direct";
+
+const pageFlipSign = (direction: PageFlipDirection): number => {
+  if (direction === "back") return -1;
+  if (direction === "forward") return 1;
+  return 0;
+};
+
+export const pageFlipVariants: Variants = {
+  hidden: ({ direction }: { direction: PageFlipDirection }) => ({
+    opacity: 0,
+    x: pageFlipSign(direction) * 24,
+  }),
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: DURATION.base, ease: EASE_OUT },
+  },
+  exit: ({ direction }: { direction: PageFlipDirection }) => ({
+    opacity: 0,
+    x: pageFlipSign(direction) * -24,
+    transition: { duration: DURATION.fast, ease: EASE_OUT },
+  }),
+};
+

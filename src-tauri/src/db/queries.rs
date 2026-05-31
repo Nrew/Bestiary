@@ -322,28 +322,36 @@ impl Repository<AbilityExport, Ability> for AbilityRepository {
         let now = Utc::now();
         sqlx::query(
             r#"
-            INSERT INTO abilities (id, name, slug, description, type, target_json, casting_time,
-                                   requires_concentration, components_json, recharge, effects_json,
-                                   created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO abilities (id, name, slug, description, timing, category, target_json,
+                                   requires_concentration, components_json,
+                                   spell_level, school, ritual, higher_levels, uses_json,
+                                   effects_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name, slug = excluded.slug, description = excluded.description,
-                type = excluded.type, target_json = excluded.target_json, casting_time = excluded.casting_time,
+                timing = excluded.timing, category = excluded.category,
+                target_json = excluded.target_json,
                 requires_concentration = excluded.requires_concentration, components_json = excluded.components_json,
-                recharge = excluded.recharge, effects_json = excluded.effects_json,
-                updated_at = excluded.updated_at
+                spell_level = excluded.spell_level, school = excluded.school,
+                ritual = excluded.ritual, higher_levels = excluded.higher_levels,
+                uses_json = excluded.uses_json,
+                effects_json = excluded.effects_json, updated_at = excluded.updated_at
             "#
         )
         .bind(&export.id)
         .bind(&export.name)
         .bind(&export.slug)
         .bind(&export.description)
-        .bind(&export.r#type)
+        .bind(&export.timing)
+        .bind(&export.category)
         .bind(export.target.as_ref().map(Json))
-        .bind(&export.casting_time)
         .bind(export.requires_concentration)
         .bind(export.components.as_ref().map(Json))
-        .bind(&export.recharge)
+        .bind(export.spell_level.map(|n| n as i64))
+        .bind(&export.school)
+        .bind(export.ritual)
+        .bind(&export.higher_levels)
+        .bind(export.uses.as_ref().map(Json))
         .bind(Json(&export.effects))
         .bind(now)
         .bind(now)
@@ -818,4 +826,170 @@ pub async fn save_ability(
 
 pub async fn delete_ability(pool: &Pool<Sqlite>, id: &ID) -> Result<(), AppError> {
     AbilityRepository::delete(pool, id).await
+}
+
+#[cfg(test)]
+mod migration_tests {
+    use sqlx::SqlitePool;
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn migration_002_shapes_abilities_table(pool: SqlitePool) -> sqlx::Result<()> {
+        let cols: Vec<String> =
+            sqlx::query_scalar("SELECT name FROM pragma_table_info('abilities')")
+                .fetch_all(&pool)
+                .await?;
+        for required in [
+            "spell_level",
+            "school",
+            "ritual",
+            "higher_levels",
+            "uses_json",
+            "timing",
+            "category",
+        ] {
+            assert!(
+                cols.iter().any(|c| c == required),
+                "missing column: {}",
+                required
+            );
+        }
+        for removed in ["type", "casting_time", "recharge"] {
+            assert!(
+                !cols.iter().any(|c| c == removed),
+                "column should no longer exist: {}",
+                removed
+            );
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn migration_002_backfills_recharge_patterns_into_uses_json() -> sqlx::Result<()> {
+        let m001 = include_str!("../../migrations/001_initial_schema.sql");
+        let m002 = include_str!("../../migrations/002_abilities_scope_b.sql");
+
+        let pool = SqlitePool::connect("sqlite::memory:").await?;
+        sqlx::raw_sql(m001).execute(&pool).await?;
+
+        let fixtures: &[(&str, &str)] = &[
+            ("at-will", "At Will"),
+            ("once", "Once"),
+            ("short-rest", "short rest"),
+            ("long-rest", "Long Rest"),
+            ("dawn", "dawn"),
+            ("recharge-range", "Recharge 5-6"),
+            ("recharge-endash", "Recharge 5–6"),
+            ("recharge-single", "Recharge 6"),
+            ("per-day", "3/day"),
+            ("per-short-rest", "2/short rest"),
+            ("per-long-rest", "1/long rest"),
+            ("per-dawn", "1/dawn"),
+            ("unparseable", "1d4 hours"),
+        ];
+        for (id, recharge) in fixtures {
+            sqlx::query(
+                "INSERT INTO abilities (id, name, slug, description, type, recharge, effects_json) \
+                 VALUES (?, ?, ?, '', 'action', ?, '[]')",
+            )
+            .bind(id)
+            .bind(id)
+            .bind(id)
+            .bind(recharge)
+            .execute(&pool)
+            .await?;
+        }
+
+        sqlx::raw_sql(m002).execute(&pool).await?;
+
+        let rows: Vec<(String, Option<String>)> =
+            sqlx::query_as("SELECT id, uses_json FROM abilities ORDER BY id")
+                .fetch_all(&pool)
+                .await?;
+        let by_id: std::collections::HashMap<_, _> = rows.into_iter().collect();
+
+        let check = |id: &str, expected_substring: &str| {
+            let actual = by_id.get(id).and_then(|v| v.as_deref()).unwrap_or("<NULL>");
+            assert!(
+                actual.contains(expected_substring),
+                "row {id}: expected uses_json to contain {expected_substring:?}, got {actual:?}",
+            );
+        };
+        check("at-will", "\"kind\":\"atWill\"");
+        check("once", "\"kind\":\"once\"");
+        check("short-rest", "\"rest\":\"short\"");
+        check("long-rest", "\"rest\":\"long\"");
+        check("dawn", "\"rest\":\"dawn\"");
+        check("recharge-range", "\"min\":5");
+        check("recharge-range", "\"max\":6");
+        check("recharge-endash", "\"min\":5");
+        check("recharge-single", "\"min\":6");
+        check("recharge-single", "\"max\":6");
+        check("per-day", "\"kind\":\"perDay\"");
+        check("per-day", "\"count\":3");
+        check("per-short-rest", "\"count\":2");
+        check("per-long-rest", "\"rest\":\"long\"");
+        check("per-dawn", "\"rest\":\"dawn\"");
+        assert!(
+            by_id
+                .get("unparseable")
+                .and_then(|v| v.as_deref())
+                .is_none(),
+            "unparseable values should be left as NULL",
+        );
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod ability_repository_tests {
+    use super::AbilityRepository;
+    use crate::db::Repository;
+    use crate::models::{
+        AbilityCategory, AbilityEffect, AbilityExport, AbilityTiming, AbilityUses, DamageType,
+        MagicSchool,
+    };
+    use sqlx::SqlitePool;
+    use uuid::Uuid;
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn ability_save_load_roundtrip_with_spell_fields(pool: SqlitePool) -> sqlx::Result<()> {
+        let id = Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let export = AbilityExport {
+            id: id.clone(),
+            name: "Fireball".into(),
+            slug: "fireball".into(),
+            description: String::new(),
+            timing: AbilityTiming::Action,
+            category: AbilityCategory::None,
+            target: None,
+            requires_concentration: false,
+            components: None,
+            spell_level: Some(3),
+            school: Some(MagicSchool::Evocation),
+            ritual: false,
+            higher_levels: Some("Damage increases by 1d6 per slot".into()),
+            uses: Some(AbilityUses::PerDay { count: 1 }),
+            effects: vec![AbilityEffect::Damage {
+                formula: "8d6".into(),
+                damage_type: DamageType::Fire,
+            }],
+            created_at: now.clone(),
+            updated_at: now,
+        };
+
+        let loaded = AbilityRepository::save(&pool, export)
+            .await
+            .map_err(|e| sqlx::Error::Protocol(format!("save: {e}")))?;
+
+        assert_eq!(loaded.spell_level, Some(3));
+        assert_eq!(loaded.school, Some(MagicSchool::Evocation));
+        assert!(!loaded.ritual);
+        assert_eq!(
+            loaded.higher_levels.as_deref(),
+            Some("Damage increases by 1d6 per slot")
+        );
+        assert_eq!(loaded.uses, Some(AbilityUses::PerDay { count: 1 }));
+        Ok(())
+    }
 }

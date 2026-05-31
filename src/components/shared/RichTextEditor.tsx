@@ -1,5 +1,16 @@
-import React, { useMemo, useEffect, useRef, useState, useCallback, Component, ErrorInfo, ReactNode } from "react";
+import React, {
+  useMemo,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useCallback,
+  Component,
+  ErrorInfo,
+  ReactNode,
+} from "react";
 import { useToast } from "@/components/ui/toast";
+import { useLatestRef } from "@/hooks/useLatestRef";
 import { useEditor, EditorContent, useEditorState } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -30,8 +41,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { getLogger } from "@/lib/logger";
 import { sanitizeHtml } from "@/lib/sanitize";
-
-export { sanitizeHtml } from "@/lib/sanitize";
 
 const log = getLogger("RichTextEditor");
 
@@ -73,30 +82,32 @@ class EditorErrorBoundary extends Component<{ children: ReactNode }, EditorError
   }
 }
 
-const ToolbarButton: React.FC<{
+function ToolbarButton({ onClick, isActive, children, label }: {
   onClick: () => void;
   isActive: boolean;
   children: React.ReactNode;
   label: string;
-}> = ({ onClick, isActive, children, label }) => (
-  <Button
-    type="button"
-    variant="ghost"
-    size="sm"
-    className={cn(
-      "h-8 w-8 p-0",
-      isActive && "is-active bg-muted text-foreground"
-    )}
-    onClick={onClick}
-    aria-label={label}
-    aria-pressed={isActive}
-    title={label}
-  >
-    {children}
-  </Button>
-);
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className={cn(
+        "h-8 w-8 p-0",
+        isActive && "is-active bg-muted text-foreground"
+      )}
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={isActive}
+      title={label}
+    >
+      {children}
+    </Button>
+  );
+}
 
-const EditorToolbar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
+function EditorToolbar({ editor }: { editor: Editor | null }) {
   // useEditorState subscribes to editor transactions so toolbar stays fresh while the shell keeps `shouldRerenderOnTransaction: false`.
   const editorState = useEditorState({
     editor,
@@ -159,29 +170,39 @@ const EditorToolbar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
       </ToolbarButton>
     </div>
   );
-};
+}
 
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
+  onBlur?: () => void;
   editable?: boolean;
   placeholder?: string;
   id?: string;
+  ariaLabel?: string;
   ariaDescribedBy?: string;
   ariaLabelledBy?: string;
   ariaInvalid?: boolean;
+  /** Merged onto the outer editor shell (border, toolbar wrapper). */
+  className?: string;
+  ref?: React.Ref<HTMLDivElement>;
 }
 
 /** TipTap shell: sanitizes HTML in/out, wiki-link autocomplete, guarded navigation while editing. */
-const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
+function RichTextEditorInner({
   content,
   onChange,
+  onBlur: onBlurProp,
   editable = true,
   id,
+  ariaLabel,
   ariaDescribedBy,
   ariaLabelledBy,
   ariaInvalid,
-}) => {
+  className,
+  ref,
+}: RichTextEditorProps) {
+  const shellRef = useRef<HTMLDivElement>(null);
   const { showTooltip } = useWikiLink();
   const rawNavigate = useAppStore((s) => s.navigateToEntry);
   const { navigateToEntry: guardedNavigate } = useNavigationGuard();
@@ -192,24 +213,22 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
   // Sanitize before TipTap parses so hostile markup never enters the editor document.
   const sanitizedContent = useMemo(() => sanitizeHtml(content), [content]);
 
-  // Navigate ref switches to guarded navigation when editor is editable
-  // so wiki-link clicks in edit mode show the unsaved-changes dialog
-  const navigateRef = useRef<
+  // Latest-value refs the TipTap extensions read inside long-lived closures.
+  // Each ref tracks the freshest prop/state value across renders so we can
+  // build the extensions exactly once per editor instance without staling out.
+  const navigateRef = useLatestRef<
     (context: ViewContext, id: string) => Promise<void | boolean>
-  >(rawNavigate);
-  useEffect(() => {
-    navigateRef.current = editable
+  >(
+    editable
       ? (context, id) => guardedNavigate(context, id)
-      : (context, id) => rawNavigate(context, id);
-  }, [editable, guardedNavigate, rawNavigate]);
+      : (context, id) => rawNavigate(context, id),
+  );
+  const callbacksRef = useLatestRef({ showTooltip, toastError: toast.error });
+  const onChangeRef = useLatestRef(onChange);
+  const onBlurPropRef = useLatestRef(onBlurProp);
+  const nameLookupRef = useLatestRef(nameLookup);
 
-  const callbacksRef = useRef({ showTooltip, toastError: toast.error });
-  useEffect(() => {
-    callbacksRef.current = { showTooltip, toastError: toast.error };
-  }, [showTooltip, toast.error]);
-
-  const nameLookupRef = useRef(nameLookup);
-  useEffect(() => { nameLookupRef.current = nameLookup; }, [nameLookup]);
+  const pendingContentRef = useRef<string | null>(null);
 
   const [suggestion, setSuggestion] = useState<{
     query: string;
@@ -217,23 +236,21 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
     selectedIdx: number;
   } | null>(null);
 
-  const onSuggestionChangeRef = useRef<
-    (q: string | null, c: { top: number; left: number } | null) => void
-  >(() => {});
-
-  useEffect(() => {
-    onSuggestionChangeRef.current = (query, coords) => {
+  const onSuggestionChangeRef = useLatestRef(
+    (query: string | null, coords: { top: number; left: number } | null) => {
       if (!editable || query === null) {
         setSuggestion(null);
       } else {
-        setSuggestion((prev) => ({
-          query,
-          coords: coords ?? prev?.coords ?? { top: 0, left: 0 },
-          selectedIdx: 0,
-        }));
+        setSuggestion((prev) => {
+          const nextCoords = coords ?? prev?.coords ?? { top: 0, left: 0 };
+          if (prev && prev.query === query) {
+            return { query, coords: nextCoords, selectedIdx: prev.selectedIdx };
+          }
+          return { query, coords: nextCoords, selectedIdx: 0 };
+        });
       }
-    };
-  }, [editable]);
+    },
+  );
 
   const suggestionItems = useMemo((): WikiLinkItem[] => {
     if (!suggestion) return [];
@@ -249,39 +266,48 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
     return [...startsWith, ...includes].slice(0, 8);
   }, [suggestion, nameLookup]);
 
-  const extensions = useMemo(
-    () => [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
-      WikiLinkExtension.configure({
-        nameLookup: nameLookupRef,
-        onLinkHover: (id, type, element) => callbacksRef.current.showTooltip(id, type, element),
-        onLinkClick: (id, type) => { void navigateRef.current(type, id); },
-        onBrokenLinkClick: () =>
-          callbacksRef.current.toastError("This link's target no longer exists in the bestiary."),
-        onSuggestionChange: (query, coords) => onSuggestionChangeRef.current(query, coords),
-      }),
-    ],
-    // Extensions stay stable; refs/refs-like accessors supply fresh lookups and callbacks.
-    []
-  );
+  // Built once per editor instance: TipTap consumes the array on mount and
+  // would tear down the ProseMirror state machine if it changed reference.
+  // The refs above keep the callbacks reactive without invalidating the array.
+  const [extensions] = useState(() => [
+    StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+    WikiLinkExtension.configure({
+      nameLookup: nameLookupRef,
+      onLinkHover: (id, type, element) => callbacksRef.current.showTooltip(id, type, element),
+      onLinkClick: (id, type) => { void navigateRef.current(type, id); },
+      onBrokenLinkClick: () =>
+        callbacksRef.current.toastError("This link's target no longer exists in the bestiary."),
+      onSuggestionChange: (query, coords) => onSuggestionChangeRef.current(query, coords),
+    }),
+  ]);
+
+  const SUGGESTION_LISTBOX_ID = "wiki-link-suggestions";
 
   const editorAttributes = useMemo(() => {
     const attributes: Record<string, string> = {
       role: "textbox",
       "aria-multiline": "true",
+      "aria-haspopup": "listbox",
+      "aria-expanded": "false",
+      "aria-controls": SUGGESTION_LISTBOX_ID,
       class: cn(
-        "prose dark:prose-invert max-w-none focus:outline-none p-4 min-h-[150px] font-serif",
+        "max-w-none focus:outline-none p-4 min-h-(--editor-min-h) font-serif",
         editable ? "is-editable" : "viewer-prose"
       ),
     };
     if (id) attributes.id = id;
+    if (ariaLabel) attributes["aria-label"] = ariaLabel;
     if (ariaDescribedBy) attributes["aria-describedby"] = ariaDescribedBy;
     if (ariaLabelledBy) attributes["aria-labelledby"] = ariaLabelledBy;
     if (ariaInvalid) attributes["aria-invalid"] = "true";
     return attributes;
-  }, [ariaDescribedBy, ariaInvalid, ariaLabelledBy, editable, id]);
+  }, [ariaDescribedBy, ariaInvalid, ariaLabel, ariaLabelledBy, editable, id]);
 
+  // Defer ProseMirror construction to useEffect so edit clicks and IPC ticks
+  // are less likely to overlap a single long synchronous task (Chrome
+  // "[Violation] 'click' handler" / main-thread jank).
   const editor = useEditor({
+    immediatelyRender: false,
     extensions,
     content: sanitizedContent,
     editable,
@@ -290,7 +316,18 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
         return;
       }
       const html = editor.getHTML();
-      onChange(sanitizeHtml(html));
+      onChangeRef.current(sanitizeHtml(html));
+    },
+    onBlur: ({ editor }) => {
+      if (pendingContentRef.current !== null) {
+        const pending = pendingContentRef.current;
+        pendingContentRef.current = null;
+        const currentHtml = editor.getHTML();
+        if (currentHtml !== pending) {
+          editor.commands.setContent(pending);
+        }
+      }
+      onBlurPropRef.current?.();
     },
     // Toolbar reacts via useEditorState; omit full re-renders on selection-only transactions.
     shouldRerenderOnTransaction: false,
@@ -298,6 +335,19 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
       attributes: editorAttributes,
     },
   });
+
+  useLayoutEffect(() => {
+    const target: HTMLDivElement | null =
+      editor && !editor.isDestroyed
+        ? (editor.view.dom as HTMLDivElement)
+        : shellRef.current;
+
+    if (typeof ref === "function") {
+      ref(target);
+    } else if (ref && "current" in ref) {
+      ref.current = target;
+    }
+  }, [editor, ref]);
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
@@ -317,7 +367,10 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
     // tags, attribute order), which would otherwise blow away the user's
     // cursor position on every keystroke as the parent re-sends sanitized
     // content via onChange.
-    if (editor.isFocused) return;
+    if (editor.isFocused) {
+      pendingContentRef.current = sanitizedContent;
+      return;
+    }
     const currentHtml = editor.getHTML();
     if (currentHtml !== sanitizedContent) {
       editor.commands.setContent(sanitizedContent);
@@ -329,6 +382,11 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
       editor.setEditable(editable);
     }
   }, [editable, editor]);
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.view.dom.setAttribute("aria-expanded", suggestion ? "true" : "false");
+  }, [editor, suggestion, editorAttributes]);
 
   const selectSuggestion = useCallback(
     (item: WikiLinkItem) => {
@@ -378,15 +436,18 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
 
   return (
     <div
+      ref={shellRef}
       className={cn(
         "rounded-md border border-input",
-        !editable && "border-none bg-transparent p-0"
+        !editable && "border-none bg-transparent p-0",
+        className
       )}
     >
       {editable && <EditorToolbar editor={editor} />}
       <EditorContent editor={editor} />
       {suggestion && editable && suggestionItems.length > 0 && (
         <div
+          id={SUGGESTION_LISTBOX_ID}
           className="fixed z-100 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-64 overflow-y-auto min-w-52"
           style={{ top: suggestion.coords.top + 4, left: suggestion.coords.left }}
           role="listbox"
@@ -419,13 +480,15 @@ const RichTextEditorInner: React.FC<RichTextEditorProps> = ({
       )}
     </div>
   );
-};
+}
 
 /**
  * TipTap-backed editor; HTML is sanitized on input/output (see sanitize.ts).
  */
-export const RichTextEditor: React.FC<RichTextEditorProps> = (props) => (
-  <EditorErrorBoundary>
-    <RichTextEditorInner {...props} />
-  </EditorErrorBoundary>
-);
+export function RichTextEditor(props: RichTextEditorProps) {
+  return (
+    <EditorErrorBoundary>
+      <RichTextEditorInner {...props} />
+    </EditorErrorBoundary>
+  );
+}

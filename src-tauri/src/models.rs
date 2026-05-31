@@ -72,7 +72,7 @@ macro_rules! define_game_enum {
 define_game_enum!(ItemType, Weapon, Armor, Consumable, Trinket, Material, Organic, Tool);
 define_game_enum!(Rarity, Common, Uncommon, Rare, VeryRare, Legendary, Mythic, Unique);
 define_game_enum!(
-    AbilityType,
+    AbilityTiming,
     Action,
     BonusAction,
     Reaction,
@@ -81,7 +81,24 @@ define_game_enum!(
     Lair,
     Mythic
 );
+define_game_enum!(AbilityCategory, None, Multiattack, RegionalEffect);
+
+fn default_ability_category() -> AbilityCategory {
+    AbilityCategory::None
+}
 define_game_enum!(AoeShape, Sphere, Cube, Cone, Line, Cylinder);
+define_game_enum!(
+    MagicSchool,
+    Abjuration,
+    Conjuration,
+    Divination,
+    Enchantment,
+    Evocation,
+    Illusion,
+    Necromancy,
+    Transmutation
+);
+define_game_enum!(RestType, Short, Long, Dawn);
 define_game_enum!(
     DamageType,
     Acid,
@@ -117,8 +134,11 @@ define_game_enum!(ResistanceLevel, Vulnerable, Resistant, Immune);
 pub struct GameEnums {
     pub item_types: Vec<ItemType>,
     pub rarities: Vec<Rarity>,
-    pub ability_types: Vec<AbilityType>,
+    pub ability_timings: Vec<AbilityTiming>,
+    pub ability_categories: Vec<AbilityCategory>,
     pub aoe_shapes: Vec<AoeShape>,
+    pub magic_schools: Vec<MagicSchool>,
+    pub rest_types: Vec<RestType>,
     pub damage_types: Vec<DamageType>,
     pub entity_sizes: Vec<EntitySize>,
     pub threat_levels: Vec<ThreatLevel>,
@@ -168,8 +188,16 @@ pub struct StatusEffectPayload {
 #[serde(rename_all = "camelCase")]
 pub struct StatBlock {
     pub hp: Option<i32>,
+    pub hit_dice: Option<String>,
     pub armor: Option<i32>,
+    pub armor_note: Option<String>,
     pub speed: Option<f32>,
+    pub burrow_speed: Option<f32>,
+    pub climb_speed: Option<f32>,
+    pub fly_speed: Option<f32>,
+    pub swim_speed: Option<f32>,
+    pub hover_speed: Option<f32>,
+    pub initiative_bonus: Option<i32>,
     pub strength: Option<i32>,
     pub dexterity: Option<i32>,
     pub constitution: Option<i32>,
@@ -179,6 +207,138 @@ pub struct StatBlock {
     #[serde(default)]
     #[ts(type = "Record<string, number | string>")]
     pub custom: HashMap<String, serde_json::Value>,
+}
+
+impl StatBlock {
+    /// Idempotent migration that lifts legacy stat-block fields out of `custom`
+    /// into their proper typed columns. Older entries stored hitDice / armorNote /
+    /// movement speeds / initiativeBonus under `custom`; new schema has them as
+    /// real fields. Runs on every entity hydrate so the frontend never sees the
+    /// legacy shape and never needs to migrate on mount.
+    pub fn normalize_legacy_custom_stats(&mut self) {
+        // Legacy keys that may exist only under `custom`; each maps to a typed field above.
+        let legacy_keys = [
+            "hitDice",
+            "hit_dice",
+            "armorType",
+            "armor_type",
+            "armorNote",
+            "armor_note",
+            "burrowSpeed",
+            "burrow_speed",
+            "climbSpeed",
+            "climb_speed",
+            "swimSpeed",
+            "swim_speed",
+            "flySpeed",
+            "fly_speed",
+            "hoverSpeed",
+            "hover_speed",
+            "initiative",
+            "initiativeBonus",
+            "initiative_bonus",
+        ];
+
+        let armor_preset = self.armor_note.is_some();
+
+        for key in legacy_keys {
+            if let Some(value) = self.custom.get(key).cloned() {
+                let consumed = match key {
+                    "hitDice" | "hit_dice" => assign_string(&mut self.hit_dice, &value),
+                    "armorType" | "armor_type" | "armorNote" | "armor_note" => {
+                        if armor_preset {
+                            assign_string(&mut self.armor_note, &value)
+                        } else {
+                            merge_string(&mut self.armor_note, &value)
+                        }
+                    }
+                    "burrowSpeed" | "burrow_speed" => assign_f32(&mut self.burrow_speed, &value),
+                    "climbSpeed" | "climb_speed" => assign_f32(&mut self.climb_speed, &value),
+                    "swimSpeed" | "swim_speed" => assign_f32(&mut self.swim_speed, &value),
+                    "flySpeed" | "fly_speed" => assign_f32(&mut self.fly_speed, &value),
+                    "hoverSpeed" | "hover_speed" => assign_f32(&mut self.hover_speed, &value),
+                    "initiative" | "initiativeBonus" | "initiative_bonus" => {
+                        assign_i32(&mut self.initiative_bonus, &value)
+                    }
+                    _ => false,
+                };
+                if consumed {
+                    self.custom.remove(key);
+                }
+            }
+        }
+    }
+}
+
+fn assign_string(target: &mut Option<String>, value: &serde_json::Value) -> bool {
+    if target.is_some() {
+        return true;
+    }
+    let text = match value {
+        serde_json::Value::String(s) => s.trim().to_string(),
+        serde_json::Value::Number(n) => n.to_string(),
+        serde_json::Value::Null => return true,
+        _ => return false,
+    };
+    if text.is_empty() {
+        return true;
+    }
+    *target = Some(text);
+    true
+}
+
+fn merge_string(target: &mut Option<String>, value: &serde_json::Value) -> bool {
+    let text = match value {
+        serde_json::Value::String(s) => s.trim().to_string(),
+        serde_json::Value::Number(n) => n.to_string(),
+        serde_json::Value::Null => return true,
+        _ => return false,
+    };
+    if text.is_empty() {
+        return true;
+    }
+    match target {
+        Some(existing) => {
+            if !existing.split(", ").any(|part| part == text) {
+                existing.push_str(", ");
+                existing.push_str(&text);
+            }
+        }
+        None => *target = Some(text),
+    }
+    true
+}
+
+fn assign_f32(target: &mut Option<f32>, value: &serde_json::Value) -> bool {
+    if target.is_some() {
+        return true;
+    }
+    let parsed = match value {
+        serde_json::Value::Number(n) => n.as_f64().map(|v| v as f32),
+        serde_json::Value::String(s) => s.trim().parse::<f32>().ok(),
+        serde_json::Value::Null => return true,
+        _ => return false,
+    };
+    if let Some(v) = parsed.filter(|v| v.is_finite()) {
+        *target = Some(v);
+    }
+    true
+}
+
+fn assign_i32(target: &mut Option<i32>, value: &serde_json::Value) -> bool {
+    if target.is_some() {
+        return true;
+    }
+    let parsed = match value {
+        serde_json::Value::Number(n) => n.as_i64().and_then(|v| i32::try_from(v).ok()),
+        serde_json::Value::String(s) => s.trim().parse::<i32>().ok(),
+        serde_json::Value::Null => return true,
+        _ => return false,
+    };
+    if let Some(v) = parsed {
+        *target = Some(v);
+    }
+    true
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, TS)]
@@ -249,6 +409,17 @@ pub struct SpellComponents {
 pub struct SavingThrow {
     pub dc: u32,
     pub attribute: Attribute,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
+#[ts(export_to = "../../src/types/generated.ts")]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum AbilityUses {
+    Recharge { min: u8, max: u8 },
+    PerDay { count: u32 },
+    PerRest { count: u32, rest: RestType },
+    AtWill,
+    Once,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, TS)]
@@ -376,14 +547,23 @@ pub struct AbilityExport {
     )]
     pub slug: String,
     pub description: String,
-    pub r#type: AbilityType,
+    pub timing: AbilityTiming,
+    #[serde(default = "default_ability_category")]
+    pub category: AbilityCategory,
     pub target: Option<AbilityTarget>,
-    pub casting_time: Option<String>,
     #[serde(default)]
     pub requires_concentration: bool,
     pub components: Option<SpellComponents>,
-    pub recharge: Option<String>,
-    #[validate(length(min = 1, message = "Ability must have at least one effect."))]
+    #[serde(default)]
+    pub spell_level: Option<u8>,
+    #[serde(default)]
+    pub school: Option<MagicSchool>,
+    #[serde(default)]
+    pub ritual: bool,
+    #[serde(default)]
+    pub higher_levels: Option<String>,
+    #[serde(default)]
+    pub uses: Option<AbilityUses>,
     pub effects: Vec<AbilityEffect>,
     pub created_at: String,
     pub updated_at: String,
@@ -475,12 +655,16 @@ pub struct Ability {
     pub name: String,
     pub slug: String,
     pub description: String,
-    pub r#type: AbilityType,
+    pub timing: AbilityTiming,
+    pub category: AbilityCategory,
     pub target_json: Option<Json<AbilityTarget>>,
-    pub casting_time: Option<String>,
     pub requires_concentration: bool,
     pub components_json: Option<Json<SpellComponents>>,
-    pub recharge: Option<String>,
+    pub spell_level: Option<i64>,
+    pub school: Option<MagicSchool>,
+    pub ritual: bool,
+    pub higher_levels: Option<String>,
+    pub uses_json: Option<Json<AbilityUses>>,
     pub effects_json: Json<Vec<AbilityEffect>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -569,12 +753,16 @@ impl From<Ability> for AbilityExport {
             name: db.name,
             slug: db.slug,
             description: db.description,
-            r#type: db.r#type,
+            timing: db.timing,
+            category: db.category,
             target: db.target_json.map(|t| t.0),
-            casting_time: db.casting_time,
             requires_concentration: db.requires_concentration,
             components: db.components_json.map(|c| c.0),
-            recharge: db.recharge,
+            spell_level: db.spell_level.map(|n| n as u8),
+            school: db.school,
+            ritual: db.ritual,
+            higher_levels: db.higher_levels,
+            uses: db.uses_json.map(|j| j.0),
             effects: db.effects_json.0,
             created_at: db.created_at.to_rfc3339(),
             updated_at: db.updated_at.to_rfc3339(),
@@ -650,7 +838,14 @@ impl From<Entity> for EntityExport {
             languages: db.languages_json.0,
             habitats: db.habitats_json.0,
             description: db.description,
-            stat_block: db.stat_block_json.0,
+            stat_block: {
+                // Idempotent migration: older entries stored hitDice / armorNote /
+                // movement speeds / initiativeBonus in `custom`; lift them into
+                // proper typed fields so the frontend never sees legacy shape.
+                let mut sb = db.stat_block_json.0;
+                sb.normalize_legacy_custom_stats();
+                sb
+            },
             notes: db.notes,
             status_ids: db.status_ids,
             ability_ids: db.ability_ids,
@@ -749,10 +944,43 @@ impl Validatable for ItemExport {
     }
 }
 
+fn validate_ability_consistency(errors: &mut Vec<String>, ability: &AbilityExport) {
+    if ability.category == AbilityCategory::None {
+        return;
+    }
+    let label = match ability.category {
+        AbilityCategory::Multiattack => "multiattack",
+        AbilityCategory::RegionalEffect => "regionalEffect",
+        AbilityCategory::None => unreachable!(),
+    };
+
+    let mut deny = |present: bool, field: &str| {
+        if present {
+            errors.push(format!("{field} is not allowed on category='{label}'"));
+        }
+    };
+    deny(ability.spell_level.is_some(), "spellLevel");
+    deny(ability.school.is_some(), "school");
+    deny(ability.ritual, "ritual");
+    deny(ability.higher_levels.is_some(), "higherLevels");
+    deny(ability.components.is_some(), "components");
+    deny(ability.target.is_some(), "target");
+    deny(ability.requires_concentration, "requiresConcentration");
+    deny(ability.uses.is_some(), "uses");
+
+    if ability.category == AbilityCategory::Multiattack && !ability.effects.is_empty() {
+        errors.push(
+            "multiattack should have no effects; author constituent attacks as separate abilities"
+                .to_string(),
+        );
+    }
+}
+
 impl Validatable for AbilityExport {
     fn validate(&self) -> Result<(), Vec<String>> {
         let mut errors = collect_schema_errors(self);
         validate_uuid(&mut errors, "Ability ID", &self.id);
+        validate_ability_consistency(&mut errors, self);
         for effect in &self.effects {
             validate_ability_effect_ids(&mut errors, effect);
         }
@@ -772,6 +1000,433 @@ impl Validatable for StatusExport {
             Ok(())
         } else {
             Err(errors)
+        }
+    }
+}
+
+#[cfg(test)]
+mod stat_block_normalize_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn empty_stat_block() -> StatBlock {
+        StatBlock::default()
+    }
+
+    #[test]
+    fn lifts_parseable_legacy_keys_into_typed_fields() {
+        let mut sb = empty_stat_block();
+        sb.custom.insert("climbSpeed".to_string(), json!("20"));
+        sb.custom.insert("hitDice".to_string(), json!("8d10 + 40"));
+        sb.custom.insert("SpellPower".to_string(), json!(15));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.climb_speed, Some(20.0));
+        assert_eq!(sb.hit_dice.as_deref(), Some("8d10 + 40"));
+        assert_eq!(sb.custom.get("SpellPower"), Some(&json!(15)));
+        assert!(!sb.custom.contains_key("climbSpeed"));
+        assert!(!sb.custom.contains_key("hitDice"));
+    }
+
+    #[test]
+    fn drops_unparseable_legacy_numeric_value_but_clears_key() {
+        let mut sb = empty_stat_block();
+        sb.custom
+            .insert("flySpeed".to_string(), json!("30 ft. hover"));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.fly_speed, None);
+        // Unparseable legacy keys are still dropped so they don't render as phantom UI rows.
+        assert!(!sb.custom.contains_key("flySpeed"));
+    }
+
+    #[test]
+    fn drops_legacy_key_when_structured_field_already_populated() {
+        let mut sb = empty_stat_block();
+        sb.armor_note = Some("natural armor".to_string());
+        sb.custom
+            .insert("armorType".to_string(), json!("natural armor"));
+        sb.custom.insert("SpellPower".to_string(), json!(15));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.armor_note.as_deref(), Some("natural armor"));
+        assert!(!sb.custom.contains_key("armorType"));
+        assert_eq!(sb.custom.get("SpellPower"), Some(&json!(15)));
+    }
+
+    #[test]
+    fn merges_both_legacy_armor_keys_into_armor_note() {
+        let mut sb = empty_stat_block();
+        sb.custom
+            .insert("armorType".to_string(), json!("natural armor"));
+        sb.custom
+            .insert("armorNote".to_string(), json!("with shield"));
+
+        sb.normalize_legacy_custom_stats();
+
+        let note = sb.armor_note.as_deref().unwrap_or("");
+        assert!(note.contains("natural armor"), "lost armorType: {note}");
+        assert!(note.contains("with shield"), "lost armorNote: {note}");
+        assert!(!sb.custom.contains_key("armorType"));
+        assert!(!sb.custom.contains_key("armorNote"));
+    }
+
+    #[test]
+    fn no_op_when_custom_is_empty() {
+        let mut sb = empty_stat_block();
+        let before = sb.clone();
+        sb.normalize_legacy_custom_stats();
+        assert_eq!(sb, before);
+    }
+
+    #[test]
+    fn accepts_snake_case_legacy_keys() {
+        let mut sb = empty_stat_block();
+        sb.custom.insert("climb_speed".to_string(), json!("15"));
+        sb.custom.insert("initiative_bonus".to_string(), json!("2"));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.climb_speed, Some(15.0));
+        assert_eq!(sb.initiative_bonus, Some(2));
+    }
+
+    #[test]
+    fn handles_initiative_aliases() {
+        let mut sb = empty_stat_block();
+        sb.custom.insert("initiative".to_string(), json!(3));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.initiative_bonus, Some(3));
+        assert!(!sb.custom.contains_key("initiative"));
+    }
+
+    /// JSON round-trip integration test: a legacy stat block (with movement
+    /// speeds stored under `custom`) deserializes, normalizes, and re-serializes
+    /// with the legacy keys lifted into typed fields and removed from `custom`.
+    ///
+    /// This is the path every entity hydrate goes through via
+    /// `From<Entity> for EntityExport`, so this test guards against a future
+    /// refactor breaking the wire-level contract that the frontend depends on.
+    #[test]
+    fn round_trips_legacy_payload_through_serde() {
+        let legacy_json = json!({
+            "hp": 84,
+            "armor": 15,
+            "speed": 30,
+            "strength": 18,
+            "dexterity": 12,
+            "constitution": 16,
+            "intelligence": 8,
+            "wisdom": 10,
+            "charisma": 9,
+            "custom": {
+                "climbSpeed": "20",
+                "hitDice": "8d10 + 40",
+                "armorType": "natural armor",
+                "initiativeBonus": "2",
+                "SpellPower": 15
+            }
+        });
+
+        let mut sb: StatBlock = serde_json::from_value(legacy_json).expect("legacy JSON parses");
+        sb.normalize_legacy_custom_stats();
+
+        // Typed fields populated from legacy custom keys
+        assert_eq!(sb.climb_speed, Some(20.0));
+        assert_eq!(sb.hit_dice.as_deref(), Some("8d10 + 40"));
+        assert_eq!(sb.armor_note.as_deref(), Some("natural armor"));
+        assert_eq!(sb.initiative_bonus, Some(2));
+
+        // Legacy keys removed from custom; user-defined keys preserved
+        assert!(!sb.custom.contains_key("climbSpeed"));
+        assert!(!sb.custom.contains_key("hitDice"));
+        assert!(!sb.custom.contains_key("armorType"));
+        assert!(!sb.custom.contains_key("initiativeBonus"));
+        assert_eq!(sb.custom.get("SpellPower"), Some(&json!(15)));
+
+        // Re-serialize and confirm the shape the frontend will see
+        let serialized = serde_json::to_value(&sb).expect("StatBlock re-serializes");
+        assert_eq!(serialized["climbSpeed"], json!(20.0));
+        assert_eq!(serialized["hitDice"], json!("8d10 + 40"));
+        assert_eq!(serialized["armorNote"], json!("natural armor"));
+        assert_eq!(serialized["initiativeBonus"], json!(2));
+        assert_eq!(serialized["custom"]["SpellPower"], json!(15));
+        assert!(serialized["custom"].get("climbSpeed").is_none());
+    }
+
+    #[test]
+    fn drops_legacy_key_holding_null() {
+        let mut sb = empty_stat_block();
+        sb.custom.insert("burrowSpeed".to_string(), json!(null));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.burrow_speed, None);
+        assert!(!sb.custom.contains_key("burrowSpeed"));
+    }
+
+    #[test]
+    fn preserves_legacy_key_holding_structured_value() {
+        let mut sb = empty_stat_block();
+        sb.custom
+            .insert("flySpeed".to_string(), json!({ "base": 30, "max": 60 }));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.fly_speed, None);
+        assert_eq!(
+            sb.custom.get("flySpeed"),
+            Some(&json!({ "base": 30, "max": 60 }))
+        );
+    }
+
+    #[test]
+    fn drops_legacy_string_key_holding_null() {
+        let mut sb = empty_stat_block();
+        sb.custom.insert("hitDice".to_string(), json!(null));
+
+        sb.normalize_legacy_custom_stats();
+
+        assert_eq!(sb.hit_dice, None);
+        assert!(!sb.custom.contains_key("hitDice"));
+    }
+}
+
+#[cfg(test)]
+mod ability_consistency_tests {
+    use super::*;
+
+    fn base(category: AbilityCategory) -> AbilityExport {
+        AbilityExport {
+            id: "00000000-0000-4000-8000-000000000001".into(),
+            name: "Test".into(),
+            slug: "test".into(),
+            description: String::new(),
+            timing: AbilityTiming::Action,
+            category,
+            target: None,
+            requires_concentration: false,
+            components: None,
+            spell_level: None,
+            school: None,
+            ritual: false,
+            higher_levels: None,
+            uses: None,
+            effects: vec![],
+            created_at: chrono::Utc::now().to_rfc3339(),
+            updated_at: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+
+    fn collect(ability: &AbilityExport) -> Vec<String> {
+        let mut errors = Vec::new();
+        validate_ability_consistency(&mut errors, ability);
+        errors
+    }
+
+    #[test]
+    fn standard_category_with_spell_fields_passes() {
+        let mut a = base(AbilityCategory::None);
+        a.spell_level = Some(3);
+        a.school = Some(MagicSchool::Evocation);
+        a.effects = vec![AbilityEffect::Damage {
+            formula: "8d6".into(),
+            damage_type: DamageType::Fire,
+        }];
+        assert!(collect(&a).is_empty());
+    }
+
+    #[test]
+    fn standard_category_with_empty_effects_passes() {
+        assert!(collect(&base(AbilityCategory::None)).is_empty());
+    }
+
+    #[test]
+    fn multiattack_with_empty_effects_passes() {
+        assert!(collect(&base(AbilityCategory::Multiattack)).is_empty());
+    }
+
+    #[test]
+    fn multiattack_with_effects_fails() {
+        let mut a = base(AbilityCategory::Multiattack);
+        a.effects = vec![AbilityEffect::Damage {
+            formula: "1d4".into(),
+            damage_type: DamageType::Slashing,
+        }];
+        let errors = collect(&a);
+        assert!(errors
+            .iter()
+            .any(|e| e.contains("multiattack should have no effects")));
+    }
+
+    #[test]
+    fn multiattack_rejects_every_disallowed_field() {
+        let mut a = base(AbilityCategory::Multiattack);
+        a.spell_level = Some(3);
+        a.school = Some(MagicSchool::Evocation);
+        a.ritual = true;
+        a.higher_levels = Some("x".into());
+        a.components = Some(SpellComponents {
+            verbal: true,
+            somatic: false,
+            material: None,
+        });
+        a.target = Some(AbilityTarget::SelfTarget);
+        a.requires_concentration = true;
+        a.uses = Some(AbilityUses::PerDay { count: 1 });
+
+        let errors = collect(&a);
+        for field in [
+            "spellLevel",
+            "school",
+            "ritual",
+            "higherLevels",
+            "components",
+            "target",
+            "requiresConcentration",
+            "uses",
+        ] {
+            assert!(
+                errors.iter().any(|e| e.contains(field)),
+                "missing error for {field}: {errors:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn regional_effect_rejects_spell_fields() {
+        let mut a = base(AbilityCategory::RegionalEffect);
+        a.spell_level = Some(0);
+        a.target = Some(AbilityTarget::SelfTarget);
+        let errors = collect(&a);
+        assert!(errors.iter().any(|e| e.contains("regionalEffect")));
+        assert!(errors.iter().any(|e| e.contains("spellLevel")));
+        assert!(errors.iter().any(|e| e.contains("target")));
+    }
+}
+
+#[cfg(test)]
+mod ability_axis_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn ability_timing_variants_roundtrip() {
+        for (variant, expected) in [
+            (AbilityTiming::Action, "action"),
+            (AbilityTiming::BonusAction, "bonusAction"),
+            (AbilityTiming::Reaction, "reaction"),
+            (AbilityTiming::Passive, "passive"),
+            (AbilityTiming::Legendary, "legendary"),
+            (AbilityTiming::Lair, "lair"),
+            (AbilityTiming::Mythic, "mythic"),
+        ] {
+            let serialized = serde_json::to_value(&variant).unwrap();
+            assert_eq!(serialized, json!(expected), "serialize {:?}", variant);
+            let parsed: AbilityTiming = serde_json::from_value(json!(expected)).unwrap();
+            assert_eq!(parsed, variant, "deserialize {:?}", variant);
+        }
+    }
+
+    #[test]
+    fn ability_category_variants_roundtrip() {
+        for (variant, expected) in [
+            (AbilityCategory::None, "none"),
+            (AbilityCategory::Multiattack, "multiattack"),
+            (AbilityCategory::RegionalEffect, "regionalEffect"),
+        ] {
+            let serialized = serde_json::to_value(&variant).unwrap();
+            assert_eq!(serialized, json!(expected), "serialize {:?}", variant);
+            let parsed: AbilityCategory = serde_json::from_value(json!(expected)).unwrap();
+            assert_eq!(parsed, variant, "deserialize {:?}", variant);
+        }
+    }
+}
+
+#[cfg(test)]
+mod ability_uses_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn ability_export_includes_spell_fields() {
+        let export = AbilityExport {
+            id: "00000000-0000-0000-0000-000000000001".to_string(),
+            name: "Fireball".into(),
+            slug: "fireball".into(),
+            description: "A bright streak flashes\u{2026}".into(),
+            timing: AbilityTiming::Action,
+            category: AbilityCategory::None,
+            target: None,
+            requires_concentration: false,
+            components: Some(SpellComponents {
+                verbal: true,
+                somatic: true,
+                material: Some("a tiny ball of bat guano and sulfur".into()),
+            }),
+            spell_level: Some(3),
+            school: Some(MagicSchool::Evocation),
+            ritual: false,
+            higher_levels: Some(
+                "When you cast this spell using a slot of 4th level or higher\u{2026}".into(),
+            ),
+            uses: None,
+            effects: vec![],
+            created_at: chrono::Utc::now().to_rfc3339(),
+            updated_at: chrono::Utc::now().to_rfc3339(),
+        };
+        let value = serde_json::to_value(&export).unwrap();
+        assert_eq!(value["spellLevel"], json!(3));
+        assert_eq!(value["school"], json!("evocation"));
+        assert_eq!(value["ritual"], json!(false));
+        assert!(value["higherLevels"].is_string());
+    }
+
+    #[test]
+    fn ability_uses_tagged_union_roundtrip() {
+        let cases = [
+            (
+                AbilityUses::Recharge { min: 5, max: 6 },
+                json!({"kind":"recharge","min":5,"max":6}),
+            ),
+            (
+                AbilityUses::PerDay { count: 3 },
+                json!({"kind":"perDay","count":3}),
+            ),
+            (
+                AbilityUses::PerRest {
+                    count: 1,
+                    rest: RestType::Short,
+                },
+                json!({"kind":"perRest","count":1,"rest":"short"}),
+            ),
+            (
+                AbilityUses::PerRest {
+                    count: 1,
+                    rest: RestType::Long,
+                },
+                json!({"kind":"perRest","count":1,"rest":"long"}),
+            ),
+            (
+                AbilityUses::PerRest {
+                    count: 1,
+                    rest: RestType::Dawn,
+                },
+                json!({"kind":"perRest","count":1,"rest":"dawn"}),
+            ),
+            (AbilityUses::AtWill, json!({"kind":"atWill"})),
+            (AbilityUses::Once, json!({"kind":"once"})),
+        ];
+        for (variant, expected) in cases {
+            let actual = serde_json::to_value(&variant).unwrap();
+            assert_eq!(actual, expected, "serialize {:?}", variant);
+            let parsed: AbilityUses = serde_json::from_value(expected.clone()).unwrap();
+            assert_eq!(parsed, variant, "deserialize {:?}", variant);
         }
     }
 }

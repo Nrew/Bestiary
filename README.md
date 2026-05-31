@@ -19,7 +19,6 @@ Bestiary keeps monsters, magic items, abilities, and conditions on your machine.
 - [Backup, import, and export](#backup-import-and-export)
 - [Troubleshooting](#troubleshooting)
 - [Build from source](#build-from-source)
-- [Known limitations](#known-limitations)
 - [Content & licensing](#content--licensing)
 - [Documentation & community](#documentation--community)
 - [License](#license)
@@ -29,9 +28,9 @@ Bestiary keeps monsters, magic items, abilities, and conditions on your machine.
 
 ![Creature entry](docs/screenshots/application-creature.png)
 
-| Library | Encounter Builder |
-| ------- | ----------------- |
-| ![Library empty state](docs/screenshots/library-empty.png) | ![Encounter Builder dialog](docs/screenshots/encounter-builder.png) |
+| Library | Encounter Builder | Entry creation |
+| ------- | ----------------- | -------------- |
+| ![Library empty state](docs/screenshots/library-empty.png) | ![Encounter Builder dialog](docs/screenshots/encounter-builder.png) | ![Creating an entry](docs/screenshots/entity-creation.png) |
 
 
 ## Installation

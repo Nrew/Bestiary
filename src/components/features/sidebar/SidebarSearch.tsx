@@ -1,27 +1,16 @@
-import React, { useCallback, useImperativeHandle, useRef, forwardRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { Input, Button } from "@/components/ui";
 import { useAppStore } from "@/store/appStore";
 import { useSidebarContext } from "./SidebarContext";
 import { APP_SHORTCUTS, formatShortcutKey } from "@/lib/keyboard-shortcuts";
 import { Search, X } from "lucide-react";
 
-export interface SidebarSearchRef {
-  focus: () => void;
-}
-
 // Debouncing happens in useSidebarData; this component just writes the query to the store.
-export const SidebarSearch = React.memo(forwardRef<SidebarSearchRef>((_, ref) => {
+export const SidebarSearch = React.memo(function SidebarSearch() {
   const searchQuery = useAppStore((s) => s.searchQuery);
   const setSearchQuery = useAppStore((s) => s.setSearchQuery);
   const { contextConfig } = useSidebarContext();
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useImperativeHandle(ref, () => ({
-    focus: () => {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    },
-  }), []);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,16 +43,17 @@ export const SidebarSearch = React.memo(forwardRef<SidebarSearchRef>((_, ref) =>
           className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone pointer-events-none"
           aria-hidden="true"
         />
+        <label htmlFor="sidebar-search" className="sr-only">{placeholder}</label>
         <Input
           ref={inputRef}
           id="sidebar-search"
+          name="sidebar-search"
           type="text"
           placeholder={placeholder}
           value={searchQuery}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           className="search-medieval pl-10 pr-10"
-          aria-label={placeholder}
           autoComplete="off"
           spellCheck="false"
           title={`Search (${formatShortcutKey(APP_SHORTCUTS.SEARCH)})`}
@@ -84,6 +74,4 @@ export const SidebarSearch = React.memo(forwardRef<SidebarSearchRef>((_, ref) =>
       </div>
     </div>
   );
-}));
-
-SidebarSearch.displayName = "SidebarSearch";
+});

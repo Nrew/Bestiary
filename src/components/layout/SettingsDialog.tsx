@@ -2,15 +2,21 @@ import React, { useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Settings, Download, Trash2, Upload, X } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useConfirm } from "@/hooks/useConfirm";
+import { Download, Trash2, Upload, X } from "lucide-react";
 import { exportDatabase, cleanupOrphanedImages, importDatabase, clearAllCaches } from "@/lib/api";
 import { getErrorMessage } from "@/lib/errors";
 import { useAppStore } from "@/store/appStore";
-import { staggerContainerVariants, contentVariants, fadeVariants } from "@/lib/animations";
+import { contentVariants, fadeVariants, staggerContainerVariants } from "@/lib/animations";
 import type { ImportResult } from "@/types";
 
-export const SettingsDialog: React.FC = () => {
-  const [open, setOpen] = useState(false);
+interface SettingsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [exportStatus, setExportStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [cleanupStatus, setCleanupStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [cleanupCount, setCleanupCount] = useState<number | null>(null);
@@ -20,6 +26,7 @@ export const SettingsDialog: React.FC = () => {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const setError = useAppStore((s) => s.setError);
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
 
   const handleExport = async () => {
     setExportStatus("loading");
@@ -34,6 +41,15 @@ export const SettingsDialog: React.FC = () => {
   };
 
   const handleCleanup = async () => {
+    const ok = await confirm({
+      title: "Delete orphaned image files?",
+      description:
+        "Image files no longer referenced by any entry will be permanently removed from disk. This cannot be undone.",
+      confirmLabel: "Delete files",
+      cancelLabel: "Keep files",
+      destructive: true,
+    });
+    if (!ok) return;
     setCleanupStatus("loading");
     try {
       const count = await cleanupOrphanedImages();
@@ -54,6 +70,15 @@ export const SettingsDialog: React.FC = () => {
 
   const handleImport = async () => {
     if (!importFile) return;
+    const ok = await confirm({
+      title: "Import bestiary backup?",
+      description:
+        "Existing entries that share an ID with the import file will be overwritten. New entries will be added. This cannot be undone.",
+      confirmLabel: "Import & overwrite",
+      cancelLabel: "Cancel",
+      destructive: true,
+    });
+    if (!ok) return;
     setImportStatus("loading");
     try {
       const jsonStr = await importFile.text();
@@ -67,30 +92,11 @@ export const SettingsDialog: React.FC = () => {
     }
   };
 
-  const handleOpenChange = (o: boolean) => {
-    setOpen(o);
-    if (!o) {
-      setExportStatus("idle");
-      setCleanupStatus("idle");
-      setCleanupCount(null);
-      setExportDisplayPath(null);
-      setImportFile(null);
-      setImportStatus("idle");
-      setImportResult(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Trigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Settings" title="Settings" className="text-leather hover:text-leather hover:bg-leather/10">
-          <Settings className="w-5 h-5" />
-        </Button>
-      </Dialog.Trigger>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[85vh] overflow-y-auto glass-panel p-6 rounded-xl shadow-2xl animate-slide-up focus:outline-none motion-reduce:animate-none">
+        <Dialog.Overlay className="fixed inset-0 bg-overlay-soft backdrop-blur-sm z-50 animate-fade-only motion-reduce:animate-none" />
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-(--dialog-max-h) overflow-y-auto glass-panel p-6 rounded-xl shadow-2xl animate-scale-in focus:outline-none motion-reduce:animate-none">
           <Dialog.Title className="sr-only">Bestiary Settings</Dialog.Title>
           <Dialog.Description className="sr-only">
             Manage data backup, image cleanup, and import/restore settings for your bestiary.
@@ -124,8 +130,7 @@ export const SettingsDialog: React.FC = () => {
                   void handleExport();
                 }}
                 loading={exportStatus === "loading"}
-                variant="outline"
-                className="gap-2 border-leather/30 hover:border-leather"
+                variant="outlineLeather"
               >
                 {exportStatus !== "loading" && <Download className="w-4 h-4" />}
                 {exportStatus === "loading" ? "Exporting…" : exportStatus === "done" ? "Export Again" : "Export Bestiary"}
@@ -155,8 +160,7 @@ export const SettingsDialog: React.FC = () => {
                   void handleCleanup();
                 }}
                 loading={cleanupStatus === "loading"}
-                variant="outline"
-                className="gap-2 border-leather/30 hover:border-leather"
+                variant="outlineLeather"
               >
                 {cleanupStatus !== "loading" && <Trash2 className="w-4 h-4" />}
                 {cleanupStatus === "loading" ? "Cleaning…" : "Clean Up Images"}
@@ -170,8 +174,13 @@ export const SettingsDialog: React.FC = () => {
                   Restore entries from a previously exported bestiary file. Existing entries with the same ID are updated.
                 </p>
               </div>
+              <label htmlFor="settings-import-file" className="sr-only">
+                Choose bestiary backup file to import
+              </label>
               <input
                 ref={fileInputRef}
+                id="settings-import-file"
+                name="settings-import-file"
                 type="file"
                 accept=".json"
                 className="hidden"
@@ -181,8 +190,7 @@ export const SettingsDialog: React.FC = () => {
                 <Button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={importStatus === "loading"}
-                  variant="outline"
-                  className="gap-2 border-leather/30 hover:border-leather"
+                  variant="outlineLeather"
                 >
                   <Upload className="w-4 h-4" />
                   Choose File…
@@ -203,7 +211,7 @@ export const SettingsDialog: React.FC = () => {
                       </p>
                       {importResult.errors.length > 0 && (
                         <details className="text-xs">
-                          <summary className="cursor-pointer text-amber-500 px-2 py-1">
+                          <summary className="cursor-pointer text-warning-strong px-2 py-1">
                             {importResult.errors.length} error{importResult.errors.length === 1 ? "" : "s"} during import
                           </summary>
                           <ul className="mt-1 max-h-32 overflow-y-auto bg-muted/50 rounded px-2 py-1 space-y-0.5">
@@ -216,8 +224,8 @@ export const SettingsDialog: React.FC = () => {
                       <Button
                         type="button"
                         onClick={() => window.location.reload()}
-                        variant="outline"
-                        className="mt-2 gap-2 border-leather/30 hover:border-leather"
+                        variant="outlineLeather"
+                        className="mt-2"
                       >
                         Reload to Apply Import
                       </Button>
@@ -231,8 +239,7 @@ export const SettingsDialog: React.FC = () => {
                 }}
                 disabled={!importFile}
                 loading={importStatus === "loading"}
-                variant="outline"
-                className="gap-2 border-leather/30 hover:border-leather"
+                variant="outlineLeather"
               >
                 {importStatus !== "loading" && <Upload className="w-4 h-4" />}
                 {importStatus === "loading" ? "Importing…" : "Import"}
@@ -241,6 +248,16 @@ export const SettingsDialog: React.FC = () => {
           </motion.div>
         </Dialog.Content>
       </Dialog.Portal>
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        confirmLabel={confirmState.confirmLabel}
+        cancelLabel={confirmState.cancelLabel}
+        destructive={confirmState.destructive}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </Dialog.Root>
   );
-};
+}

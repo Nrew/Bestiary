@@ -13,7 +13,11 @@
         "payload": {
           "durationRounds": 10,
           "stacks": "stack",
-          "tags": ["bleed", "debuff", "damage-over-time"]
+          "tags": [
+            "bleed",
+            "debuff",
+            "damage-over-time"
+          ]
         },
         "createdAt": "2024-09-01T10:00:00.000Z",
         "updatedAt": "2024-09-01T10:00:00.000Z"
@@ -27,10 +31,16 @@
         "summary": "Toxins sapping attack potency and coordination.",
         "description": "<p>The target has been exposed to poison and suffers its debilitating effects. The creature has disadvantage on attack rolls and ability checks for the duration.</p>",
         "payload": {
-          "attackPenalty": { "type": "flat", "value": -2 },
+          "attackPenalty": {
+            "type": "flat",
+            "value": -2
+          },
           "durationMinutes": 10.0,
           "stacks": "refresh",
-          "tags": ["poison", "debuff"]
+          "tags": [
+            "poison",
+            "debuff"
+          ]
         },
         "createdAt": "2024-09-01T10:05:00.000Z",
         "updatedAt": "2024-09-01T10:05:00.000Z"
@@ -52,7 +62,9 @@
           "twoHanded": true,
           "heavy": true
         },
-        "equipSlots": ["mainHand"],
+        "equipSlots": [
+          "mainHand"
+        ],
         "statModifiers": {},
         "durability": {
           "current": 100,
@@ -76,9 +88,14 @@
           "armorType": "light",
           "stealthDisadvantage": false
         },
-        "equipSlots": ["chest"],
+        "equipSlots": [
+          "chest"
+        ],
         "statModifiers": {
-          "armorClass": { "type": "flat", "value": 0 }
+          "armorClass": {
+            "type": "flat",
+            "value": 0
+          }
         },
         "durability": {
           "current": 60,
@@ -114,8 +131,8 @@
         "name": "Regeneration",
         "slug": "regeneration",
         "description": "<p>The troll regains <strong>10 hit points</strong> at the start of its turn if it has at least 1 HP. If the troll takes acid or fire damage, this trait does not function at the start of its next turn.</p>",
-        "type": "passive",
-        "castingTime": null,
+        "timing": "passive",
+        "category": "none",
         "requiresConcentration": false,
         "effects": [
           {
@@ -123,7 +140,10 @@
             "description": "Regain 10 HP at the start of each turn. Suppressed for 1 turn after taking acid or fire damage.",
             "data": {
               "healPerTurn": 10,
-              "suppressedBy": ["acid", "fire"]
+              "suppressedBy": [
+                "acid",
+                "fire"
+              ]
             }
           }
         ],
@@ -134,14 +154,14 @@
         "id": "a7b9c8d0-1e2f-4a3b-9c5d-6e7f8a9b0c1d",
         "name": "Crushing Slam",
         "slug": "crushing-slam",
-        "description": "<p>The troll brings its club down in a devastating overhead arc. On a hit, the target takes bludgeoning damage and must succeed on a DC 13 Constitution saving throw or begin <strong>Bleeding</strong>.</p>",
-        "type": "action",
+        "description": "<p>The troll brings its club down in a devastating overhead arc. On a hit, the target takes bludgeoning damage and must succeed on a DC 13 Constitution saving throw or become <span class=\"wiki-link wiki-link--found\" data-wiki-id=\"a1f3c2d4-5e6b-4a7c-8d9e-0f1a2b3c4d5e\" data-wiki-type=\"statuses\" tabindex=\"0\" role=\"link\">Bleeding</span>.</p>",
+        "timing": "action",
+        "category": "none",
         "target": {
           "type": "target",
           "range": 5,
           "count": 1
         },
-        "castingTime": "1 action",
         "requiresConcentration": false,
         "effects": [
           {
@@ -167,13 +187,17 @@
         "name": "Thick Hide",
         "slug": "thick-hide",
         "description": "<p>When hit by an attack, the troll hunches and tenses its leathery hide. As a reaction it gains <strong>+2 AC</strong> against that attack, potentially turning the hit into a miss.</p>",
-        "type": "reaction",
+        "timing": "reaction",
+        "category": "none",
         "target": {
           "type": "selfTarget"
         },
-        "castingTime": "1 reaction (when hit by an attack)",
         "requiresConcentration": false,
-        "recharge": "short rest",
+        "uses": {
+          "kind": "perRest",
+          "count": 1,
+          "rest": "short"
+        },
         "effects": [
           {
             "type": "custom",
@@ -187,6 +211,205 @@
         ],
         "createdAt": "2024-09-01T12:20:00.000Z",
         "updatedAt": "2024-09-01T12:20:00.000Z"
+      },
+      {
+        "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+        "name": "Root Whip",
+        "slug": "root-whip",
+        "description": "<p>The troll wrenches a gnarled root from the earth and cracks it at one creature within 15 ft. The target must succeed on a <strong>DC 13 Dexterity saving throw</strong> or take <strong>1d8 bludgeoning damage</strong> and be knocked prone.</p>",
+        "timing": "legendary",
+        "category": "none",
+        "target": {
+          "type": "target",
+          "range": 15,
+          "count": 1
+        },
+        "requiresConcentration": false,
+        "effects": [
+          {
+            "type": "damage",
+            "formula": "1d8",
+            "damageType": "bludgeoning"
+          }
+        ],
+        "createdAt": "2024-09-01T12:30:00.000Z",
+        "updatedAt": "2024-09-01T12:30:00.000Z"
+      },
+      {
+        "id": "d2e3f4a5-6b7c-4d8e-9f0a-1b2c3d4e5f6a",
+        "name": "Predator's Scent",
+        "slug": "predators-scent",
+        "description": "<p>The troll fixes its sunken eyes on a creature within 60 ft. it can smell, reading its movement before it makes it. Until the end of the troll's next turn, it has <strong>advantage</strong> on the first attack roll it makes against that creature.</p>",
+        "timing": "legendary",
+        "category": "none",
+        "target": {
+          "type": "target",
+          "range": 60,
+          "count": 1
+        },
+        "requiresConcentration": false,
+        "effects": [
+          {
+            "type": "custom",
+            "description": "Advantage on the next attack roll against the target.",
+            "data": {
+              "advantage": true,
+              "duration": "until end of troll's next turn"
+            }
+          }
+        ],
+        "createdAt": "2024-09-01T12:35:00.000Z",
+        "updatedAt": "2024-09-01T12:35:00.000Z"
+      },
+      {
+        "id": "e3f4a5b6-7c8d-4e9f-a0b1-2c3d4e5f6a7b",
+        "name": "Regenerative Surge",
+        "slug": "regenerative-surge",
+        "description": "<p>The troll abandons offense and lets its body knit. It immediately regains <strong>15 hit points</strong>. If its <span class=\"wiki-link wiki-link--found\" data-wiki-id=\"f6a8b7c9-0d1e-4f2a-8b4c-5d6e7f8a9b0c\" data-wiki-type=\"abilities\" tabindex=\"0\" role=\"link\">Regeneration</span> was suppressed, the suppression ends.</p>",
+        "timing": "legendary",
+        "category": "none",
+        "target": {
+          "type": "selfTarget"
+        },
+        "requiresConcentration": false,
+        "effects": [
+          {
+            "type": "custom",
+            "description": "Regain 15 hit points and remove Regeneration suppression.",
+            "data": {
+              "healing": 15,
+              "clearsRegenSuppression": true
+            }
+          }
+        ],
+        "createdAt": "2024-09-01T12:40:00.000Z",
+        "updatedAt": "2024-09-01T12:40:00.000Z"
+      },
+      {
+        "id": "f4a5b6c7-8d9e-4f0a-b1c2-3d4e5f6a7b8c",
+        "name": "Strangling Undergrowth",
+        "slug": "strangling-undergrowth",
+        "description": "<p>Roots and vines tear upward through the soil in a <strong>10-ft. radius</strong> around a point within 60 ft. Each creature in that area must succeed on a <strong>DC 13 Strength saving throw</strong> or be <strong>restrained</strong> until initiative count 20 on the next round.</p>",
+        "timing": "lair",
+        "category": "none",
+        "target": {
+          "type": "area",
+          "range": 60,
+          "shape": "cylinder",
+          "size": 10
+        },
+        "requiresConcentration": false,
+        "effects": [
+          {
+            "type": "custom",
+            "description": "Restrained on failed DC 13 Strength save until initiative count 20.",
+            "data": {
+              "condition": "restrained",
+              "savingThrow": {
+                "dc": 13,
+                "attribute": "strength"
+              },
+              "duration": "until initiative count 20 on the next round"
+            }
+          }
+        ],
+        "createdAt": "2024-09-01T12:45:00.000Z",
+        "updatedAt": "2024-09-01T12:45:00.000Z"
+      },
+      {
+        "id": "a5b6c7d8-9e0f-4a1b-82d3-4e5f6a7b8c9d",
+        "name": "Rank Spore Cloud",
+        "slug": "rank-spore-cloud",
+        "description": "<p>Rot spores erupt from cracks in the lair walls. Each creature within 20 ft. of the troll must succeed on a <strong>DC 12 Constitution saving throw</strong> or take <strong>2d6 poison damage</strong> and be <span class=\"wiki-link wiki-link--found\" data-wiki-id=\"b2e4d3c5-6f7a-4b8d-9e0f-1a2b3c4d5e6f\" data-wiki-type=\"statuses\" tabindex=\"0\" role=\"link\">Poisoned</span> until the start of its next turn.</p>",
+        "timing": "lair",
+        "category": "none",
+        "target": {
+          "type": "area",
+          "range": 0,
+          "shape": "sphere",
+          "size": 20
+        },
+        "requiresConcentration": false,
+        "effects": [
+          {
+            "type": "damage",
+            "formula": "2d6",
+            "damageType": "poison"
+          }
+        ],
+        "createdAt": "2024-09-01T12:50:00.000Z",
+        "updatedAt": "2024-09-01T12:50:00.000Z"
+      },
+      {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "name": "Fireball",
+        "slug": "fireball",
+        "description": "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame.",
+        "timing": "action",
+        "category": "none",
+        "target": {
+          "type": "area",
+          "shape": "sphere",
+          "range": 150
+        },
+        "requiresConcentration": false,
+        "components": {
+          "verbal": true,
+          "somatic": true,
+          "material": "a tiny ball of bat guano and sulfur"
+        },
+        "spellLevel": 3,
+        "school": "evocation",
+        "ritual": false,
+        "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.",
+        "uses": null,
+        "effects": [
+          {
+            "type": "damage",
+            "formula": "8d6",
+            "damageType": "fire"
+          }
+        ],
+        "createdAt": "2026-05-14T00:00:00Z",
+        "updatedAt": "2026-05-14T00:00:00Z"
+      },
+      {
+        "id": "22222222-2222-4222-8222-222222222222",
+        "name": "Multiattack",
+        "slug": "young-dragon-multiattack",
+        "description": "The dragon makes three attacks: one with its bite and two with its claws.",
+        "timing": "action",
+        "category": "multiattack",
+        "target": null,
+        "requiresConcentration": false,
+        "components": null,
+        "spellLevel": null,
+        "school": null,
+        "ritual": false,
+        "higherLevels": null,
+        "uses": null,
+        "effects": [],
+        "createdAt": "2026-05-14T00:00:00Z",
+        "updatedAt": "2026-05-14T00:00:00Z"
+      },
+      {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "name": "Ancient Presence",
+        "slug": "ancient-presence",
+        "description": "Land within 6 miles of the lair becomes saturated with arcane residue; magical creatures encountered there have advantage on initiative.",
+        "timing": "passive",
+        "category": "regionalEffect",
+        "target": null,
+        "requiresConcentration": false,
+        "components": null,
+        "spellLevel": null,
+        "school": null,
+        "ritual": false,
+        "higherLevels": null,
+        "uses": null,
+        "effects": [],
+        "createdAt": "2026-05-14T00:00:00Z",
+        "updatedAt": "2026-05-14T00:00:00Z"
       }
     ],
     "entities": [
@@ -204,44 +427,73 @@
         "challengeRating": 5.0,
         "experiencePoints": 1800,
         "proficiencyBonus": 3,
-        "legendaryActionsPerRound": null,
+        "legendaryActionsPerRound": 3,
         "savingThrows": {
           "strength": 7,
           "constitution": 8
         },
         "skills": {
           "perception": 2,
-          "stealth": 2
+          "stealth": 4
         },
         "damageResistances": [
-          { "damageType": "bludgeoning", "level": "resistant" },
-          { "damageType": "fire", "level": "vulnerable" },
-          { "damageType": "acid", "level": "vulnerable" }
+          {
+            "damageType": "bludgeoning",
+            "level": "resistant"
+          },
+          {
+            "damageType": "fire",
+            "level": "vulnerable"
+          },
+          {
+            "damageType": "acid",
+            "level": "vulnerable"
+          }
         ],
         "statusImmunities": [],
-        "senses": ["darkvision 60 ft.", "passive Perception 12"],
-        "languages": ["Giant"],
-        "habitats": ["forest", "swamp", "hills", "caves"],
-        "description": "<h2>Appearance</h2><p>A hulking, moss-covered brute that lopes through old-growth forests on knuckled fists, its rubbery green hide dappled with lichen and old scars. Standing nearly 9 feet tall, the Forest Troll is a study in ugly efficiency — all reach and muscle and hunger.</p><h2>The Regeneration Problem</h2><p>Forest Trolls are infamous for their ability to close wounds almost as fast as a blade can open them. Adventurers who have never faced one before are often horrified to watch a deep cut seal over in seconds. Only fire and acid leave wounds that truly stay open — a fact that separates experienced monster hunters from unlucky beginners.</p>",
+        "senses": [
+          "darkvision 60 ft."
+        ],
+        "languages": [
+          "Giant"
+        ],
+        "habitats": [
+          "forest",
+          "swamp",
+          "hills",
+          "caves"
+        ],
+        "description": "<h2>Appearance</h2><p>A hulking, moss-covered brute that lopes through old-growth forests on knuckled fists, its rubbery green hide dappled with lichen and old scars. Standing nearly 9 feet tall, the Forest Troll is a study in ugly efficiency — all reach and muscle and hunger.</p><h2>The <span class=\"wiki-link wiki-link--found\" data-wiki-id=\"f6a8b7c9-0d1e-4f2a-8b4c-5d6e7f8a9b0c\" data-wiki-type=\"abilities\" tabindex=\"0\" role=\"link\">Regeneration</span> Problem</h2><p>Forest Trolls are infamous for their ability to close wounds almost as fast as a blade can open them. Adventurers who have never faced one before are often horrified to watch a deep cut seal over in seconds. Only fire and acid leave wounds that truly stay open — a fact that separates experienced monster hunters from unlucky beginners.</p>",
         "statBlock": {
           "hp": 84,
+          "hitDice": null,
           "armor": 15,
+          "armorNote": null,
           "speed": 30.0,
+          "burrowSpeed": null,
+          "climbSpeed": 20,
+          "flySpeed": null,
+          "swimSpeed": null,
+          "hoverSpeed": null,
+          "initiativeBonus": null,
           "strength": 18,
           "dexterity": 13,
           "constitution": 20,
           "intelligence": 7,
           "wisdom": 9,
           "charisma": 7,
-          "custom": {
-            "climbSpeed": 20
-          }
+          "custom": {}
         },
         "statusIds": [],
         "abilityIds": [
           "f6a8b7c9-0d1e-4f2a-8b4c-5d6e7f8a9b0c",
           "a7b9c8d0-1e2f-4a3b-9c5d-6e7f8a9b0c1d",
-          "b8c0d9e1-2f3a-4b4c-ad6e-7f8a9b0c1d2e"
+          "b8c0d9e1-2f3a-4b4c-ad6e-7f8a9b0c1d2e",
+          "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+          "d2e3f4a5-6b7c-4d8e-9f0a-1b2c3d4e5f6a",
+          "e3f4a5b6-7c8d-4e9f-a0b1-2c3d4e5f6a7b",
+          "f4a5b6c7-8d9e-4f0a-b1c2-3d4e5f6a7b8c",
+          "a5b6c7d8-9e0f-4a1b-82d3-4e5f6a7b8c9d"
         ],
         "inventory": [
           {
@@ -261,7 +513,7 @@
           }
         ],
         "images": [],
-        "notes": "<p><strong>Combat Notes:</strong> The troll will attack the nearest creature and press the assault relentlessly. It uses Thick Hide as a reaction when struck, and leads every round with Crushing Slam. It will not flee.</p><p><strong>Regeneration:</strong> Remind players after the first round that wounds are closing — the clock is ticking. Without fire or acid damage, attrition heavily favors the troll.</p>",
+        "notes": "<p><strong>Combat Notes:</strong> The troll will attack the nearest creature and press the assault relentlessly. It uses <span class=\"wiki-link wiki-link--found\" data-wiki-id=\"b8c0d9e1-2f3a-4b4c-ad6e-7f8a9b0c1d2e\" data-wiki-type=\"abilities\" tabindex=\"0\" role=\"link\">Thick Hide</span> as a reaction when struck, and leads every round with <span class=\"wiki-link wiki-link--found\" data-wiki-id=\"a7b9c8d0-1e2f-4a3b-9c5d-6e7f8a9b0c1d\" data-wiki-type=\"abilities\" tabindex=\"0\" role=\"link\">Crushing Slam</span>. It will not flee.</p><p><strong><span class=\"wiki-link wiki-link--found\" data-wiki-id=\"f6a8b7c9-0d1e-4f2a-8b4c-5d6e7f8a9b0c\" data-wiki-type=\"abilities\" tabindex=\"0\" role=\"link\">Regeneration</span>:</strong> Remind players after the first round that wounds are closing — the clock is ticking. Without fire or acid damage, attrition heavily favors the troll.</p>",
         "createdAt": "2024-09-01T13:00:00.000Z",
         "updatedAt": "2024-09-01T13:00:00.000Z"
       }

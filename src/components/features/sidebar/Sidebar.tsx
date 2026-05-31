@@ -1,11 +1,11 @@
-import React, { forwardRef } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { EASE_OUT, DURATION, fadeVariants, sidebarPanelVariants } from "@/lib/animations";
+import { DURATION, EASE_OUT, fadeVariants, sidebarPanelVariants } from "@/lib/animations";
 import { cn } from "@/lib/utils";
 import { SidebarProvider, useSidebarContext } from "./SidebarContext";
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarNav } from "./SidebarNav";
-import { SidebarSearch, type SidebarSearchRef } from "./SidebarSearch";
+import { SidebarSearch } from "./SidebarSearch";
 import { SidebarList } from "./SidebarList";
 import { SidebarFooter } from "./SidebarFooter";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
@@ -15,50 +15,51 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  autoFocusSearch?: boolean;
 }
 
-export type { SidebarSearchRef };
-
-const AnimatedSection: React.FC<{
+function AnimatedSection({ delay, className, children }: {
   delay: number;
   className?: string;
   children: React.ReactNode;
-}> = ({ delay, className, children }) => (
-  <motion.div
-    initial={{ opacity: 0, y: -6 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: DURATION.base, ease: EASE_OUT, delay: delay / 1000 }}
-    className={className}
-  >
-    {children}
-  </motion.div>
-);
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: DURATION.base, ease: EASE_OUT, delay: delay / 1000 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
-const SidebarContent = forwardRef<SidebarSearchRef>((_, ref) => (
-  <>
-    <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.HEADER}>
-      <SidebarHeader />
-    </AnimatedSection>
-    <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.NAV}>
-      <SidebarNav />
-    </AnimatedSection>
-    <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.SEARCH}>
-      <SidebarSearch ref={ref} />
-    </AnimatedSection>
-    <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.LIST} className="flex-1 overflow-auto">
-      <ErrorBoundary level="component">
-        <SidebarList />
-      </ErrorBoundary>
-    </AnimatedSection>
-    <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.FOOTER}>
-      <SidebarFooter />
-    </AnimatedSection>
-  </>
-));
+function SidebarContent() {
+  return (
+    <>
+      <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.HEADER}>
+        <SidebarHeader />
+      </AnimatedSection>
+      <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.NAV}>
+        <SidebarNav />
+      </AnimatedSection>
+      <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.SEARCH}>
+        <SidebarSearch />
+      </AnimatedSection>
+      <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.LIST} className="flex-1 overflow-auto">
+        <ErrorBoundary level="component">
+          <SidebarList />
+        </ErrorBoundary>
+      </AnimatedSection>
+      <AnimatedSection delay={SIDEBAR_CONFIG.ANIMATION_DELAYS.FOOTER}>
+        <SidebarFooter />
+      </AnimatedSection>
+    </>
+  );
+}
 
-SidebarContent.displayName = "SidebarContent";
-
-const SidebarImpl = forwardRef<SidebarSearchRef>((_, ref) => {
+function SidebarImpl({ autoFocusSearch }: { autoFocusSearch: boolean }) {
   const { isOpen, onClose } = useSidebarContext();
   const panelRef = React.useRef<HTMLElement>(null);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
@@ -81,14 +82,24 @@ const SidebarImpl = forwardRef<SidebarSearchRef>((_, ref) => {
     };
 
     const focusFirstElement = window.setTimeout(() => {
-      getFocusableElements()[0]?.focus();
-      if (document.activeElement === document.body) {
-        panelRef.current?.focus();
+      const searchInput = autoFocusSearch
+        ? panelRef.current?.querySelector<HTMLInputElement>("#sidebar-search")
+        : null;
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      } else {
+        getFocusableElements()[0]?.focus();
+        if (document.activeElement === document.body) {
+          panelRef.current?.focus();
+        }
       }
     }, 0);
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        const nestedDialog = document.querySelector('[role="alertdialog"][data-state="open"], [role="dialog"][aria-modal="true"]:not([aria-label="Table of Contents"])');
+        if (nestedDialog) return;
         event.preventDefault();
         onClose();
         return;
@@ -121,7 +132,7 @@ const SidebarImpl = forwardRef<SidebarSearchRef>((_, ref) => {
       document.removeEventListener("keydown", handleKeyDown);
       previousFocusRef.current?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, autoFocusSearch]);
 
   return (
     <>
@@ -156,7 +167,7 @@ const SidebarImpl = forwardRef<SidebarSearchRef>((_, ref) => {
               aria-label="Table of Contents"
               tabIndex={-1}
             >
-              <SidebarContent ref={ref} />
+              <SidebarContent />
             </motion.aside>
           </>
         )}
@@ -165,14 +176,12 @@ const SidebarImpl = forwardRef<SidebarSearchRef>((_, ref) => {
       <DeleteConfirmationDialog />
     </>
   );
-});
+}
 
-SidebarImpl.displayName = "SidebarImpl";
-
-export const Sidebar = forwardRef<SidebarSearchRef, SidebarProps>(({ isOpen, onClose }, ref) => (
-  <SidebarProvider isOpen={isOpen} onClose={onClose}>
-    <SidebarImpl ref={ref} />
-  </SidebarProvider>
-));
-
-Sidebar.displayName = 'Sidebar';
+export function Sidebar({ isOpen, onClose, autoFocusSearch = false }: SidebarProps) {
+  return (
+    <SidebarProvider isOpen={isOpen} onClose={onClose}>
+      <SidebarImpl autoFocusSearch={autoFocusSearch} />
+    </SidebarProvider>
+  );
+}

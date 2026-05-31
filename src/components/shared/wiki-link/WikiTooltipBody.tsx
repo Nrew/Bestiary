@@ -1,4 +1,3 @@
-import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { stripHtml, formatCR } from "@/lib/utils";
 import { ENTITY_SIZE_LABELS } from "@/lib/dnd/constants";
@@ -11,7 +10,7 @@ interface WikiTooltipBodyProps {
   isLoading: boolean;
 }
 
-export const WikiTooltipBody: React.FC<WikiTooltipBodyProps> = ({ data, type, isLoading }) => {
+export function WikiTooltipBody({ data, type, isLoading }: WikiTooltipBodyProps) {
   const name        = data?.name;
   const description = data
     ? (type === "statuses" ? (data as Status).summary : data.description)
@@ -52,7 +51,7 @@ export const WikiTooltipBody: React.FC<WikiTooltipBodyProps> = ({ data, type, is
               isLoading ? (
                 <Skeleton className="h-3 w-20 mt-1" />
               ) : entitySubtitle ? (
-                <span className="block font-serif text-[11px] text-muted-foreground leading-tight mt-0.5 italic">
+                <span className="block font-serif text-2xs text-muted-foreground leading-tight mt-0.5 italic">
                   {entitySubtitle}
                 </span>
               ) : null
@@ -60,7 +59,7 @@ export const WikiTooltipBody: React.FC<WikiTooltipBodyProps> = ({ data, type, is
           </div>
 
           <span
-            className="shrink-0 font-display text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border leading-none"
+            className="shrink-0 font-display text-xxs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border leading-none"
             style={{
               color:           accentColor,
               borderColor:     accentColor,
@@ -86,4 +85,4 @@ export const WikiTooltipBody: React.FC<WikiTooltipBodyProps> = ({ data, type, is
       </div>
     </>
   );
-};
+}

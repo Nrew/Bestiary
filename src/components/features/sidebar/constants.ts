@@ -42,7 +42,7 @@ export const SIDEBAR_CONFIG = {
   PAGE_SIZE,
   /** Item row height in pixels, used by the virtual scroller */
   ITEM_HEIGHT: 72,
-  /** Virtual scroll overscan — rows rendered beyond the visible window */
+  /** Virtual scroll overscan: rows rendered beyond the visible window */
   OVERSCAN: 10,
   MAX_NAME_LENGTH: 32,
   ANIMATION_DELAYS: {  // ms
@@ -57,31 +57,31 @@ export const SIDEBAR_CONFIG = {
 export const ITEM_STYLING = {
   entity: {
     color: "text-moss",
-    bg: "bg-moss/[.05]",
-    gradientClass: "bg-gradient-to-b from-moss/[.2]",
-    hoverClass: "hover:bg-moss/[.1] hover:border-moss/[.3]",
-    selectedClass: "bg-moss/[.05] border-moss/[.2]",
+    bg: "bg-moss/5",
+    gradientClass: "bg-linear-to-b from-moss/20",
+    hoverClass: "hover:bg-moss/10 hover:border-moss/30",
+    selectedClass: "bg-moss/5 border-moss/20",
   },
   item: {
-    color: "text-brass",
-    bg: "bg-brass/[.05]",
-    gradientClass: "bg-gradient-to-b from-brass/[.2]",
-    hoverClass: "hover:bg-brass/[.1] hover:border-brass/[.3]",
-    selectedClass: "bg-brass/[.05] border-brass/[.2]",
+    color: "text-brass-strong",
+    bg: "bg-brass/5",
+    gradientClass: "bg-linear-to-b from-brass/20",
+    hoverClass: "hover:bg-brass/10 hover:border-brass/30",
+    selectedClass: "bg-brass/5 border-brass/20",
   },
   status: {
     color: "text-violet",
-    bg: "bg-violet/[.05]",
-    gradientClass: "bg-gradient-to-b from-violet/[.2]",
-    hoverClass: "hover:bg-violet/[.1] hover:border-violet/[.3]",
-    selectedClass: "bg-violet/[.05] border-violet/[.2]",
+    bg: "bg-violet/5",
+    gradientClass: "bg-linear-to-b from-violet/20",
+    hoverClass: "hover:bg-violet/10 hover:border-violet/30",
+    selectedClass: "bg-violet/5 border-violet/20",
   },
   ability: {
     color: "text-bloodstone",
-    bg: "bg-bloodstone/[.05]",
-    gradientClass: "bg-gradient-to-b from-bloodstone/[.2]",
-    hoverClass: "hover:bg-bloodstone/[.1] hover:border-bloodstone/[.3]",
-    selectedClass: "bg-bloodstone/[.05] border-bloodstone/[.2]",
+    bg: "bg-bloodstone/5",
+    gradientClass: "bg-linear-to-b from-bloodstone/20",
+    hoverClass: "hover:bg-bloodstone/10 hover:border-bloodstone/30",
+    selectedClass: "bg-bloodstone/5 border-bloodstone/20",
   },
 } as const;
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useMemo } from "react";
+import React, { createContext, use, useCallback, useMemo } from "react";
 import { useAppStore } from "@/store/appStore";
 import { CONTEXT_CONFIG, type SidebarContextConfig } from "./constants";
 import { useNavigationGuard } from "@/hooks/useNavigationGuard";
@@ -27,11 +27,11 @@ interface SidebarProviderProps {
   onClose: () => void;
 }
 
-export const SidebarProvider: React.FC<SidebarProviderProps> = ({
+export function SidebarProvider({
   children,
   isOpen,
   onClose,
-}) => {
+}: SidebarProviderProps) {
   const currentContext = useAppStore((s) => s.currentContext);
   const selectedId = useAppStore((s) => s.selectedId);
   const { navigateToEntry } = useNavigationGuard();
@@ -91,14 +91,14 @@ export const SidebarProvider: React.FC<SidebarProviderProps> = ({
   );
 
   return (
-    <SidebarContext.Provider value={value}>
+    <SidebarContext value={value}>
       {children}
-    </SidebarContext.Provider>
+    </SidebarContext>
   );
-};
+}
 
 export const useSidebarContext = () => {
-  const context = useContext(SidebarContext);
+  const context = use(SidebarContext);
   if (!context) {
     throw new Error(
       "useSidebarContext must be used within a SidebarProvider. " +

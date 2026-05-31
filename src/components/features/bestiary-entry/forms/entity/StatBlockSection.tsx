@@ -1,4 +1,3 @@
-import React from "react";
 import { useFormContext } from "react-hook-form";
 import { FormSection } from "@/components/forms/FormSection";
 import { CustomPropertiesFields } from "@/components/forms/FormCollections";
@@ -15,13 +14,6 @@ const ENTITY_STAT_KEYS = new Set([
 ]);
 
 const CUSTOM_STAT_SUGGESTIONS: Record<string, string> = {
-  burrowSpeed: "Burrow Speed",
-  climbSpeed: "Climb Speed",
-  swimSpeed: "Swim Speed",
-  flySpeed: "Fly Speed",
-  hoverSpeed: "Hover Speed",
-  hitDice: "Hit Dice",
-  armorType: "Armor Type",
   spellcastingAbility: "Spellcasting Ability",
   spellSaveDC: "Spell Save DC",
   spellAttackBonus: "Spell Attack Bonus",
@@ -31,20 +23,22 @@ const CUSTOM_STAT_SUGGESTIONS: Record<string, string> = {
   summonSource: "Summon Source",
 };
 
-const CustomStatBlockFields: React.FC = () => (
-  <CustomPropertiesFields
-    fieldPath="statBlock.custom"
-    suggestions={CUSTOM_STAT_SUGGESTIONS}
-    entityStatKeys={ENTITY_STAT_KEYS}
-  />
-);
+function CustomStatBlockFields() {
+  return (
+    <CustomPropertiesFields
+      fieldPath="statBlock.custom"
+      suggestions={CUSTOM_STAT_SUGGESTIONS}
+      entityStatKeys={ENTITY_STAT_KEYS}
+    />
+  );
+}
 
-export const StatBlockSection: React.FC = () => {
+export function StatBlockSection() {
   const { register } = useFormContext<Entity>();
 
   return (
     <FormSection title="Stat Block" iconCategory="ability" iconName="strength">
-      <div className="col-span-full grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="statBlock.hp">Hit Points</Label>
           <Input
@@ -52,6 +46,14 @@ export const StatBlockSection: React.FC = () => {
             type="number"
             {...register("statBlock.hp", { valueAsNumber: true })}
             placeholder="e.g., 84"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="statBlock.hitDice">Hit Dice</Label>
+          <Input
+            id="statBlock.hitDice"
+            {...register("statBlock.hitDice")}
+            placeholder="e.g., 8d10 + 40"
           />
         </div>
         <div className="space-y-2">
@@ -64,13 +66,87 @@ export const StatBlockSection: React.FC = () => {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="statBlock.speed">Speed (ft)</Label>
+          <Label htmlFor="statBlock.armorNote">Armor Note</Label>
           <Input
-            id="statBlock.speed"
-            type="number"
-            {...register("statBlock.speed", { valueAsNumber: true })}
-            placeholder="e.g., 30"
+            id="statBlock.armorNote"
+            {...register("statBlock.armorNote")}
+            placeholder="e.g., natural armor"
           />
+        </div>
+      </div>
+
+      <div className="col-span-full space-y-4 pt-4 border-t border-border/50">
+        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Movement</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="statBlock.speed">Walking</Label>
+            <Input
+              id="statBlock.speed"
+              type="number"
+              {...register("statBlock.speed", { valueAsNumber: true })}
+              placeholder="30"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="statBlock.burrowSpeed">Burrow</Label>
+            <Input
+              id="statBlock.burrowSpeed"
+              type="number"
+              {...register("statBlock.burrowSpeed", { valueAsNumber: true })}
+              placeholder="e.g., 20"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="statBlock.climbSpeed">Climb</Label>
+            <Input
+              id="statBlock.climbSpeed"
+              type="number"
+              {...register("statBlock.climbSpeed", { valueAsNumber: true })}
+              placeholder="e.g., 30"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="statBlock.flySpeed">Fly</Label>
+            <Input
+              id="statBlock.flySpeed"
+              type="number"
+              {...register("statBlock.flySpeed", { valueAsNumber: true })}
+              placeholder="e.g., 60"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="statBlock.swimSpeed">Swim</Label>
+            <Input
+              id="statBlock.swimSpeed"
+              type="number"
+              {...register("statBlock.swimSpeed", { valueAsNumber: true })}
+              placeholder="e.g., 30"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="statBlock.hoverSpeed">Hover</Label>
+            <Input
+              id="statBlock.hoverSpeed"
+              type="number"
+              {...register("statBlock.hoverSpeed", { valueAsNumber: true })}
+              placeholder="e.g., 30"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border/50">
+        <div className="space-y-2">
+          <Label htmlFor="statBlock.initiativeBonus">Initiative Override</Label>
+          <Input
+            id="statBlock.initiativeBonus"
+            type="number"
+            {...register("statBlock.initiativeBonus", { valueAsNumber: true })}
+            placeholder="Uses Dex modifier"
+          />
+          <p className="text-xs text-muted-foreground">
+            Leave blank unless initiative differs from Dexterity.
+          </p>
         </div>
       </div>
 
@@ -99,4 +175,4 @@ export const StatBlockSection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}

@@ -37,9 +37,9 @@ export const SidebarFooter = React.memo(() => {
     >
       <div className="flex items-center justify-center gap-2 font-serif">
         {loading && displayedCount > 0 ? (
-          <Loader2 className="w-4 h-4 text-rune animate-spin" />
+          <Loader2 className="w-4 h-4 text-rune-strong animate-spin" />
         ) : (
-          <Archive className="w-4 h-4 text-rune" />
+          <Archive className="w-4 h-4 text-rune-strong" />
         )}
         <span aria-live="polite" aria-atomic="true">
           {getStatusText()}
@@ -54,7 +54,7 @@ export const SidebarFooter = React.memo(() => {
         <div className="mt-2">
           <div className="w-full bg-border rounded-full h-1 overflow-hidden">
             <div
-              className="h-full bg-rune/60 transition-all duration-300 ease-out"
+              className="h-full bg-rune/60 transition-[width] duration-300 ease-out"
               style={{ width: `${Math.min((displayedCount / totalCount) * 100, 100)}%` }}
               aria-hidden="true"
             />

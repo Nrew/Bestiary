@@ -1,5 +1,5 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import { FormSection } from "@/components/forms/FormSection";
 import {
   FormInput,
@@ -10,7 +10,13 @@ import {
 } from "@/components/forms/FormPrimitives";
 import { CustomPropertiesFields } from "@/components/forms/FormCollections";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
+import { DeferredMount } from "@/components/shared/DeferredMount";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Status } from "@/types";
+
+const RICH_TEXT_FALLBACK = (
+  <Skeleton variant="shimmer" className="min-h-49.5 w-full rounded-md" aria-hidden />
+);
 
 const STATUS_CUSTOM_SUGGESTIONS: Record<string, string> = {
   transformationTarget: "Transformation Target",
@@ -25,17 +31,14 @@ const STATUS_ENTITY_KEYS = new Set([
   "relatedEntity",
 ]);
 
-export const StatusForm: React.FC = React.memo(() => {
-  const {
-    watch,
-    setValue,
-  } = useFormContext<Status>();
+const STACKING_OPTIONS = [
+  { value: "no", label: "Does Not Stack" },
+  { value: "refresh", label: "Refresh Duration" },
+  { value: "stack", label: "Stack (Intensify)" },
+];
 
-  const stackingOptions = [
-    { value: "no", label: "Does Not Stack" },
-    { value: "refresh", label: "Refresh Duration" },
-    { value: "stack", label: "Stack (Intensify)" },
-  ];
+export const StatusForm = React.memo(() => {
+  const { control } = useFormContext<Status>();
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -81,7 +84,7 @@ export const StatusForm: React.FC = React.memo(() => {
           name="payload.stacks"
           label="Stacking Behavior"
           placeholder="Select stacking..."
-          options={stackingOptions}
+          options={STACKING_OPTIONS}
           description="How multiple applications interact"
         />
 
@@ -145,12 +148,24 @@ export const StatusForm: React.FC = React.memo(() => {
       </FormSection>
 
       <FormSection title="Full Description" iconCategory="ui" iconName="book">
-        <div className="col-span-full">
-          <RichTextEditor
-            content={watch("description") || ""}
-            onChange={(html) => setValue("description", html, { shouldDirty: true })}
-          />
-        </div>
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <DeferredMount
+              ref={field.ref}
+              className="col-span-full"
+              fallback={RICH_TEXT_FALLBACK}
+            >
+              <RichTextEditor
+                ariaLabel="Status full description"
+                content={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            </DeferredMount>
+          )}
+        />
       </FormSection>
     </div>
   );

@@ -1,25 +1,25 @@
-import React from "react";
 import { FormSection } from "@/components/forms/FormSection";
 import { StringArrayField } from "@/components/forms/StringArrayField";
 import { COMMON_LANGUAGES, COMMON_HABITATS } from "@/lib/dnd/constants";
 import type { Entity } from "@/types";
 
-export const SensesSection: React.FC = () => {
+export function SensesSection() {
   return (
     <FormSection title="Senses" iconCategory="attribute" iconName="vision">
       <div className="col-span-full">
         <StringArrayField<Entity>
           name="senses"
           label="Senses"
-          placeholder="e.g., darkvision 60 ft., passive Perception 14"
+          placeholder="e.g., darkvision 60 ft., tremorsense 30 ft."
+          description="Passive Perception is calculated automatically from Wisdom and skill proficiency."
           addButtonLabel="Add Sense"
         />
       </div>
     </FormSection>
   );
-};
+}
 
-export const LanguagesSection: React.FC = () => {
+export function LanguagesSection() {
   return (
     <FormSection title="Languages" iconCategory="ui" iconName="bubble">
       <div className="col-span-full">
@@ -33,9 +33,9 @@ export const LanguagesSection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}
 
-export const HabitatsSection: React.FC = () => {
+export function HabitatsSection() {
   return (
     <FormSection title="Habitats" iconCategory="location" iconName="dungeon">
       <div className="col-span-full">
@@ -49,4 +49,4 @@ export const HabitatsSection: React.FC = () => {
       </div>
     </FormSection>
   );
-};
+}

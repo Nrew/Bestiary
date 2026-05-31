@@ -1,32 +1,32 @@
-import React from "react";
 import { BookOpen } from "lucide-react";
 import { IlluminatedLetter, DecorativeFlourish } from "@/components/shared/ornaments";
 
-export const EmptyState: React.FC = () => {
+export function EmptyState() {
   return (
     <div className="flex h-full flex-1 items-center justify-center p-8">
       <div className="text-center font-serif max-w-4xl flex flex-col items-center gap-8 animate-fade-in">
         <div className="relative w-40 h-40">
-          <div className="absolute inset-0 bg-linear-to-br from-rune/20 via-leather/15 to-rune/20 rounded-3xl blur-lg animate-glow"></div>
-          <div className="relative w-full h-full glass-panel rounded-3xl flex items-center justify-center shadow-2xl border-4 border-rune/60">
-            <BookOpen className="w-16 h-16 text-leather relative z-10 animate-bounce-gentle" />
+          <div className="absolute inset-0 bg-linear-to-br from-rune/20 via-leather/15 to-rune/20 rounded-3xl animate-glow"></div>
+          <div className="relative w-full h-full rounded-3xl flex items-center justify-center shadow-2xl border-4 border-rune/60 bg-card/90">
+            <BookOpen className="w-16 h-16 text-leather relative z-10 animate-float" />
           </div>
         </div>
 
         <div className="space-y-6">
-          <div className="flex items-center justify-center gap-4">
-            <IlluminatedLetter letter="B" />
-            <div className="text-left">
+          <div className="flex items-center justify-center gap-4" aria-label="Bestiary">
+            <span className="sr-only">Bestiary</span>
+            <IlluminatedLetter letter="B" aria-hidden="true" />
+            <div className="text-left" aria-hidden="true">
               <h2 className="text-5xl font-bold font-display text-leather tracking-wide">
                 estiary
               </h2>
-              <h3 className="text-2xl font-display text-rune tracking-wider mt-2">
+              <h3 className="text-2xl font-display text-rune-strong tracking-wider mt-2">
                 Expand thy archives.
               </h3>
             </div>
           </div>
 
-          <DecorativeFlourish className="w-64 h-12 text-rune mx-auto" />
+          <DecorativeFlourish className="w-64 h-12 text-rune-strong mx-auto" />
 
           <div className="space-y-4 max-w-2xl">
             <p className="text-xl text-muted-foreground leading-relaxed">
@@ -41,6 +41,6 @@ export const EmptyState: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default EmptyState;

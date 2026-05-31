@@ -1,4 +1,3 @@
-import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { RichTextViewer } from "@/components/shared/RichTextViewer";
 import { Icon } from "@/components/shared/Icon";
@@ -14,10 +13,10 @@ const STACKING_LABELS: Record<string, string> = {
   stack: "Stacks (Intensifies)",
 };
 
-const StatModifierDisplay: React.FC<{
+function StatModifierDisplay({ label, stat }: {
   label: string;
   stat: StatValue | null;
-}> = ({ label, stat }) => {
+}) {
   if (!stat) return null;
 
   return (
@@ -28,9 +27,9 @@ const StatModifierDisplay: React.FC<{
       </span>
     </div>
   );
-};
+}
 
-export const StatusDetailsSection: React.FC<{ data: Status }> = ({ data }) => {
+export function StatusDetailsSection({ data }: { data: Status }) {
   const { payload } = data;
   const hasTags = payload.tags && payload.tags.length > 0;
   const hasCustomData = Object.keys(payload.custom ?? {}).length > 0;
@@ -152,9 +151,9 @@ export const StatusDetailsSection: React.FC<{ data: Status }> = ({ data }) => {
       )}
     </div>
   );
-};
+}
 
-export const StatusSummarySection: React.FC<{ data: Status }> = ({ data }) => {
+export function StatusSummarySection({ data }: { data: Status }) {
   if (!hasMeaningfulString(data.summary)) return null;
   return (
     <div className="stone-plate">
@@ -166,16 +165,16 @@ export const StatusSummarySection: React.FC<{ data: Status }> = ({ data }) => {
       </p>
     </div>
   );
-};
+}
 
-export const StatusDescriptionSection: React.FC<{ data: Status }> = ({
+export function StatusDescriptionSection({
   data,
-}) => {
+}: { data: Status }) {
   if (!hasRichTextContent(data.description)) return null;
 
   return (
-    <div className="prose prose-lg dark:prose-invert max-w-none viewer-prose font-serif">
+    <div className="max-w-none viewer-prose font-serif">
       <RichTextViewer html={data.description} />
     </div>
   );
-};
+}

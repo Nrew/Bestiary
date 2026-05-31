@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X } from "lucide-react";
 import { useStatusesMap, useEntitiesMap } from "@/store/appStore";
 import { getContextConfig } from "@/lib/context-config";
+import { cn } from "@/lib/utils";
+import { listboxOptionVariants } from "@/components/ui/listbox-option";
 import type { BestiaryEntry } from "@/types";
 
 interface SingleEntryPickerProps {
@@ -14,8 +16,8 @@ interface SingleEntryPickerProps {
   context: "statuses" | "entities";
 }
 
-export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
-  ({ label, value, onChange, context }) => {
+export const SingleEntryPicker = React.memo(
+  ({ label, value, onChange, context }: SingleEntryPickerProps) => {
     const [isOpen, setIsOpen] = React.useState(false);
     const [search, setSearch] = React.useState("");
     const [remoteEntries, setRemoteEntries] = React.useState<BestiaryEntry[]>([]);
@@ -24,6 +26,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
     const [activeIndex, setActiveIndex] = React.useState(0);
     const listRef = React.useRef<HTMLDivElement>(null);
     const listboxId = React.useId();
+    const fetchedNameRef = React.useRef<string | null>(null);
 
     const statusesMap = useStatusesMap();
     const entitiesMap = useEntitiesMap();
@@ -34,19 +37,28 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
       : null;
 
     React.useEffect(() => {
-      if (!value || entriesMap.has(value) || fetchedName !== null) return;
+      setFetchedName(null);
+      fetchedNameRef.current = null;
+    }, [value]);
+
+    React.useEffect(() => {
+      if (!value || entriesMap.has(value) || fetchedNameRef.current !== null) return;
       let cancelled = false;
       getContextConfig(context).api.getDetails(value)
         .then((entry) => {
-          if (!cancelled) setFetchedName(entry.name);
+          if (cancelled) return;
+          fetchedNameRef.current = entry.name;
+          setFetchedName(entry.name);
         })
         .catch(() => {
-          if (!cancelled) setFetchedName("");
+          if (cancelled) return;
+          fetchedNameRef.current = "";
+          setFetchedName("");
         });
       return () => {
         cancelled = true;
       };
-    }, [context, entriesMap, fetchedName, value]);
+    }, [context, entriesMap, value]);
 
     React.useEffect(() => {
       if (!isOpen) return;
@@ -67,11 +79,9 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
       };
     }, [context, isOpen, search]);
 
-    const filteredEntries = remoteEntries;
-
     React.useEffect(() => {
       setActiveIndex(0);
-    }, [filteredEntries.length]);
+    }, [search]);
 
     const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => {
       if (!isOpen) return;
@@ -79,7 +89,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
-          setActiveIndex(i => Math.min(i + 1, filteredEntries.length - 1));
+          setActiveIndex(i => Math.min(i + 1, remoteEntries.length - 1));
           break;
         case "ArrowUp":
           e.preventDefault();
@@ -87,8 +97,8 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
           break;
         case "Enter":
           e.preventDefault();
-          if (filteredEntries[activeIndex]) {
-            onChange(filteredEntries[activeIndex].id);
+          if (remoteEntries[activeIndex]) {
+            onChange(remoteEntries[activeIndex].id);
             setIsOpen(false);
             setSearch("");
           }
@@ -99,7 +109,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
           setSearch("");
           break;
       }
-    }, [isOpen, activeIndex, filteredEntries, onChange]);
+    }, [isOpen, activeIndex, remoteEntries, onChange]);
 
     React.useEffect(() => {
       if (!isOpen) return;
@@ -151,7 +161,10 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
               role="dialog"
               aria-label={`Search ${context}`}
             >
+              <Label htmlFor={`${listboxId}-search`} className="sr-only">Search {context}</Label>
               <Input
+                id={`${listboxId}-search`}
+                name={`${listboxId}-search`}
                 placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -165,7 +178,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
                 <p className="text-sm text-muted-foreground p-2" role="status">
                   Searching...
                 </p>
-              ) : filteredEntries.length === 0 ? (
+              ) : remoteEntries.length === 0 ? (
                 <p className="text-sm text-muted-foreground p-2" role="status">
                   No entries found
                 </p>
@@ -175,7 +188,7 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
                   role="listbox"
                   aria-label={`${context} options`}
                 >
-                  {filteredEntries.map((entry, index) => (
+                  {remoteEntries.map((entry, index) => (
                     <button
                       key={entry.id}
                       type="button"
@@ -186,9 +199,10 @@ export const SingleEntryPicker: React.FC<SingleEntryPickerProps> = React.memo(
                         setIsOpen(false);
                         setSearch("");
                       }}
-                      className={`w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent ${
-                        index === activeIndex ? "bg-accent" : ""
-                      }`}
+                      className={cn(
+                        listboxOptionVariants({ active: index === activeIndex }),
+                        "w-full text-left px-2 py-1.5 rounded",
+                      )}
                     >
                       {entry.name}
                     </button>

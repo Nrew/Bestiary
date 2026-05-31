@@ -5,7 +5,7 @@ import type { ThreatLevel, Rarity } from "@/types";
 const THREAT_LEVEL_CLASS_MAP: Record<ThreatLevel, string> = {
   trivial: "text-stone bg-stone/10 border-stone/30",
   easy: "text-jade bg-jade/10 border-jade/30",
-  medium: "text-rune bg-rune/10 border-rune/30",
+  medium: "text-rune-strong bg-rune/10 border-rune/30",
   hard: "text-copper bg-copper/10 border-copper/30",
   deadly: "text-wine bg-wine/10 border-wine/30",
   legendary: "text-violet bg-violet/10 border-violet/30",
@@ -16,7 +16,7 @@ const RARITY_CLASS_MAP: Record<Rarity, string> = {
   uncommon: "text-jade bg-jade/10 border-jade/30",
   rare: "text-sapphire bg-sapphire/10 border-sapphire/30",
   veryRare: "text-violet bg-violet/10 border-violet/30",
-  legendary: "text-rune bg-rune/10 border-rune/30",
+  legendary: "text-rune-strong bg-rune/10 border-rune/30",
   mythic: "text-copper bg-copper/10 border-copper/30",
   unique: "text-wine bg-wine/10 border-wine/30",
 };
@@ -90,5 +90,5 @@ export const COMPONENT_STYLES = {
   /** Stat block container */
   statBlock: "bg-parchment/80 rounded-lg border-2 border-leather/30 p-4 font-serif text-foreground shadow-lg",
   /** Decorative divider line */
-  divider: "my-3 h-px w-full bg-gradient-to-r from-transparent via-wine/50 to-transparent",
+  divider: "my-3 h-px w-full bg-linear-to-r from-transparent via-wine/50 to-transparent",
 } as const;

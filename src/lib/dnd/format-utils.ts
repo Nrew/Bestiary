@@ -1,12 +1,7 @@
-import type { StatValue } from "@/types";
-
-/**
- * Helper for exhaustive switch statements.
- * TypeScript will error at compile time if a case is missing.
- */
-function assertNever(value: never): never {
-  throw new Error(`Unexpected value: ${JSON.stringify(value)}`);
-}
+import type { AbilityUses, MagicSchool, StatValue } from "@/types";
+import { MAGIC_SCHOOL_LABELS } from "./constants";
+import { ordinalize } from "@/lib/utils";
+import { assertNever } from "@/lib/type-utils";
 
 export function formatStatValue(stat: StatValue): string {
   switch (stat.type) {
@@ -21,7 +16,6 @@ export function formatStatValue(stat: StatValue): string {
   }
 }
 
-/** Stringifies any value for display. Objects are JSON-serialized; circular refs fall back to "[Complex Object]". */
 export function formatValue(value: unknown): string {
   if (value === null || value === undefined) return "—";
   if (typeof value === "boolean") return value ? "Yes" : "No";
@@ -29,7 +23,6 @@ export function formatValue(value: unknown): string {
     try {
       return JSON.stringify(value);
     } catch {
-      // Handle circular references gracefully
       return "[Complex Object]";
     }
   }
@@ -42,7 +35,50 @@ export function formatValue(value: unknown): string {
   return "[Function]";
 }
 
-/** Used for color-coding modifiers. percentMult < 100 is negative (e.g. 50 = halved). */
+export function formatBonus(value: number): string {
+  return value >= 0 ? `+${value}` : `${value}`;
+}
+
+export function formatSpellLevel(
+  level: number | null | undefined,
+  school?: MagicSchool | null,
+): string {
+  if (level == null && !school) return "";
+  if (level === 0) {
+    return school ? `${MAGIC_SCHOOL_LABELS[school]} Cantrip` : "Cantrip";
+  }
+  if (level == null) {
+    return school ? MAGIC_SCHOOL_LABELS[school] : "";
+  }
+  const ordinal = ordinalize(level);
+  return school ? `${ordinal}-level ${MAGIC_SCHOOL_LABELS[school]}` : `${ordinal}-level`;
+}
+
+export function formatAbilityUses(uses: AbilityUses | null): string | null {
+  if (!uses) return null;
+  switch (uses.kind) {
+    case "recharge":
+      return uses.min === uses.max
+        ? `Recharge ${uses.min}`
+        : `Recharge ${uses.min}-${uses.max}`;
+    case "perDay":
+      return `${uses.count}/Day`;
+    case "perRest": {
+      const restWord = uses.rest === "dawn" ? "dawn" : `${uses.rest} rest`;
+      return `${uses.count}/${restWord}`;
+    }
+    case "atWill":
+      return "At Will";
+    case "once":
+      return "Once";
+    default: {
+      const _exhaustive: never = uses;
+      void _exhaustive;
+      return null;
+    }
+  }
+}
+
 export function isNegativeStatValue(stat: StatValue): boolean {
   switch (stat.type) {
     case "flat":

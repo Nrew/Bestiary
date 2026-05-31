@@ -6,11 +6,24 @@ import {
   formatAbilityModifier,
   calculatePassivePerception,
 } from '@/lib/dnd';
+import {
+  estimateHitDiceCount,
+  getHitDieFromSize,
+  calculateHitPoints,
+} from '@/lib/dnd/calculations';
 
 const DEFAULT_STAT_BLOCK: StatBlock = {
   hp: null,
+  hitDice: null,
   armor: null,
+  armorNote: null,
   speed: null,
+  burrowSpeed: null,
+  climbSpeed: null,
+  flySpeed: null,
+  swimSpeed: null,
+  hoverSpeed: null,
+  initiativeBonus: null,
   strength: null,
   dexterity: null,
   constitution: null,
@@ -21,7 +34,6 @@ const DEFAULT_STAT_BLOCK: StatBlock = {
 };
 
 export interface ComputedEntityStats {
-  // Core modifiers
   proficiencyBonus: number;
   strModifier: number;
   dexModifier: number;
@@ -29,25 +41,17 @@ export interface ComputedEntityStats {
   intModifier: number;
   wisModifier: number;
   chaModifier: number;
-
-  // Formatted modifiers (with + or -)
   strModifierFormatted: string;
   dexModifierFormatted: string;
   conModifierFormatted: string;
   intModifierFormatted: string;
   wisModifierFormatted: string;
   chaModifierFormatted: string;
-
-  // Passive scores
   passivePerception: number;
   passiveInvestigation: number;
   passiveInsight: number;
-
-  // Hit dice
   hitDice: string | null;
   averageHP: number | null;
-
-  // Initiative
   initiative: number;
 }
 
@@ -73,28 +77,29 @@ export function useComputedEntityStats(entity: Entity | null | undefined): Compu
     const wisModifier = calculateAbilityModifier(wis);
     const chaModifier = calculateAbilityModifier(cha);
 
-    const isPerceptionProficient = skills && 'perception' in skills;
-    const isInvestigationProficient = skills && 'investigation' in skills;
-    const isInsightProficient = skills && 'insight' in skills;
-
-    const passivePerception = calculatePassivePerception(
-      wis,
-      proficiencyBonus,
-      isPerceptionProficient
-    );
-
-    const passiveInvestigation = 10 + intModifier + (isInvestigationProficient ? proficiencyBonus : 0);
-    const passiveInsight = 10 + wisModifier + (isInsightProficient ? proficiencyBonus : 0);
+    const passivePerception =
+      skills.perception !== undefined
+        ? 10 + skills.perception
+        : calculatePassivePerception(wis, proficiencyBonus, false);
+    const passiveInvestigation =
+      skills.investigation !== undefined
+        ? 10 + skills.investigation
+        : 10 + intModifier;
+    const passiveInsight =
+      skills.insight !== undefined
+        ? 10 + skills.insight
+        : 10 + wisModifier;
 
     let hitDice: string | null = null;
     let averageHP: number | null = null;
 
-    if (statBlock.hp && entity?.size) {
-      const hitDieSize = getHitDieSize(entity.size);
+    if (statBlock.hp !== null && statBlock.hp !== undefined && entity?.size) {
+      const hitDieSize = getHitDieFromSize(entity.size);
       if (hitDieSize) {
-        const numDice = Math.floor(statBlock.hp / ((hitDieSize + 1) / 2 + conModifier));
-        hitDice = `${numDice}d${hitDieSize}`;
-        averageHP = Math.floor(numDice * ((hitDieSize + 1) / 2) + numDice * conModifier);
+        const numDice = estimateHitDiceCount(statBlock.hp, entity.size, conModifier);
+        const hp = calculateHitPoints(numDice, hitDieSize, conModifier);
+        hitDice = hp.hitDice;
+        averageHP = hp.average;
       }
     }
 
@@ -117,21 +122,9 @@ export function useComputedEntityStats(entity: Entity | null | undefined): Compu
       passiveInsight,
       hitDice,
       averageHP,
-      initiative: dexModifier,
+      initiative: statBlock.initiativeBonus ?? dexModifier,
     };
   }, [entity]);
-}
-
-function getHitDieSize(size: string): number | null {
-  const sizeMap: Record<string, number> = {
-    tiny: 4,
-    small: 6,
-    medium: 8,
-    large: 10,
-    huge: 12,
-    gargantuan: 20,
-  };
-  return sizeMap[size.toLowerCase()] ?? null;
 }
 
 export function calculateAverageFromHitDice(hitDice: string, modifier: number = 0): number {
@@ -139,6 +132,6 @@ export function calculateAverageFromHitDice(hitDice: string, modifier: number = 
   if (!match) return 0;
 
   const [, numDice, dieSize] = match;
-  const avgPerDie = (parseInt(dieSize) + 1) / 2;
-  return Math.floor(parseInt(numDice) * avgPerDie + modifier);
+  const avgPerDie = (parseInt(dieSize, 10) + 1) / 2;
+  return Math.floor(parseInt(numDice, 10) * avgPerDie + modifier);
 }

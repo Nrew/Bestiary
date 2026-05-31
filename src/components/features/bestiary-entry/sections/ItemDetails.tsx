@@ -1,4 +1,3 @@
-import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { RichTextViewer } from "@/components/shared/RichTextViewer";
 import { Icon } from "@/components/shared/Icon";
@@ -12,7 +11,7 @@ import { formatStatValue, formatValue } from "@/lib/dnd/format-utils";
 import { formatLabel } from "@/lib/utils";
 import type { Item } from "@/types";
 
-export const ItemDetailsSection: React.FC<{ data: Item }> = ({ data }) => {
+export function ItemDetailsSection({ data }: { data: Item }) {
   const hasProperties = Object.keys(data.properties ?? {}).length > 0;
   const hasStatModifiers = Object.keys(data.statModifiers ?? {}).length > 0;
   const hasEquipSlots = data.equipSlots && data.equipSlots.length > 0;
@@ -70,7 +69,7 @@ export const ItemDetailsSection: React.FC<{ data: Item }> = ({ data }) => {
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div
-                className="bg-primary h-2 rounded-full transition-all"
+                className="bg-primary h-2 rounded-full transition-[width] duration-300"
                 style={{
                   width: `${data.durability.max > 0 ? (data.durability.current / data.durability.max) * 100 : 0}%`,
                 }}
@@ -135,14 +134,14 @@ export const ItemDetailsSection: React.FC<{ data: Item }> = ({ data }) => {
       )}
     </div>
   );
-};
+}
 
-export const ItemDescriptionSection: React.FC<{ data: Item }> = ({ data }) => {
+export function ItemDescriptionSection({ data }: { data: Item }) {
   if (!hasRichTextContent(data.description)) return null;
 
   return (
-    <div className="prose prose-lg dark:prose-invert max-w-none viewer-prose font-serif">
+    <div className="max-w-none viewer-prose font-serif">
       <RichTextViewer html={data.description} />
     </div>
   );
-};
+}

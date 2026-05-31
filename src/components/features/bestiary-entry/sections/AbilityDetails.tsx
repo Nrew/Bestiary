@@ -1,27 +1,32 @@
-import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { RichTextViewer } from "@/components/shared/RichTextViewer";
-import { useAppStore } from "@/store/appStore";
+import { useNavigationGuard } from "@/hooks/useNavigationGuard";
 import { useWikiLink } from "@/components/shared/wiki-link/WikiLinkProvider";
 import {
-  ABILITY_TYPE_LABELS,
+  ABILITY_TIMING_LABELS,
+  ABILITY_CATEGORY_LABELS,
   ABILITY_SCORE_LABELS,
   AOE_SHAPE_LABELS,
   DAMAGE_TYPE_LABELS,
 } from "@/lib/dnd/constants";
 import { hasRichTextContent } from "@/lib/empty";
-import { formatStatValue, formatValue } from "@/lib/dnd/format-utils";
+import {
+  formatAbilityUses,
+  formatSpellLevel,
+  formatStatValue,
+  formatValue,
+} from "@/lib/dnd/format-utils";
 import { formatLabel } from "@/lib/utils";
 import type { Ability, AbilityEffect, ViewContext } from "@/types";
 import { useReferencedEntryName } from "@/hooks/useReferencedEntryName";
 
 type EffectLinkContext = Extract<ViewContext, "entities" | "statuses">;
 
-const EntryLink: React.FC<{
+function EntryLink({ id, type, onNavigate }: {
   id: string;
   type: EffectLinkContext;
   onNavigate: (id: string, type: EffectLinkContext) => void;
-}> = ({ id, type, onNavigate }) => {
+}) {
   const { status, name } = useReferencedEntryName(type, id);
   const { showTooltip, hideTooltip } = useWikiLink();
   const isFound = status === "found";
@@ -32,6 +37,7 @@ const EntryLink: React.FC<{
       onMouseDown={(e) => e.preventDefault()}
       onClick={(e) => {
         e.currentTarget.blur();
+        window.getSelection()?.removeAllRanges();
         onNavigate(id, type);
       }}
       onMouseEnter={(e) => { if (id) showTooltip(id, type, e.currentTarget); }}
@@ -41,17 +47,17 @@ const EntryLink: React.FC<{
       {isFound ? name : "…"}
     </button>
   );
-};
+}
 
 interface EffectDisplayProps {
   effect: AbilityEffect;
   onNavigate: (id: string, type: EffectLinkContext) => void;
 }
 
-const EffectDisplay: React.FC<EffectDisplayProps> = ({
+function EffectDisplay({
   effect,
   onNavigate,
-}) => {
+}: EffectDisplayProps) {
   switch (effect.type) {
     case "damage":
       return (
@@ -174,9 +180,9 @@ const EffectDisplay: React.FC<EffectDisplayProps> = ({
     default:
       return <span className="text-muted-foreground">Unknown effect</span>;
   }
-};
+}
 
-export const AbilityDetailsSection: React.FC<{ data: Ability }> = ({ data }) => {
+export function AbilityDetailsSection({ data }: { data: Ability }) {
   const hasTarget = data.target !== null;
   const hasComponents = data.components !== null;
 
@@ -187,20 +193,26 @@ export const AbilityDetailsSection: React.FC<{ data: Ability }> = ({ data }) => 
           Ability Details
         </h3>
         <div className="space-y-2 text-sm font-serif">
-          <div className="flex justify-between">
-            <strong className="text-foreground/70">Type</strong>
-            <Badge variant="outline">{ABILITY_TYPE_LABELS[data.type]}</Badge>
-          </div>
-          {data.castingTime && (
-            <div className="flex justify-between">
-              <strong className="text-foreground/70">Casting Time</strong>
-              <span>{data.castingTime}</span>
+          {data.category === "none" && (data.spellLevel != null || data.school) && (
+            <div className="text-sm italic text-foreground/70">
+              {formatSpellLevel(data.spellLevel, data.school)}
+              {data.ritual && " (ritual)"}
             </div>
           )}
-          {data.recharge && (
+          <div className="flex justify-between">
+            <strong className="text-foreground/70">Timing</strong>
+            <Badge variant="outline">{ABILITY_TIMING_LABELS[data.timing]}</Badge>
+          </div>
+          {data.category !== "none" && (
             <div className="flex justify-between">
-              <strong className="text-foreground/70">Recharge</strong>
-              <span>{data.recharge}</span>
+              <strong className="text-foreground/70">Category</strong>
+              <Badge variant="outline">{ABILITY_CATEGORY_LABELS[data.category]}</Badge>
+            </div>
+          )}
+          {data.uses && (
+            <div className="flex justify-between">
+              <strong className="text-foreground/70">Uses</strong>
+              <span>{formatAbilityUses(data.uses)}</span>
             </div>
           )}
           {data.requiresConcentration && (
@@ -210,6 +222,12 @@ export const AbilityDetailsSection: React.FC<{ data: Ability }> = ({ data }) => 
             </div>
           )}
         </div>
+        {data.category === "none" && data.higherLevels && (
+          <div className="mt-3 text-sm font-serif">
+            <strong>At Higher Levels.</strong>{" "}
+            <RichTextViewer html={data.higherLevels} />
+          </div>
+        )}
       </div>
 
       {hasTarget && data.target && (
@@ -268,10 +286,10 @@ export const AbilityDetailsSection: React.FC<{ data: Ability }> = ({ data }) => 
       )}
     </div>
   );
-};
+}
 
-export const AbilityEffectsSection: React.FC<{ data: Ability }> = ({ data }) => {
-  const navigateToEntry = useAppStore((s) => s.navigateToEntry);
+export function AbilityEffectsSection({ data }: { data: Ability }) {
+  const { navigateToEntry } = useNavigationGuard();
 
   if (!data.effects || data.effects.length === 0) {
     return null;
@@ -296,16 +314,16 @@ export const AbilityEffectsSection: React.FC<{ data: Ability }> = ({ data }) => 
       </div>
     </div>
   );
-};
+}
 
-export const AbilityDescriptionSection: React.FC<{ data: Ability }> = ({
+export function AbilityDescriptionSection({
   data,
-}) => {
+}: { data: Ability }) {
   if (!hasRichTextContent(data.description)) return null;
 
   return (
-    <div className="prose prose-lg dark:prose-invert max-w-none viewer-prose font-serif">
+    <div className="max-w-none viewer-prose font-serif">
       <RichTextViewer html={data.description} />
     </div>
   );
-};
+}

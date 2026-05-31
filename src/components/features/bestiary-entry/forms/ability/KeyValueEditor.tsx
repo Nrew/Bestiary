@@ -10,8 +10,8 @@ interface KeyValueEditorProps {
   onChange: (data: Record<string, unknown>) => void;
 }
 
-export const KeyValueEditor: React.FC<KeyValueEditorProps> = React.memo(
-  ({ label, value, onChange }) => {
+export const KeyValueEditor = React.memo(
+  ({ label, value, onChange }: KeyValueEditorProps) => {
     const [newKey, setNewKey] = React.useState("");
     const [newValue, setNewValue] = React.useState("");
     const keyInputId = React.useId();
@@ -56,22 +56,24 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = React.memo(
           ))}
         </div>
         <div className="flex gap-2">
+          <Label htmlFor={keyInputId} className="sr-only">Property key</Label>
           <Input
             id={keyInputId}
+            name="propertyKey"
             placeholder="Key"
             value={newKey}
             onChange={(e) => setNewKey(e.target.value)}
             className="flex-1"
-            aria-label="Property key"
           />
+          <Label htmlFor={valueInputId} className="sr-only">Property value</Label>
           <Input
             id={valueInputId}
+            name="propertyValue"
             placeholder="Value"
             value={newValue}
             onChange={(e) => setNewValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addProperty())}
             className="flex-1"
-            aria-label="Property value"
           />
           <button
             type="button"
