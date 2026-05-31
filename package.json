@@ -1,7 +1,7 @@
 {
   "name": "bestiary",
   "private": false,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "An offline bestiary, item, and ability compendium for tabletop RPGs.",
   "author": "Nrew",
   "license": "MIT",
