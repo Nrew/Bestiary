@@ -46,12 +46,6 @@ const buttonVariants = cva(buttonBase, {
         "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:shadow-button-medieval-focus " +
         "print:bg-secondary print:text-foreground print:border-border print:shadow-none " +
         "contrast-more:border-[3px]",
-      save:
-        "border border-brass bg-wine text-primary-foreground font-serif font-semibold tracking-wide rounded-sm " +
-        "transition-[background-color,border-color,transform] duration-[120ms] ease-medieval " +
-        "hover:bg-wine-hover hover:border-brass-hover " +
-        "active:scale-[0.97] active:bg-wine-active " +
-        "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:shadow-button-save-focus",
     },
     size: {
       default: "h-10 px-4 py-2",
