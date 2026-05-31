@@ -19,8 +19,8 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-overlay-soft backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-(--dialog-max-h) overflow-y-auto glass-panel p-6 rounded-xl shadow-2xl animate-slide-up focus:outline-none motion-reduce:animate-none">
+        <Dialog.Overlay className="fixed inset-0 bg-overlay-soft backdrop-blur-sm z-50 animate-fade-only motion-reduce:animate-none" />
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-(--dialog-max-h) overflow-y-auto glass-panel p-6 rounded-xl shadow-2xl animate-scale-in focus:outline-none motion-reduce:animate-none">
           <Dialog.Title className="sr-only">Keyboard Shortcuts</Dialog.Title>
           <Dialog.Description className="sr-only">
             Keyboard shortcuts available in the application.

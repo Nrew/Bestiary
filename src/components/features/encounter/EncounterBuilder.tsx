@@ -401,13 +401,13 @@ export function EncounterBuilder({ open, onOpenChange }: EncounterBuilderProps) 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-overlay-soft backdrop-blur-sm z-50 animate-fade-in" />
+        <Dialog.Overlay className="fixed inset-0 bg-overlay-soft backdrop-blur-sm z-50 animate-fade-only motion-reduce:animate-none" />
 
         <Dialog.Content
           className={cn(
             "fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
             "w-full max-w-3xl h-176 max-h-(--dialog-max-h-workspace) flex flex-col",
-            "glass-panel rounded-xl shadow-2xl animate-slide-up focus:outline-none",
+            "glass-panel rounded-xl shadow-2xl animate-scale-in focus:outline-none motion-reduce:animate-none",
             "p-0"
           )}
         >

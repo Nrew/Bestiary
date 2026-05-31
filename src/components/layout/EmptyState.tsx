@@ -8,7 +8,7 @@ export function EmptyState() {
         <div className="relative w-40 h-40">
           <div className="absolute inset-0 bg-linear-to-br from-rune/20 via-leather/15 to-rune/20 rounded-3xl animate-glow"></div>
           <div className="relative w-full h-full rounded-3xl flex items-center justify-center shadow-2xl border-4 border-rune/60 bg-card/90">
-            <BookOpen className="w-16 h-16 text-leather relative z-10 animate-bounce-gentle" />
+            <BookOpen className="w-16 h-16 text-leather relative z-10 animate-float" />
           </div>
         </div>
 

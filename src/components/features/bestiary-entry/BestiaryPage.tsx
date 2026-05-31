@@ -68,7 +68,7 @@ export function BestiaryPage({
 
   if (data) {
     return (
-      <div key={entryId} className="h-full animate-fade-in">
+      <div key={entryId} className="h-full">
         <BestiaryEntry entry={data} entryType={entryType} />
       </div>
     );

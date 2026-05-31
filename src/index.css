@@ -145,6 +145,9 @@
   --color-brass-strong: oklch(44% 0.12 70);
   --color-warning-strong: oklch(44% 0.13 80);
 
+  --color-note-surface: oklch(94.0% 0.022 93);
+  --color-note-edge: oklch(82.1% 0.035 76);
+
   /* Tailwind semantic mappings */
   --color-background: var(--color-parchment);
   --color-foreground: var(--color-ink);
@@ -222,10 +225,10 @@
   --shadow-button-medieval: 0 2px 4px var(--color-ink-20), inset 0 1px 0 var(--color-parchment-40);
   --shadow-button-medieval-hover: 0 4px 12px var(--color-ink-30), inset 0 1px 0 var(--color-parchment-60);
   --shadow-button-medieval-focus: 0 0 0 2px var(--color-rune), 0 0 0 4px var(--color-rune-20);
-  --shadow-button-save-focus: 0 0 0 2px var(--color-wine), 0 0 0 4px var(--color-brass-25);
 
   /* Animation timing */
-  --ease-medieval: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-medieval: var(--ease-out);
 
   /* Keyframe animations */
   --animate-fade-in: fadeIn 0.15s var(--ease-medieval) forwards;
@@ -233,8 +236,8 @@
   --animate-scale-in: scaleIn 0.15s var(--ease-medieval) forwards;
   --animate-content-fade: content-fade-in 0.12s var(--ease-medieval) forwards;
   --animate-skeleton: skeleton-shimmer 1.5s ease-in-out infinite;
-  --animate-glow-pulse: glowPulse 2.4s ease-in-out infinite;
-  --animate-bounce-gentle: bounceGentle 2.8s ease-in-out infinite;
+  --animate-glow-pulse: glowPulse 3.2s ease-in-out infinite;
+  --animate-float: float 3.2s ease-in-out infinite;
   --animate-pulse-warn: pulse-warning 2s ease-in-out infinite;
   --animate-loot-result: loot-result 0.24s var(--ease-medieval) both;
   --animate-loot-die-roll: loot-die-roll 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -339,14 +342,13 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, var(--color-rune), var(--color-leather));
+    background: var(--color-leather);
     border-radius: 6px;
     border: 2px solid var(--color-secondary);
-    box-shadow: inset 0 1px 0 oklch(85% 0.15 85 / 30%);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, var(--color-leather), var(--color-rune));
+    background: var(--color-leather-lifted);
   }
 
   ::-webkit-scrollbar-corner {
@@ -429,8 +431,8 @@
   animation: var(--animate-glow-pulse);
 }
 
-@utility animate-bounce-gentle {
-  animation: var(--animate-bounce-gentle);
+@utility animate-float {
+  animation: var(--animate-float);
 }
 
 @utility animate-loot-die-roll {
@@ -517,8 +519,7 @@
   justify-content: space-between;
   padding-inline: var(--spacing-sidebar-padding);
   z-index: 30;
-  background: linear-gradient(135deg, var(--color-card-90) 0%, var(--color-secondary-80) 100%);
-  backdrop-filter: blur(10px) saturate(1.1);
+  background: linear-gradient(135deg, var(--color-card) 0%, var(--color-secondary) 100%);
   border-bottom: 2px solid;
   border-image: linear-gradient(90deg, transparent, var(--color-rune-60) 50%, transparent) 1;
   box-shadow: 0 4px 16px var(--color-ink-10);
@@ -530,8 +531,7 @@
 
 @utility glass-panel {
   position: relative;
-  background: linear-gradient(135deg, var(--color-card-90) 0%, var(--color-card-70) 100%);
-  backdrop-filter: blur(12px) saturate(1.2);
+  background: linear-gradient(135deg, var(--color-card) 0%, oklch(95% 0.012 75) 100%);
   border: 1px solid var(--color-border-30);
   box-shadow: var(--shadow-glass);
 }
@@ -539,11 +539,10 @@
 @utility glass-sidebar {
   position: relative;
   background: linear-gradient(180deg,
-    var(--color-secondary-95) 0%,
-    var(--color-card-90) 50%,
-    var(--color-secondary-95) 100%
+    var(--color-secondary) 0%,
+    var(--color-card) 50%,
+    var(--color-secondary) 100%
   );
-  backdrop-filter: blur(12px) saturate(1.2);
   border: 1px solid var(--color-border-30);
   border-right: 3px solid var(--color-rune-60);
   box-shadow: 2px 0 24px var(--color-ink-15), inset -1px 0 0 var(--color-rune-30);
@@ -587,8 +586,7 @@
   font-family: var(--font-serif);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-  background: var(--color-card-95);
-  backdrop-filter: blur(8px);
+  background: var(--color-input);
   transition: border-color 0.25s var(--ease-medieval), box-shadow 0.25s var(--ease-medieval);
   box-shadow: inset 0 1px 3px var(--color-ink-05);
 }
@@ -598,9 +596,8 @@
   border-radius: var(--radius-md);
   padding: 0.5rem 1rem;
   border: 2px solid var(--color-stone-40);
-  transition: border-color 0.3s var(--ease-medieval), box-shadow 0.3s var(--ease-medieval), backdrop-filter 0.3s var(--ease-medieval);
-  background-color: var(--color-card-90);
-  backdrop-filter: blur(8px);
+  transition: border-color 0.3s var(--ease-medieval), box-shadow 0.3s var(--ease-medieval);
+  background-color: var(--color-card);
   box-shadow: inset 0 2px 4px var(--color-ink-05), 0 1px 2px var(--color-ink-10);
 }
 
@@ -637,7 +634,6 @@
   &:focus {
     outline: none;
     border-color: var(--color-leather);
-    backdrop-filter: blur(12px);
     box-shadow: inset 0 2px 4px var(--color-ink-05), 0 0 0 3px var(--color-leather-10), 0 4px 12px var(--color-ink-15);
   }
 }
@@ -652,7 +648,7 @@
 
 /* Wiki link styles */
 .wiki-link {
-  transition: transform 0.3s var(--ease-medieval), background 0.3s var(--ease-medieval), box-shadow 0.3s var(--ease-medieval);
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
   cursor: pointer;
   position: relative;
 }
@@ -904,11 +900,9 @@
   50% { opacity: 0.85; transform: scale(1.08); }
 }
 
-/* Gentle vertical float for decorative icons */
-@keyframes bounceGentle {
+@keyframes float {
   0%, 100% { transform: translateY(0); }
-  45% { transform: translateY(-7px); }
-  65% { transform: translateY(-4px); }
+  50% { transform: translateY(-5px); }
 }
 
 /* ============================================================================

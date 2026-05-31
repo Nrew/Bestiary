@@ -95,8 +95,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-overlay-soft backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-(--dialog-max-h) overflow-y-auto glass-panel p-6 rounded-xl shadow-2xl animate-slide-up focus:outline-none motion-reduce:animate-none">
+        <Dialog.Overlay className="fixed inset-0 bg-overlay-soft backdrop-blur-sm z-50 animate-fade-only motion-reduce:animate-none" />
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-(--dialog-max-h) overflow-y-auto glass-panel p-6 rounded-xl shadow-2xl animate-scale-in focus:outline-none motion-reduce:animate-none">
           <Dialog.Title className="sr-only">Bestiary Settings</Dialog.Title>
           <Dialog.Description className="sr-only">
             Manage data backup, image cleanup, and import/restore settings for your bestiary.

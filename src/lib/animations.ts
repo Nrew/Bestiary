@@ -36,13 +36,13 @@ export const staggerContainerVariants: Variants = {
   hidden: {},
   visible: {
     transition: {
-      delayChildren: 0.05,
-      staggerChildren: 0.06,
+      delayChildren: 0,
+      staggerChildren: 0.035,
     },
   },
   exit: {
     transition: {
-      staggerChildren: 0.03,
+      staggerChildren: 0.02,
       staggerDirection: -1,
     },
   },

@@ -169,7 +169,7 @@ function AppProviders({ children }: React.PropsWithChildren) {
   return (
     <ToastProvider>
       <ToastSetup />
-      <TooltipProvider delayDuration={100}>
+      <TooltipProvider delayDuration={200}>
         <WikiLinkProvider>{children}</WikiLinkProvider>
       </TooltipProvider>
     </ToastProvider>

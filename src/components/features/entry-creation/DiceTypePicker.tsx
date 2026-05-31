@@ -55,9 +55,9 @@ export function DiceTypePicker({
       onOpenChange={(next) => !isSubmitting && onOpenChange(next)}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay-soft backdrop-blur-sm animate-fade-in" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay-soft backdrop-blur-sm animate-fade-only motion-reduce:animate-none" />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-50 w-[min(calc(100vw-2rem),36rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl glass-panel p-8 shadow-2xl animate-slide-up focus:outline-none motion-reduce:animate-none"
+          className="fixed left-1/2 top-1/2 z-50 w-[min(calc(100vw-2rem),36rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl glass-panel p-8 shadow-2xl animate-scale-in focus:outline-none motion-reduce:animate-none"
           onOpenAutoFocus={(e) => {
             e.preventDefault();
             confirmBtnRef.current?.focus();

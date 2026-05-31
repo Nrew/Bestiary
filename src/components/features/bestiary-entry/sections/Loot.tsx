@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback, useMemo, useState, useRef } from "react";
+import { useReducedMotion } from "framer-motion";
 import { useItem, useAppStore } from "@/store/appStore";
 import { Icon } from "@/components/shared/Icon";
 import { useNavigationGuard } from "@/hooks/useNavigationGuard";
@@ -226,6 +227,7 @@ export function LootSection({ data }: { data: Entity }) {
     [inventory]
   );
   const ensureItemsLoaded = useAppStore((s) => s.ensureItemsLoaded);
+  const prefersReducedMotion = useReducedMotion();
   const [phase, setPhase] = useState<LootPhase>({ kind: "idle" });
   const rollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const animationKeyRef = useRef(0);
@@ -258,12 +260,18 @@ export function LootSection({ data }: { data: Entity }) {
     animationKeyRef.current = nextAnimation.key;
 
     clearRollTimer();
+
+    if (prefersReducedMotion) {
+      setPhase({ kind: "resolved", results: nextResults, animation: nextAnimation });
+      return;
+    }
+
     setPhase({ kind: "rolling", pending: nextResults, animation: nextAnimation });
     rollTimerRef.current = setTimeout(() => {
       clearRollTimer();
       setPhase({ kind: "resolved", results: nextResults, animation: nextAnimation });
     }, nextAnimation.durationMs);
-  }, [clearRollTimer, inventory, phase.kind]);
+  }, [clearRollTimer, inventory, phase.kind, prefersReducedMotion]);
 
   if (inventory.length === 0) return null;
 
