@@ -14,15 +14,7 @@ export function NotesSection({ data }: { data: BestiaryEntry }) {
       iconCategory="entity"
       iconName="spellbook"
     >
-      <div
-        className="p-4 sm:p-6 rounded-lg relative border-l-4"
-        style={{
-          backgroundColor: "hsl(45, 40%, 90%)", // Slightly darker parchment
-          borderColor: "hsl(35, 30%, 75%)",
-          boxShadow:
-            "inset 2px 2px 8px hsl(30, 20%, 10%, 0.1), 2px 2px 5px hsl(30, 20%, 10%, 0.2)",
-        }}
-      >
+      <div className="p-4 sm:p-6 rounded-lg relative border-l-4 border-note-edge bg-note-surface shadow-[inset_2px_2px_8px_var(--color-ink-10),2px_2px_5px_var(--color-ink-20)]">
         <div className="max-w-none font-serif viewer-prose">
           <RichTextViewer html={notes} />
         </div>

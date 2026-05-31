@@ -124,7 +124,7 @@ export function AbilityForm() {
       </FormSection>
 
       {category === "multiattack" && (
-        <aside className="flex items-start gap-2 rounded-sm border-l-2 border-sapphire/40 bg-stone/10 p-3 font-serif text-sm text-ink/70">
+        <aside className="flex items-start gap-2 rounded-sm border border-sapphire/25 bg-stone/10 p-3 font-serif text-sm text-ink/70">
           <Icon category="game" name="source-book" size="sm" className="mt-0.5 shrink-0 text-sapphire/70" />
           <div>
             <strong className="font-display text-ink">Multiattack.</strong>{" "}
@@ -134,7 +134,7 @@ export function AbilityForm() {
         </aside>
       )}
       {category === "regionalEffect" && (
-        <aside className="flex items-start gap-2 rounded-sm border-l-2 border-sapphire/40 bg-stone/10 p-3 font-serif text-sm text-ink/70">
+        <aside className="flex items-start gap-2 rounded-sm border border-sapphire/25 bg-stone/10 p-3 font-serif text-sm text-ink/70">
           <Icon category="game" name="source-book" size="sm" className="mt-0.5 shrink-0 text-sapphire/70" />
           <div>
             <strong className="font-display text-ink">Regional Effect.</strong>{" "}
